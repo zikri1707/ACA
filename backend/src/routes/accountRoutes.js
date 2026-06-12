@@ -116,12 +116,38 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// Delete Account (Admin only)
+// Get Account Usage Info (to check if used in rules or consultations)
+router.get('/:id/usage', authenticateToken, async (req, res) => {
+  try {
+    const ruleUsage = await get('SELECT COUNT(*) as count FROM rules WHERE conclusion_account_id = ?', [req.params.id]);
+    const consultationUsage = await get('SELECT COUNT(*) as count FROM consultations WHERE result_account_id = ?', [req.params.id]);
+    
+    return res.json({
+      inUse: ruleUsage.count > 0 || consultationUsage.count > 0,
+      ruleCount: ruleUsage.count,
+      consultationCount: consultationUsage.count
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Gagal memeriksa penggunaan akun.', error: err.message });
+  }
+});
+
+// Delete Account (Admin only, with usage check)
 router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const account = await get('SELECT id, code, name FROM accounts WHERE id = ?', [req.params.id]);
     if (!account) {
       return res.status(404).json({ message: 'Akun tidak ditemukan.' });
+    }
+
+    // Double check usage to enforce integrity
+    const ruleUsage = await get('SELECT COUNT(*) as count FROM rules WHERE conclusion_account_id = ?', [req.params.id]);
+    const consultationUsage = await get('SELECT COUNT(*) as count FROM consultations WHERE result_account_id = ?', [req.params.id]);
+    
+    if (ruleUsage.count > 0 || consultationUsage.count > 0) {
+      return res.status(400).json({ 
+        message: `Tidak dapat menghapus akun karena digunakan oleh ${ruleUsage.count} aturan dan ${consultationUsage.count} riwayat konsultasi.` 
+      });
     }
 
     await run('DELETE FROM accounts WHERE id = ?', [req.params.id]);
@@ -138,3 +164,4 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 export default router;
+

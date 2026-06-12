@@ -20,7 +20,16 @@ export const ConsultationWizard = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Start a new consultation session
+  // Reset and go to business type selection
+  const resetConsultation = () => {
+    setFacts({});
+    setAnswersHistory([]);
+    setProvenGoal(null);
+    setRuleTrace([]);
+    setStep('business_select');
+  };
+
+  // Start a new consultation session from selected business type
   const startConsultation = () => {
     setFacts({});
     setAnswersHistory([]);
@@ -273,10 +282,10 @@ export const ConsultationWizard = () => {
         </div>
       )}
 
-      {/* 2. Step: Active Questionnaire & Logic Tracing */}
+      {/* 2. Step: Active Questionnaire */}
       {step === 'questions' && (
-        <div className="layout-main-side">
-          {/* Left panel: Questionnaire */}
+        <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+          {/* Questionnaire Card */}
           <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '420px' }}>
             {loading ? (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -384,101 +393,12 @@ export const ConsultationWizard = () => {
               </div>
             )}
           </div>
-
-          {/* Right panel: Tracing Visualizer */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <div className="card-title">
-                <span>Visualisasi Logika</span>
-                <span className="badge badge-info" style={{ fontSize: '0.65rem' }}>Backward Chaining</span>
-              </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-                Sistem menelusuri rule-base untuk membuktikan tujuan klasifikasi:
-              </p>
-
-              {/* Progress steps */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '280px', overflowY: 'auto' }}>
-                {ruleTrace.map((trace, index) => {
-                  let statusColor = 'var(--text-muted)';
-                  let statusBg = 'var(--background)';
-                  let icon = '🔒';
-
-                  if (trace.status === 'passed') {
-                    statusColor = 'var(--success)';
-                    statusBg = 'var(--success-light)';
-                    icon = '✓';
-                  } else if (trace.status === 'failed') {
-                    statusColor = 'var(--danger)';
-                    statusBg = 'var(--danger-light)';
-                    icon = '✕';
-                  } else if (trace.status === 'blocked') {
-                    statusColor = 'var(--primary)';
-                    statusBg = 'var(--primary-light)';
-                    icon = '⚙️';
-                  }
-
-                  return (
-                    <div key={index} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      padding: '0.65rem 0.85rem',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: statusBg,
-                      border: `1px solid ${trace.status === 'blocked' ? 'var(--primary)' : 'var(--border)'}`,
-                      fontSize: '0.8rem'
-                    }}>
-                      <div style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        backgroundColor: 'var(--surface)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 700,
-                        color: statusColor,
-                        border: `1px solid ${statusColor}`
-                      }}>
-                        {icon}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{trace.rule_code}: {trace.rule_name}</div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Membuktikan: {trace.conclusion.name}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Bottom calculation status */}
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '1rem' }}>
-              <div className="flex-between" style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-                <span>Probabilitas Hasil</span>
-                <span>{answersHistory.length * 10 > 90 ? 90 : answersHistory.length * 10}%</span>
-              </div>
-              <div style={{ height: '6px', backgroundColor: 'var(--border)', borderRadius: '3px', overflow: 'hidden' }}>
-                <div style={{ width: `${answersHistory.length * 10}%`, height: '100%', backgroundColor: 'var(--primary)' }} />
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
       {/* 3. Step: Result Page & Journal Recommendations */}
       {step === 'result' && (
         <div>
-          {/* Header Action menu */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginBottom: '1.5rem' }} className="no-print">
-            <button onClick={handlePrint} className="btn btn-secondary">
-              <PrintIcon className="w-4 h-4" /> Cetak Hasil
-            </button>
-            <button onClick={handleSaveResult} className="btn btn-primary" disabled={saving}>
-              <SaveIcon className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Simpan Riwayat'}
-            </button>
-          </div>
-
           <div className="layout-main-side">
             {/* Left side: Conclusion */}
             <div className="card">
@@ -505,41 +425,40 @@ export const ConsultationWizard = () => {
 
               {/* Logical Explanation */}
               <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Penjelasan Logika</h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                  {provenGoal ? (
-                    `Berdasarkan data yang dimasukkan, transaksi terbukti merupakan bagian dari ${provenGoal.name}. Aturan pakar ${provenGoal.rule_code} menyimpulkan bahwa karakteristik transaksi ini memenuhi kriteria standar kepatuhan akuntansi SAK EMKM untuk pencatatan pos ${provenGoal.category}.`
-                  ) : (
-                    'Sistem menelusuri seluruh basis aturan logika yang tersedia, namun tidak menemukan rule yang sesuai dengan rangkaian jawaban kuisioner Anda. Akun transaksi tidak dapat disimpulkan secara otomatis.'
-                  )}
-                </p>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Alasan Rekomendasi</h3>
+                {provenGoal ? (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    <p style={{ marginBottom: '0.75rem' }}>
+                      Berdasarkan penalaran sistem, transaksi Anda berhasil dibuktikan sebagai <strong>{provenGoal.name}</strong> (Kode Akun: {provenGoal.code}) dalam kategori <strong>{provenGoal.category}</strong> {provenGoal.subcategory ? `(${provenGoal.subcategory})` : ''}.
+                    </p>
+                    <p style={{ marginBottom: '0.5rem' }}>
+                      Aturan yang terpicu adalah <strong>{provenGoal.rule_name} ({provenGoal.rule_code})</strong>, yang secara otomatis aktif karena seluruh kondisi berikut terpenuhi berdasarkan jawaban Anda:
+                    </p>
+                    <ul style={{ paddingLeft: '1.5rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {ruleTrace.filter(t => t.status === 'passed').flatMap(t => 
+                        t.conditions.map((c, i) => (
+                          <li key={`${t.rule_code}-${i}`}>
+                            <code style={{ backgroundColor: 'var(--background)', padding: '0.15rem 0.35rem', borderRadius: '3px', fontSize: '0.75rem' }}>{c.fact_name} = {c.actual}</code> <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: '0.75rem' }}>✓ (terpenuhi)</span>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                    <p>
+                      Karena rangkaian kondisi di atas terpenuhi, maka sesuai standar akuntansi <strong>SAK EMKM</strong>, sistem menyarankan Anda untuk mencatat transaksi ini dengan mendebit <strong>{journal.debit}</strong> dan mengkredit <strong>{journal.credit}</strong>. Klasifikasi otomatis ini lazim diterapkan pada entitas UMKM <strong>{businessType === 'jasa' ? 'Jasa' : 'Dagang'}</strong> untuk memastikan laporan posisi keuangan dan laba rugi Anda tetap seimbang dan akurat.
+                    </p>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    Maaf, sistem tidak dapat menemukan klasifikasi akun yang tepat. Rangkaian jawaban Anda tidak memenuhi satu pun kriteria standar pada basis aturan yang tersedia.
+                  </p>
+                )}
               </div>
 
-              {/* Proven Rule Tracing */}
-              <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem' }}>Rule Tracing (Jalur Logika)</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {ruleTrace.filter(t => t.status === 'passed').map((t, idx) => (
-                    <div key={idx} style={{
-                      backgroundColor: 'var(--background)',
-                      borderLeft: '4px solid var(--primary)',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '0 var(--radius-md) var(--radius-md) 0',
-                      fontSize: '0.8rem'
-                    }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.15rem' }}>
-                        {t.rule_code}: {t.rule_name}
-                      </div>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-                        Kondisi Terpenuhi:{' '}
-                        {t.conditions.map(c => `${c.fact_name}=${c.actual}`).join(', ')}
-                      </p>
-                    </div>
-                  ))}
-                  {ruleTrace.filter(t => t.status === 'passed').length === 0 && (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Tidak ada rule yang terpenuhi.</p>
-                  )}
-                </div>
+              {/* Action Button */}
+              <div className="no-print" style={{ borderTop: '1px dashed var(--border)', paddingTop: '1.25rem', display: 'flex', justifyContent: 'flex-start' }}>
+                <button onClick={handleSaveResult} className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '6px' }} disabled={saving}>
+                  <SaveIcon className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Simpan Riwayat'}
+                </button>
               </div>
             </div>
 
@@ -577,12 +496,12 @@ export const ConsultationWizard = () => {
               </div>
 
               {/* Consultation New CTA */}
-              <div className="card" style={{ textAlign: 'center', padding: '2rem' }} className="no-print card">
-                <h3>Ada transaksi lain?</h3>
+              <div className="card no-print" style={{ textAlign: 'center', padding: '2rem' }}>
+                <h3 style={{ fontSize: '1.1rem' }}>Ada transaksi lain?</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', marginBottom: '1.5rem' }}>
                   Lanjutkan klasifikasi untuk menjaga keakuratan laporan keuangan UMKM Anda.
                 </p>
-                <button onClick={startConsultation} className="btn btn-secondary" style={{ width: '100%' }}>
+                <button onClick={resetConsultation} className="btn btn-secondary" style={{ width: '100%', padding: '0.85rem' }}>
                   🔄 Konsultasi Baru
                 </button>
               </div>

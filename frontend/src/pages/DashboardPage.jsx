@@ -1,6 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+// Stat card icon components
+const IconConsultation = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+);
+const IconAccuracy = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+const IconConfidence = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+  </svg>
+);
+const IconRules = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15" x2="13" y2="15"/>
+  </svg>
+);
+
+const StatCard = ({ icon, iconBg, iconColor, label, value, badge, badgeColor, badgeBg, sub }) => (
+  <div className="card" style={{ position: 'relative', overflow: 'hidden', padding: '1.5rem' }}>
+    {/* Decorative background circle */}
+    <div style={{
+      position: 'absolute', top: '-20px', right: '-20px',
+      width: '90px', height: '90px', borderRadius: '50%',
+      backgroundColor: iconBg, opacity: 0.3
+    }} />
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', position: 'relative' }}>
+      <div style={{
+        width: '44px', height: '44px', borderRadius: '12px',
+        backgroundColor: iconBg, display: 'flex',
+        alignItems: 'center', justifyContent: 'center', color: iconColor,
+        flexShrink: 0
+      }}>
+        {icon}
+      </div>
+      {badge && (
+        <span style={{
+          fontSize: '0.68rem', fontWeight: 700,
+          padding: '0.2rem 0.55rem', borderRadius: '999px',
+          backgroundColor: badgeBg, color: badgeColor,
+          whiteSpace: 'nowrap', marginTop: '0.25rem'
+        }}>{badge}</span>
+      )}
+    </div>
+    <div style={{ position: 'relative' }}>
+      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '0.35rem' }}>{label}</p>
+      <h2 style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1, marginBottom: '0.4rem' }}>{value}</h2>
+      {sub && <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{sub}</p>}
+    </div>
+  </div>
+);
+
 export const DashboardPage = () => {
   const { token, navigateTo, showToast } = useAuth();
   const [data, setData] = useState(null);
@@ -9,16 +65,11 @@ export const DashboardPage = () => {
   const fetchDashboardData = async () => {
     try {
       const response = await fetch('/api/reports/dashboard', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       const res = await response.json();
-      if (response.ok) {
-        setData(res);
-      } else {
-        showToast(res.message, 'danger');
-      }
+      if (response.ok) setData(res);
+      else showToast(res.message, 'danger');
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     } finally {
@@ -26,287 +77,356 @@ export const DashboardPage = () => {
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  useEffect(() => { fetchDashboardData(); }, []);
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: '1rem' }}>
         <div className="spinner" />
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Memuat data dashboard...</p>
       </div>
     );
   }
 
   const stats = data?.stats || {
-    totalConsultations: 1284,
-    totalRules: 452,
-    totalAccounts: 86,
-    accuracyRate: 98.4
+    totalConsultations: 0, totalRules: 0, totalAccounts: 0,
+    classifiedCount: 0, accuracyRate: 0, avgConfidence: 0,
+    thisMonth: 0, growthPct: 0
   };
-
   const recentConsultations = data?.recentConsultations || [];
+  const monthlyData = data?.charts?.monthly || [];
+
+  const growthPositive = stats.growthPct >= 0;
+  const maxMonthly = Math.max(...monthlyData.map(m => m.count), 1);
 
   return (
-    <div>
-      {/* Statistics Cards */}
-      <div className="grid-cols-4" style={{ marginBottom: '1.5rem' }}>
-        {/* Card 1 */}
-        <div className="card" style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Konsultasi</span>
-            <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)', backgroundColor: '#ecfdf5', color: '#10b981', fontWeight: 700 }}>+12%</span>
-          </div>
-          <h2 style={{ fontSize: '2rem', marginTop: '0.5rem' }}>{stats.totalConsultations.toLocaleString()}</h2>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-        {/* Card 2 */}
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Rule Pakar</span>
-            <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)', backgroundColor: '#f1f5f9', color: '#64748b', fontWeight: 700 }}>Tetap</span>
-          </div>
-          <h2 style={{ fontSize: '2rem', marginTop: '0.5rem' }}>{stats.totalRules}</h2>
-        </div>
-
-        {/* Card 3 */}
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Akun CoA</span>
-            <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)', backgroundColor: '#ecfdf5', color: '#10b981', fontWeight: 700 }}>+5</span>
-          </div>
-          <h2 style={{ fontSize: '2rem', marginTop: '0.5rem' }}>{stats.totalAccounts}</h2>
-        </div>
-
-        {/* Card 4 */}
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Tingkat Akurasi</span>
-            <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)', backgroundColor: '#eff6ff', color: '#2563eb', fontWeight: 700 }}>Tinggi</span>
-          </div>
-          <h2 style={{ fontSize: '2rem', marginTop: '0.5rem' }}>{stats.accuracyRate}%</h2>
-        </div>
+      {/* ─── Stats Row ─── */}
+      <div className="grid-cols-4">
+        <StatCard
+          icon={<IconConsultation />}
+          iconBg="#eff6ff" iconColor="#2563eb"
+          label="Total Konsultasi"
+          value={stats.totalConsultations.toLocaleString('id-ID')}
+          badge={`${growthPositive ? '▲' : '▼'} ${Math.abs(stats.growthPct)}% bulan ini`}
+          badgeBg={growthPositive ? '#ecfdf5' : '#fef2f2'}
+          badgeColor={growthPositive ? '#16a34a' : '#ef4444'}
+          sub={`${stats.thisMonth} konsultasi bulan ini`}
+        />
+        <StatCard
+          icon={<IconAccuracy />}
+          iconBg="#f0fdf4" iconColor="#16a34a"
+          label="Akurasi Klasifikasi"
+          value={`${stats.accuracyRate}%`}
+          badge="SAK EMKM"
+          badgeBg="#f0fdf4" badgeColor="#16a34a"
+          sub={`${stats.classifiedCount.toLocaleString('id-ID')} dari ${stats.totalConsultations.toLocaleString('id-ID')} terklasifikasi`}
+        />
+        <StatCard
+          icon={<IconConfidence />}
+          iconBg="#faf5ff" iconColor="#7c3aed"
+          label="Rata-rata Keyakinan"
+          value={`${stats.avgConfidence}%`}
+          badge="Confidence Score"
+          badgeBg="#faf5ff" badgeColor="#7c3aed"
+          sub="Per klasifikasi transaksi"
+        />
+        <StatCard
+          icon={<IconRules />}
+          iconBg="#fff7ed" iconColor="#ea580c"
+          label="Rule Pakar Aktif"
+          value={stats.totalRules}
+          badge="Basis Pengetahuan"
+          badgeBg="#fff7ed" badgeColor="#ea580c"
+          sub="Siap untuk klasifikasi"
+        />
       </div>
 
-      {/* Main Split Layout */}
+      {/* ─── Main Layout ─── */}
       <div className="layout-main-side">
-        {/* Left Column: Logic Engine Activity Graph */}
+
+        {/* LEFT: Chart + Table */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="card" style={{ flex: 1 }}>
-            <div className="card-title">
-              <span>Aktivitas Logic Engine</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Konsultasi & Akurasi</span>
-            </div>
-            
-            {/* Visual Bar Graph */}
-            <div style={{
-              height: '220px',
-              display: 'flex',
-              alignItems: 'end',
-              justifyContent: 'space-between',
-              padding: '1rem 0',
-              borderBottom: '1px solid var(--border)'
-            }}>
-              {/* Graphic bars (academic simulation style) */}
-              {[45, 62, 53, 78, 90, 85].map((val, idx) => (
-                <div key={idx} style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  width: '12%',
-                  height: '100%',
-                  justifyContent: 'end'
-                }}>
-                  <div style={{
-                    width: '100%',
-                    height: `${val}%`,
-                    backgroundColor: 'var(--primary-light)',
-                    borderRadius: '4px 4px 0 0',
-                    border: '1px solid var(--primary)',
-                    display: 'flex',
-                    alignItems: 'start',
-                    justifyContent: 'center',
-                    paddingTop: '4px'
-                  }}>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary)' }}>{val}</span>
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                    {['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'][idx]}
-                  </span>
-                </div>
-              ))}
+
+          {/* Bar Chart */}
+          <div className="card" style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.15rem' }}>Aktivitas Konsultasi</h3>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  {monthlyData.length > 0 ? 'Data konsultasi per bulan dari database' : 'Mulai konsultasi untuk melihat grafik aktivitas'}
+                </p>
+              </div>
+              <span className="badge badge-info" style={{ fontSize: '0.65rem' }}>6 Bulan Terakhir</span>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <div style={{ width: '12px', height: '12px', backgroundColor: 'var(--primary-light)', border: '1px solid var(--primary)', borderRadius: '2px' }} />
-                <span>Jumlah Konsultasi</span>
-              </div>
-            </div>
+            {(() => {
+              // Get last 6 months labels
+              const bulanIndo = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+              const now = new Date();
+              const last6 = Array.from({ length: 6 }, (_, i) => {
+                const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+                return {
+                  key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+                  label: bulanIndo[d.getMonth()]
+                };
+              });
+
+              // Map DB data to the 6 slots
+              const chartData = last6.map(slot => {
+                const found = monthlyData.find(m => m.month === slot.key);
+                return { label: slot.label, count: found ? found.count : 0 };
+              });
+
+              const maxVal = Math.max(...chartData.map(d => d.count), 1);
+              const hasData = chartData.some(d => d.count > 0);
+
+              return (
+                <div>
+                  {/* Y-axis guides + bars */}
+                  <div style={{ position: 'relative', height: '200px', marginBottom: '0.75rem' }}>
+                    {/* Horizontal guide lines */}
+                    {[100, 75, 50, 25].map(pct => (
+                      <div key={pct} style={{
+                        position: 'absolute', left: 0, right: 0,
+                        bottom: `${pct}%`,
+                        borderTop: '1px dashed var(--border)',
+                        zIndex: 0
+                      }} />
+                    ))}
+
+                    {/* Bars */}
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      display: 'flex', alignItems: 'flex-end',
+                      gap: '0.6rem', paddingBottom: '1px'
+                    }}>
+                      {chartData.map((d, idx) => {
+                        const pct = hasData ? Math.round((d.count / maxVal) * 100) : 0;
+                        const isMax = d.count === maxVal && hasData;
+                        return (
+                          <div key={idx} style={{
+                            flex: 1, display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', height: '100%', justifyContent: 'flex-end',
+                            gap: '4px', position: 'relative', zIndex: 1
+                          }}>
+                            {/* Value label */}
+                            <span style={{
+                              fontSize: '0.68rem', fontWeight: 700,
+                              color: isMax ? '#2563eb' : (d.count > 0 ? 'var(--text-secondary)' : 'var(--text-muted)'),
+                              opacity: d.count > 0 ? 1 : 0.4
+                            }}>
+                              {d.count}
+                            </span>
+                            {/* Bar */}
+                            <div style={{
+                              width: '100%',
+                              height: `${Math.max(hasData ? pct : 8, 4)}%`,
+                              background: isMax
+                                ? 'linear-gradient(to top, #1d4ed8, #60a5fa)'
+                                : (d.count > 0
+                                  ? 'linear-gradient(to top, #3b82f6, #93c5fd)'
+                                  : 'var(--border)'),
+                              borderRadius: '6px 6px 0 0',
+                              transition: 'height 0.5s ease',
+                              opacity: d.count === 0 ? 0.4 : 1
+                            }} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* X-axis labels */}
+                  <div style={{ display: 'flex', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
+                    {chartData.map((d, idx) => (
+                      <div key={idx} style={{
+                        flex: 1, textAlign: 'center',
+                        fontSize: '0.7rem', fontWeight: 600,
+                        color: 'var(--text-muted)'
+                      }}>
+                        {d.label}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Legend */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: 'linear-gradient(to top, #3b82f6, #93c5fd)' }} />
+                    <span>Jumlah Konsultasi</span>
+                    {!hasData && (
+                      <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        — Belum ada konsultasi yang tercatat
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
-          {/* Recent Classification Table */}
-          <div className="card">
-            <div className="card-title">
-              <span>Klasifikasi Akun Terbaru</span>
-              <button className="btn-link" onClick={() => navigateTo('history')} style={{ fontSize: '0.8rem' }}>Lihat Semua</button>
+          {/* Recent Consultations Table */}
+          <div className="card" style={{ padding: 0 }}>
+            <div style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.1rem' }}>Konsultasi Terbaru</h3>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>5 riwayat klasifikasi akun terakhir</p>
+              </div>
+              <button className="btn btn-secondary" onClick={() => navigateTo('history')} style={{ fontSize: '0.78rem', padding: '0.4rem 0.85rem' }}>
+                Lihat Semua →
+              </button>
             </div>
-            <div className="table-container" style={{ margin: 0 }}>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Waktu/Tanggal</th>
-                    <th>Pengguna</th>
-                    <th>Jenis Usaha</th>
-                    <th>Transaksi/Kategori</th>
-                    <th>Hasil Akun</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentConsultations.length > 0 ? (
-                    recentConsultations.map(con => (
-                      <tr key={con.id}>
-                        <td style={{ fontSize: '0.8rem' }}>{new Date(con.date).toLocaleDateString('id-ID')}</td>
-                        <td>{con.user_name}</td>
-                        <td style={{ textTransform: 'capitalize' }}>{con.business_type}</td>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{con.reasoning_text.split('.')[0]}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{con.account_category || 'N/A'}</div>
-                        </td>
-                        <td>
-                          {con.account_code ? (
-                            <span className="badge badge-info">{con.account_code} - {con.account_name}</span>
-                          ) : (
-                            <span className="badge badge-danger">Tidak Terklasifikasi</span>
-                          )}
-                        </td>
-                        <td>
-                          <span style={{ color: 'var(--success)', fontWeight: 700 }}>✓ Matched</span>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada riwayat konsultasi.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+
+            {recentConsultations.length > 0 ? (
+              <div>
+                {recentConsultations.map((con, idx) => (
+                  <div key={con.id} style={{
+                    display: 'flex', alignItems: 'center', gap: '1rem',
+                    padding: '1rem 1.5rem',
+                    borderBottom: idx < recentConsultations.length - 1 ? '1px solid var(--border)' : 'none',
+                    transition: 'background 0.15s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--background)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    {/* Avatar */}
+                    <div style={{
+                      width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0,
+                      background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'white', fontWeight: 800, fontSize: '0.85rem'
+                    }}>
+                      {con.user_name?.charAt(0)?.toUpperCase() || '?'}
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {con.user_name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                        UMKM {con.business_type} · {new Date(con.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </div>
+                    </div>
+
+                    {/* Result Account */}
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      {con.account_code ? (
+                        <span className="badge badge-info" style={{ fontSize: '0.68rem' }}>
+                          {con.account_code} · {con.account_name}
+                        </span>
+                      ) : (
+                        <span className="badge badge-danger" style={{ fontSize: '0.68rem' }}>Tidak Terklasifikasi</span>
+                      )}
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                        {con.account_category || '—'}
+                      </div>
+                    </div>
+
+                    {/* Status dot */}
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: con.account_code ? 'var(--success)' : 'var(--danger)', flexShrink: 0 }} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📋</div>
+                <p style={{ fontSize: '0.85rem' }}>Belum ada riwayat konsultasi.</p>
+                <button onClick={() => navigateTo('consultation')} className="btn btn-primary" style={{ marginTop: '1rem', fontSize: '0.8rem' }}>
+                  Mulai Konsultasi Pertama →
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right Column: Quick Access & Metadata info */}
+        {/* RIGHT: Quick Actions + Banner + System */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Quick Access Actions */}
-          <div className="card">
-            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Akses Cepat</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
-              <button onClick={() => navigateTo('consultation')} style={{
-                padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--primary)', color: 'white', fontWeight: 600, fontSize: '0.8rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'var(--transition)'
-              }}>
-                <span>➕</span>
-                <span>Konsultasi Baru</span>
-              </button>
-              
-              <button onClick={() => navigateTo('accounts')} style={{
-                padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.8rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'var(--transition)'
-              }}>
-                <span>📖</span>
-                <span>Daftar Akun</span>
-              </button>
 
-              <button onClick={() => navigateTo('rules')} style={{
-                padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.8rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'var(--transition)'
-              }}>
-                <span>⚙️</span>
-                <span>Knowledge Base</span>
-              </button>
-
-              <button onClick={() => navigateTo('history')} style={{
-                padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.8rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'var(--transition)'
-              }}>
-                <span>🔄</span>
-                <span>Riwayat Log</span>
-              </button>
+          {/* Quick Access */}
+          <div className="card" style={{ padding: '1.5rem' }}>
+            <h3 style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: '1rem' }}>Akses Cepat</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              {[
+                { label: 'Konsultasi Baru', icon: '➕', page: 'consultation', primary: true },
+                { label: 'Riwayat Konsultasi', icon: '🕐', page: 'history' },
+                { label: 'Basis Pengetahuan', icon: '⚙️', page: 'rules' },
+                { label: 'Daftar Akun CoA', icon: '📖', page: 'accounts' },
+              ].map(item => (
+                <button key={item.page} onClick={() => navigateTo(item.page)} style={{
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  padding: '0.75rem 1rem', borderRadius: '10px',
+                  border: item.primary ? 'none' : '1px solid var(--border)',
+                  background: item.primary ? 'linear-gradient(135deg, #1d4ed8, #2563eb)' : 'var(--surface)',
+                  color: item.primary ? 'white' : 'var(--text-primary)',
+                  fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+                  textAlign: 'left', transition: 'all 0.15s'
+                }}
+                onMouseEnter={e => { if (!item.primary) e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                onMouseLeave={e => { if (!item.primary) e.currentTarget.style.borderColor = 'var(--border)'; }}
+                >
+                  <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* SAK EMKM Update Banner */}
+          {/* SAK EMKM Banner */}
           <div style={{
-            background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
-            color: 'white',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.5rem',
-            boxShadow: 'var(--shadow-md)',
-            position: 'relative',
-            overflow: 'hidden'
+            background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #7c3aed 100%)',
+            borderRadius: '14px', padding: '1.5rem',
+            boxShadow: '0 4px 20px rgba(37,99,235,0.25)',
+            position: 'relative', overflow: 'hidden'
           }}>
-            <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#bfdbfe', display: 'block', marginBottom: '0.25rem' }}>Update Terbaru</span>
-            <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', lineHeight: 1.3, marginBottom: '0.5rem' }}>
-              Implementasi Standar SAK EMKM 2024
-            </h4>
-            <p style={{ fontSize: '0.75rem', color: '#bfdbfe', lineHeight: 1.4, marginBottom: '1.25rem' }}>
-              Sistem telah diperbarui untuk mendukung regulasi perpajakan UMKM terbaru.
-            </p>
-            <button className="btn btn-secondary" onClick={() => navigateTo('rules')} style={{ width: '100%', fontSize: '0.75rem', padding: '0.5rem', border: 'none', color: '#2563eb', fontWeight: 700, backgroundColor: 'white' }}>
-              Pelajari Selengkapnya →
-            </button>
-          </div>
+            {/* decorative circles */}
+            <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)' }} />
+            <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.05)' }} />
 
-          {/* Evaluation Trace Visualizer */}
-          <div className="card">
-            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Alur Penilaian Terakhir</h3>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: 'var(--background)',
-              padding: '0.75rem',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border)',
-              fontSize: '0.75rem',
-              fontFamily: 'var(--font-mono)'
-            }}>
-              <div style={{ padding: '0.25rem 0.5rem', backgroundColor: '#e2e8f0', borderRadius: '4px' }}>ID: R-01</div>
-              <div style={{ color: 'var(--text-muted)' }}>→</div>
-              <div style={{ padding: '0.25rem 0.5rem', backgroundColor: '#e2e8f0', borderRadius: '4px' }}>ID: R-12</div>
-              <div style={{ color: 'var(--text-muted)' }}>→</div>
-              <div style={{ padding: '0.25rem 0.5rem', backgroundColor: '#ecfdf5', color: '#059669', border: '1px solid var(--success-border)', borderRadius: '4px', fontWeight: 700 }}>ID: R-55 ✓</div>
-            </div>
-            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem', textAlign: 'center' }}>
-              Automated SAK-EMKM Verification Path
-            </p>
-          </div>
-
-          {/* System Health */}
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Kesehatan Sistem</span>
-              <span style={{ fontSize: '0.7rem', color: 'var(--success)', fontWeight: 700 }}>● Optimal</span>
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-              <div className="flex-between" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                <span>Memory Usage</span>
-                <span>32%</span>
-              </div>
-              <div style={{ height: '4px', backgroundColor: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
-                <div style={{ width: '32%', height: '100%', backgroundColor: 'var(--success)' }} />
-              </div>
-            </div>
-
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <div className="flex-between" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                <span>CPU Load</span>
-                <span>18%</span>
-              </div>
-              <div style={{ height: '4px', backgroundColor: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
-                <div style={{ width: '18%', height: '100%', backgroundColor: 'var(--success)' }} />
-              </div>
+            <div style={{ position: 'relative' }}>
+              <span style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#bfdbfe', display: 'block', marginBottom: '0.5rem' }}>
+                ✦ Update Terbaru
+              </span>
+              <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', lineHeight: 1.35, marginBottom: '0.65rem' }}>
+                Standar SAK EMKM 2024 Aktif
+              </h4>
+              <p style={{ fontSize: '0.75rem', color: '#93c5fd', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                Sistem telah mendukung regulasi terbaru untuk pencatatan akuntansi UMKM.
+              </p>
+              <button onClick={() => navigateTo('rules')} style={{
+                width: '100%', padding: '0.6rem', borderRadius: '8px',
+                border: 'none', backgroundColor: 'white', color: '#1d4ed8',
+                fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer'
+              }}>
+                Pelajari Basis Pengetahuan →
+              </button>
             </div>
           </div>
+
+          {/* System Status */}
+          <div className="card" style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Status Sistem</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>
+                <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#16a34a', boxShadow: '0 0 0 3px #dcfce7' }} />
+                Semua Sistem Normal
+              </div>
+            </div>
+            {[
+              { label: 'Basis Pengetahuan', value: `${stats.totalRules} rule`, ok: stats.totalRules > 0 },
+              { label: 'Akun Akuntansi (CoA)', value: `${stats.totalAccounts} akun`, ok: stats.totalAccounts > 0 },
+              { label: 'Akurasi Klasifikasi', value: `${stats.accuracyRate}%`, ok: stats.accuracyRate >= 80 },
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{item.label}</span>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: item.ok ? '#16a34a' : 'var(--danger)' }}>
+                  {item.ok ? '✓ ' : '✕ '}{item.value}
+                </span>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
     </div>
