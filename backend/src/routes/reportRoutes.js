@@ -1,212 +1,281 @@
 import express from 'express';
-import { query, get } from '../config/database.js';
+import { query } from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get Dashboard Overview Statistics
-router.get('/dashboard', authenticateToken, async (req, res) => {
-  try {
-    const isUser = req.user.role !== 'Admin';
-    const userId = req.user.id;
-
-    // 1. Stats Card counts
-    const totalConsultationsRow = isUser
-      ? await get('SELECT COUNT(*) as count FROM consultations WHERE user_id = ?', [userId])
-      : await get('SELECT COUNT(*) as count FROM consultations');
-
-    const totalRulesRow = await get('SELECT COUNT(*) as count FROM rules WHERE is_active = 1');
-    const totalAccountsRow = await get('SELECT COUNT(*) as count FROM accounts');
-    const totalUsersRow = await get('SELECT COUNT(*) as count FROM users');
-
-    // Classified (has result account) count
-    const classifiedRow = isUser
-      ? await get('SELECT COUNT(*) as count FROM consultations WHERE user_id = ? AND result_account_id IS NOT NULL', [userId])
-      : await get('SELECT COUNT(*) as count FROM consultations WHERE result_account_id IS NOT NULL');
-
-    // Average confidence
-    const avgConfRow = isUser
-      ? await get('SELECT AVG(confidence_level) as avg FROM consultations WHERE user_id = ? AND result_account_id IS NOT NULL', [userId])
-      : await get('SELECT AVG(confidence_level) as avg FROM consultations WHERE result_account_id IS NOT NULL');
-
-    // Consultations this month vs last month
-    const thisMonthRow = isUser
-      ? await get("SELECT COUNT(*) as count FROM consultations WHERE user_id = ? AND strftime('%Y-%m', date) = strftime('%Y-%m', 'now')", [userId])
-      : await get("SELECT COUNT(*) as count FROM consultations WHERE strftime('%Y-%m', date) = strftime('%Y-%m', 'now')");
-    const lastMonthRow = isUser
-      ? await get("SELECT COUNT(*) as count FROM consultations WHERE user_id = ? AND strftime('%Y-%m', date) = strftime('%Y-%m', date('now', '-1 month'))", [userId])
-      : await get("SELECT COUNT(*) as count FROM consultations WHERE strftime('%Y-%m', date) = strftime('%Y-%m', date('now', '-1 month'))");
-
-    // 2. Recent consultations (Limit 5)
-    let recentConsultationsSql = `
-      SELECT c.id, c.date, c.business_type, c.confidence_level, c.reasoning_text,
-             u.name as user_name,
-             a.code as account_code, a.name as account_name, a.category as account_category
-      FROM consultations c
-      JOIN users u ON c.user_id = u.id
-      LEFT JOIN accounts a ON c.result_account_id = a.id
-    `;
-    const recentParams = [];
-    if (isUser) {
-      recentConsultationsSql += ' WHERE c.user_id = ?';
-      recentParams.push(userId);
-    }
-    recentConsultationsSql += ' ORDER BY c.date DESC LIMIT 5';
-    const recentConsultations = await query(recentConsultationsSql, recentParams);
-
-    // 3. Logic Engine Activity Chart (Grouped by Date)
-    let monthlySql = `
-      SELECT strftime('%Y-%m', date) as month, COUNT(*) as count 
-      FROM consultations 
-    `;
-    const monthlyParams = [];
-    if (isUser) {
-      monthlySql += ' WHERE user_id = ? ';
-      monthlyParams.push(userId);
-    }
-    monthlySql += ' GROUP BY month ORDER BY month DESC LIMIT 6';
-    const monthlyData = await query(monthlySql, monthlyParams);
-
-    // 4. Most Common Accounts Chart
-    let accountsSql = `
-      SELECT a.name as account_name, COUNT(*) as count
-      FROM consultations c
-      JOIN accounts a ON c.result_account_id = a.id
-    `;
-    const accountsParams = [];
-    if (isUser) {
-      accountsSql += ' WHERE c.user_id = ?';
-      accountsParams.push(userId);
-    }
-    accountsSql += ' GROUP BY a.name ORDER BY count DESC LIMIT 5';
-    const accountsData = await query(accountsSql, accountsParams);
-
-    // 5. Business Type distribution
-    const businessSql = isUser
-      ? 'SELECT business_type, COUNT(*) as count FROM consultations WHERE user_id = ? GROUP BY business_type'
-      : 'SELECT business_type, COUNT(*) as count FROM users GROUP BY business_type';
-    const businessParams = isUser ? [userId] : [];
-    const businessDistribution = await query(businessSql, businessParams);
-
-    const totalCount = totalConsultationsRow.count;
-    const classifiedCount = classifiedRow.count;
-    const avgConf = avgConfRow.avg ? parseFloat(avgConfRow.avg).toFixed(1) : 95;
-    const thisMonth = thisMonthRow.count;
-    const lastMonth = lastMonthRow.count;
-    const growthPct = lastMonth > 0 ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : (thisMonth > 0 ? 100 : 0);
-    const accuracyRate = totalCount > 0 ? parseFloat((classifiedCount / totalCount * 100).toFixed(1)) : 0;
-
-    return res.json({
-      stats: {
-        totalConsultations: totalCount,
-        totalRules: totalRulesRow.count,
-        totalAccounts: totalAccountsRow.count,
-        totalUsers: totalUsersRow.count,
-        classifiedCount,
-        accuracyRate,
-        avgConfidence: avgConf,
-        thisMonth,
-        lastMonth,
-        growthPct
-      },
-      recentConsultations,
-      charts: {
-        monthly: monthlyData.reverse(),
-        accounts: accountsData,
-        business: businessDistribution
-      }
-    });
-  } catch (err) {
-    return res.status(500).json({ message: 'Gagal mengambil data dashboard.', error: err.message });
-  }
-});
-
-// Get Detailed Analytics and Filtered Reports
-router.get('/analytics', authenticateToken, async (req, res) => {
-  const { start_date, end_date, business_type, user_id } = req.query;
-  const isUser = req.user.role !== 'Admin';
-
-  let sql = `
-    SELECT c.id, c.date, c.business_type, c.confidence_level, c.reasoning_text,
-           u.name as user_name, u.business_name,
-           a.code as account_code, a.name as account_name, a.category as account_category
-    FROM consultations c
-    JOIN users u ON c.user_id = u.id
-    LEFT JOIN accounts a ON c.result_account_id = a.id
-    WHERE 1=1
-  `;
+// Helper for date filtering
+const getDateFilter = (req, dateColumn = 'j.transaction_date') => {
+  const { startDate, endDate } = req.query;
+  let filterStr = '';
   const params = [];
-
-  if (isUser) {
-    sql += ' AND c.user_id = ?';
-    params.push(req.user.id);
-  } else if (user_id) {
-    sql += ' AND c.user_id = ?';
-    params.push(user_id);
+  
+  if (startDate) {
+    filterStr += ` AND ${dateColumn} >= ?`;
+    params.push(`${startDate} 00:00:00`);
   }
-
-  if (start_date) {
-    sql += ' AND date >= ?';
-    params.push(start_date);
+  if (endDate) {
+    filterStr += ` AND ${dateColumn} <= ?`;
+    params.push(`${endDate} 23:59:59`);
   }
+  return { filterStr, params };
+};
 
-  if (end_date) {
-    sql += ' AND date <= ?';
-    params.push(end_date);
-  }
-
-  if (business_type) {
-    sql += ' AND c.business_type = ?';
-    params.push(business_type);
-  }
-
-  sql += ' ORDER BY c.date DESC';
-
+// 1. Jurnal Umum
+router.get('/journal', authenticateToken, async (req, res) => {
   try {
-    const consultations = await query(sql, params);
-
-    // Calculate aggregated results
-    const categoryCounts = {};
-    const accountCounts = {};
-    let totalConfidence = 0;
-    let classifiedCount = 0;
-
-    consultations.forEach(c => {
-      if (c.account_category) {
-        categoryCounts[c.account_category] = (categoryCounts[c.account_category] || 0) + 1;
-      }
-      if (c.account_name) {
-        accountCounts[c.account_name] = (accountCounts[c.account_name] || 0) + 1;
-        classifiedCount++;
-        totalConfidence += c.confidence_level;
-      }
-    });
-
-    const averageConfidence = classifiedCount > 0 ? (totalConfidence / classifiedCount).toFixed(1) : 100;
-
-    return res.json({
-      consultations,
-      aggregates: {
-        total: consultations.length,
-        classifiedCount,
-        unclassifiedCount: consultations.length - classifiedCount,
-        averageConfidence,
-        categories: Object.entries(categoryCounts).map(([name, value]) => ({ name, value })),
-        accounts: Object.entries(accountCounts).map(([name, count]) => ({ name, count }))
-      }
-    });
+    const { filterStr, params } = getDateFilter(req);
+    const sql = `
+      SELECT j.journal_id as id, j.transaction_date as date, j.amount, j.description, j.consultation_id,
+             ad.code as debit_account_code, ad.name as debit_account_name,
+             ac.code as credit_account_code, ac.name as credit_account_name
+      FROM journals j
+      JOIN accounts ad ON j.debit_account_id = ad.id
+      JOIN accounts ac ON j.credit_account_id = ac.id
+      WHERE 1=1 ${filterStr}
+      ORDER BY j.transaction_date DESC, j.journal_id DESC
+    `;
+    const journals = await query(sql, params);
+    return res.json({ journals });
   } catch (err) {
-    return res.status(500).json({ message: 'Gagal mengambil data analitik.', error: err.message });
+    return res.status(500).json({ message: 'Gagal memuat Jurnal Umum.', error: err.message });
   }
 });
 
-// Get User lists (Admin only, for reports filter dropdown)
-router.get('/users', authenticateToken, async (req, res) => {
+// 2. Buku Besar (General Ledger)
+router.get('/ledger', authenticateToken, async (req, res) => {
   try {
-    const users = await query('SELECT id, name, business_name FROM users ORDER BY name ASC');
-    return res.json({ users });
+    const { account_id } = req.query;
+    if (!account_id) return res.status(400).json({ message: 'account_id diperlukan.' });
+
+    const { filterStr, params } = getDateFilter(req);
+    const sql = `
+      SELECT j.journal_id as id, j.transaction_date as date, j.amount, j.description, j.consultation_id,
+             j.debit_account_id, j.credit_account_id
+      FROM journals j
+      WHERE (j.debit_account_id = ? OR j.credit_account_id = ?) ${filterStr}
+      ORDER BY j.transaction_date ASC
+    `;
+    const entries = await query(sql, [account_id, account_id, ...params]);
+    
+    let balance = 0;
+    const account = await query('SELECT id, code, name, category FROM accounts WHERE id = ?', [account_id]);
+    const accCat = account[0]?.category;
+    const isDebitNormal = accCat === 'Aset' || accCat === 'Beban';
+
+    const ledger = entries.map(entry => {
+      // Determine if this entry represents a debit or credit for the selected account
+      let isDebitEntry = entry.debit_account_id === parseInt(account_id);
+      
+      // Calculate running balance based on normal balance rules
+      if (isDebitNormal) {
+         balance += isDebitEntry ? entry.amount : -entry.amount;
+      } else {
+         balance += !isDebitEntry ? entry.amount : -entry.amount;
+      }
+      
+      return { 
+        ...entry, 
+        type: isDebitEntry ? 'debit' : 'credit', 
+        balance 
+      };
+    });
+
+    return res.json({ account: account[0], ledger });
   } catch (err) {
-    return res.status(500).json({ message: 'Gagal mengambil data user.', error: err.message });
+    return res.status(500).json({ message: 'Gagal memuat Buku Besar.', error: err.message });
+  }
+});
+
+// 3. Neraca Saldo (Trial Balance)
+router.get('/trial-balance', authenticateToken, async (req, res) => {
+  try {
+    const { filterStr, params } = getDateFilter(req);
+    // Combine debit sums and credit sums for each account using SUM and CASE
+    const sql = `
+      SELECT a.id, a.code, a.name, a.category,
+             COALESCE(SUM(CASE WHEN j.debit_account_id = a.id THEN j.amount ELSE 0 END), 0) as total_debit,
+             COALESCE(SUM(CASE WHEN j.credit_account_id = a.id THEN j.amount ELSE 0 END), 0) as total_credit
+      FROM accounts a
+      LEFT JOIN journals j ON (a.id = j.debit_account_id OR a.id = j.credit_account_id) ${filterStr}
+      GROUP BY a.id
+      ORDER BY a.code ASC
+    `;
+    let tb = await query(sql, params);
+    
+    // Filter out accounts with zero balance, calculate net
+    tb = tb.filter(acc => acc.total_debit > 0 || acc.total_credit > 0).map(acc => {
+      const isDebitNormal = acc.category === 'Aset' || acc.category === 'Beban';
+      const net = acc.total_debit - acc.total_credit;
+      
+      return { 
+        ...acc, 
+        debit_balance: net > 0 ? net : 0, 
+        credit_balance: net < 0 ? Math.abs(net) : 0 
+      };
+    });
+
+    return res.json({ trialBalance: tb });
+  } catch (err) {
+    return res.status(500).json({ message: 'Gagal memuat Neraca Saldo.', error: err.message });
+  }
+});
+
+// 4. Laporan Laba Rugi (Income Statement)
+router.get('/income-statement', authenticateToken, async (req, res) => {
+  try {
+    const { filterStr, params } = getDateFilter(req);
+    const sql = `
+      SELECT a.id, a.code, a.name, a.category,
+             COALESCE(SUM(CASE WHEN j.debit_account_id = a.id THEN j.amount ELSE 0 END), 0) as total_debit,
+             COALESCE(SUM(CASE WHEN j.credit_account_id = a.id THEN j.amount ELSE 0 END), 0) as total_credit
+      FROM accounts a
+      JOIN journals j ON (a.id = j.debit_account_id OR a.id = j.credit_account_id)
+      WHERE a.category IN ('Pendapatan', 'Beban') ${filterStr}
+      GROUP BY a.id
+      ORDER BY a.code ASC
+    `;
+    const records = await query(sql, params);
+    
+    const pendapatan = records.filter(r => r.category === 'Pendapatan').map(r => {
+      // Normal balance credit
+      return { ...r, amount: r.total_credit - r.total_debit };
+    }).filter(r => r.amount !== 0);
+    
+    const beban = records.filter(r => r.category === 'Beban').map(r => {
+      // Normal balance debit
+      return { ...r, amount: r.total_debit - r.total_credit };
+    }).filter(r => r.amount !== 0);
+    
+    const totalPendapatan = pendapatan.reduce((sum, item) => sum + item.amount, 0);
+    const totalBeban = beban.reduce((sum, item) => sum + item.amount, 0);
+    const netIncome = totalPendapatan - totalBeban;
+
+    return res.json({ pendapatan, beban, totalPendapatan, totalBeban, netIncome });
+  } catch (err) {
+    return res.status(500).json({ message: 'Gagal memuat Laba Rugi.', error: err.message });
+  }
+});
+
+// 5. Neraca (Balance Sheet)
+router.get('/balance-sheet', authenticateToken, async (req, res) => {
+  try {
+    const { filterStr, params } = getDateFilter(req);
+    const sql = `
+      SELECT a.id, a.code, a.name, a.category,
+             COALESCE(SUM(CASE WHEN j.debit_account_id = a.id THEN j.amount ELSE 0 END), 0) as total_debit,
+             COALESCE(SUM(CASE WHEN j.credit_account_id = a.id THEN j.amount ELSE 0 END), 0) as total_credit
+      FROM accounts a
+      JOIN journals j ON (a.id = j.debit_account_id OR a.id = j.credit_account_id)
+      WHERE a.category IN ('Aset', 'Kewajiban', 'Ekuitas') ${filterStr}
+      GROUP BY a.id
+      ORDER BY a.code ASC
+    `;
+    const records = await query(sql, params);
+
+    const aset = records.filter(r => r.category === 'Aset').map(r => {
+      return { ...r, amount: r.total_debit - r.total_credit };
+    }).filter(r => r.amount !== 0);
+    
+    const kewajiban = records.filter(r => r.category === 'Kewajiban').map(r => {
+      return { ...r, amount: r.total_credit - r.total_debit };
+    }).filter(r => r.amount !== 0);
+    
+    const ekuitas = records.filter(r => r.category === 'Ekuitas').map(r => {
+      return { ...r, amount: r.total_credit - r.total_debit };
+    }).filter(r => r.amount !== 0);
+
+    return res.json({ aset, kewajiban, ekuitas });
+  } catch (err) {
+    return res.status(500).json({ message: 'Gagal memuat Neraca.', error: err.message });
+  }
+});
+
+// 6. Summary for Dashboard Cards
+router.get('/summary', authenticateToken, async (req, res) => {
+  try {
+    const { filterStr, params } = getDateFilter(req);
+    const sql = `
+      SELECT a.category,
+             COALESCE(SUM(CASE WHEN j.debit_account_id = a.id THEN j.amount ELSE 0 END), 0) as total_debit,
+             COALESCE(SUM(CASE WHEN j.credit_account_id = a.id THEN j.amount ELSE 0 END), 0) as total_credit
+      FROM accounts a
+      LEFT JOIN journals j ON (a.id = j.debit_account_id OR a.id = j.credit_account_id) ${filterStr}
+      GROUP BY a.category
+    `;
+    const records = await query(sql, params);
+    
+    let summary = {
+      assets: 0,
+      liabilities: 0,
+      equity: 0,
+      revenue: 0,
+      expenses: 0
+    };
+
+    records.forEach(r => {
+      if (r.category === 'Aset') summary.assets = r.total_debit - r.total_credit;
+      if (r.category === 'Kewajiban') summary.liabilities = r.total_credit - r.total_debit;
+      if (r.category === 'Ekuitas') summary.equity = r.total_credit - r.total_debit;
+      if (r.category === 'Pendapatan') summary.revenue = r.total_credit - r.total_debit;
+      if (r.category === 'Beban') summary.expenses = r.total_debit - r.total_credit;
+    });
+
+    // 1. Monthly Trend (Konsultasi per bulan)
+    // We will get the last 6 months of consultations
+    const trendSql = `
+      SELECT strftime('%Y-%m', date) as month, COUNT(*) as count
+      FROM consultations
+      WHERE date >= date('now', '-6 months')
+      GROUP BY month
+      ORDER BY month ASC
+    `;
+    const monthlyTrend = await query(trendSql);
+
+    // 2. Category Distribution (based on journal entries frequency)
+    const catSql = `
+      SELECT a.category, COUNT(*) as count
+      FROM journals j
+      JOIN accounts a ON (j.debit_account_id = a.id OR j.credit_account_id = a.id)
+      ${filterStr.replace('j.transaction_date', 'j.transaction_date')}
+      GROUP BY a.category
+    `;
+    const catDistData = await query(catSql, params);
+    const totalCatCount = catDistData.reduce((sum, row) => sum + row.count, 0);
+    const categoryDistribution = catDistData.map(row => ({
+      category: row.category,
+      percentage: totalCatCount > 0 ? Math.round((row.count / totalCatCount) * 100) : 0
+    }));
+
+    // 3. Top 5 Frequently Used Accounts
+    const topSql = `
+      SELECT a.id, a.code, a.name, a.category,
+             (SELECT COUNT(*) FROM journals j WHERE j.debit_account_id = a.id OR j.credit_account_id = a.id) as frequency,
+             COALESCE(SUM(CASE WHEN j2.debit_account_id = a.id THEN j2.amount ELSE 0 END), 0) as total_debit,
+             COALESCE(SUM(CASE WHEN j2.credit_account_id = a.id THEN j2.amount ELSE 0 END), 0) as total_credit
+      FROM accounts a
+      LEFT JOIN journals j2 ON (j2.debit_account_id = a.id OR j2.credit_account_id = a.id)
+      GROUP BY a.id
+      HAVING frequency > 0
+      ORDER BY frequency DESC
+      LIMIT 5
+    `;
+    const topAccountsRaw = await query(topSql);
+    const topAccounts = topAccountsRaw.map(acc => {
+      const isDebitNormal = acc.category === 'Aset' || acc.category === 'Beban';
+      const balance = isDebitNormal ? (acc.total_debit - acc.total_credit) : (acc.total_credit - acc.total_debit);
+      return {
+        code: acc.code,
+        name: acc.name,
+        category: acc.category,
+        frequency: acc.frequency,
+        balance: balance
+      };
+    });
+
+    return res.json({ summary, monthlyTrend, categoryDistribution, topAccounts });
+  } catch (err) {
+    return res.status(500).json({ message: 'Gagal memuat Summary.', error: err.message });
   }
 });
 

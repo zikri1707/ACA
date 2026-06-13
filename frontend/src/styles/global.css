@@ -61,7 +61,7 @@ a:hover {
   padding: 2rem;
   background-color: var(--background);
   min-height: 100vh;
-  transition: var(--transition);
+  transition: margin-left 0.3s ease, background-color 0.3s ease, padding 0.3s ease;
 }
 
 /* Dashboard & Page Layouts */

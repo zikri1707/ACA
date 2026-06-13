@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   DashboardIcon,
@@ -17,6 +17,11 @@ export const Sidebar = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [logoutHover, setLogoutHover] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '88px' : '260px');
+  }, [isCollapsed]);
 
   if (!user) return null;
 
@@ -59,19 +64,44 @@ export const Sidebar = () => {
         display: 'flex',
         flexDirection: 'column',
         zIndex: 100,
-        padding: '1.5rem 1rem'
+        padding: '1.5rem 1rem',
+        transition: 'width 0.3s ease'
       }}>
         {/* System branding */}
         <div style={{
-          display: 'flex', flexDirection: 'column',
-          marginBottom: '2rem', paddingLeft: '0.5rem'
-        }} onClick={() => navigateTo('dashboard')} className="cursor-pointer">
-          <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.025em' }}>
-            ACA Advisor
-          </span>
-          <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
-            Expert System
-          </span>
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: '2rem', paddingLeft: isCollapsed ? '0' : '0.5rem',
+          flexDirection: isCollapsed ? 'column' : 'row',
+          gap: isCollapsed ? '1rem' : '0'
+        }}>
+          {!isCollapsed ? (
+            <div style={{ display: 'flex', flexDirection: 'column' }} onClick={() => navigateTo('dashboard')} className="cursor-pointer">
+              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.025em' }}>
+                ACA Advisor
+              </span>
+              <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                Expert System
+              </span>
+            </div>
+          ) : (
+            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.1rem', cursor: 'pointer' }} onClick={() => navigateTo('dashboard')}>
+              ACA
+            </div>
+          )}
+          
+          <button 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            style={{
+              background: 'var(--primary-light)', border: 'none', cursor: 'pointer',
+              color: 'var(--primary)', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', padding: '0.4rem', borderRadius: '8px',
+              transition: 'all 0.2s ease', width: '32px', height: '32px'
+            }}
+            className="sidebar-toggle"
+            title={isCollapsed ? "Buka Menu" : "Tutup Menu"}
+          >
+            {isCollapsed ? '»' : '«'}
+          </button>
         </div>
 
         {/* Navigation Menu */}
@@ -89,12 +119,14 @@ export const Sidebar = () => {
                   backgroundColor: isActive ? 'var(--primary-light)' : 'transparent',
                   color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
                   cursor: 'pointer', fontWeight: isActive ? 600 : 500,
-                  fontSize: '0.9rem', textAlign: 'left', transition: 'var(--transition)'
+                  fontSize: '0.9rem', textAlign: 'left', transition: 'var(--transition)',
+                  justifyContent: isCollapsed ? 'center' : 'flex-start'
                 }}
                 className="sidebar-link"
+                title={isCollapsed ? item.label : undefined}
               >
                 <span style={{ display: 'flex', alignItems: 'center' }}>{item.icon}</span>
-                <span>{item.label}</span>
+                {!isCollapsed && <span>{item.label}</span>}
               </button>
             );
           })}
@@ -105,10 +137,12 @@ export const Sidebar = () => {
               onClick={handleLogoutClick}
               onMouseEnter={() => setLogoutHover(true)}
               onMouseLeave={() => setLogoutHover(false)}
+              title={isCollapsed ? "Keluar" : undefined}
               style={{
                 width: '100%',
                 display: 'flex', alignItems: 'center', gap: '0.75rem',
-                padding: '0.85rem 1rem',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                padding: isCollapsed ? '0.85rem 0' : '0.85rem 1rem',
                 borderRadius: '12px',
                 border: logoutHover ? '1.5px solid #fca5a5' : '1.5px solid #fecdd3',
                 background: logoutHover
@@ -135,8 +169,8 @@ export const Sidebar = () => {
               }}>
                 <LogoutIcon className="w-4 h-4" />
               </span>
-              <span>Keluar</span>
-              {logoutHover && (
+              {!isCollapsed && <span>Keluar</span>}
+              {!isCollapsed && logoutHover && (
                 <span style={{ marginLeft: 'auto', fontSize: '0.7rem', opacity: 0.7 }}>→</span>
               )}
             </button>
@@ -147,7 +181,8 @@ export const Sidebar = () => {
         <div style={{
           borderTop: '1px solid var(--border)',
           paddingTop: '1rem', marginTop: '1rem',
-          display: 'flex', alignItems: 'center', gap: '0.75rem'
+          display: 'flex', alignItems: 'center', gap: '0.75rem',
+          justifyContent: isCollapsed ? 'center' : 'flex-start'
         }}>
           <div style={{
             width: '40px', height: '40px', borderRadius: '50%',
@@ -155,15 +190,17 @@ export const Sidebar = () => {
             color: 'white', fontWeight: 700, fontSize: '0.9rem',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0, boxShadow: '0 2px 8px rgba(37,99,235,0.3)'
-          }}>
+          }} title={isCollapsed ? user.name : undefined}>
             {initials}
           </div>
-          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{user.name}</h4>
-            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
-              {isAdmin ? 'Senior Accountant' : `${user.business_name || 'UMKM Owner'}`}
-            </p>
-          </div>
+          {!isCollapsed && (
+            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{user.name}</h4>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                {isAdmin ? 'Senior Accountant' : `${user.business_name || 'UMKM Owner'}`}
+              </p>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -309,6 +346,10 @@ export const Sidebar = () => {
         .cancel-logout-btn:hover {
           background-color: #f9fafb !important;
           border-color: #d1d5db !important;
+        }
+        .sidebar-toggle:hover {
+          background-color: var(--primary) !important;
+          color: white !important;
         }
         @keyframes fadeInOverlay {
           from { opacity: 0; }

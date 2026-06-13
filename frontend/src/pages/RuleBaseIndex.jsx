@@ -132,6 +132,27 @@ export const RuleBaseIndex = () => {
     fetchDependencies();
   }, [token]);
 
+  // Effect for rendering Mermaid diagram dynamically
+  useEffect(() => {
+    if (activeTab === 'rules_diagram') {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js';
+      script.async = true;
+      script.onload = () => {
+        if (window.mermaid) {
+          window.mermaid.initialize({ startOnLoad: true, theme: 'default' });
+          window.mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+        }
+      };
+      document.body.appendChild(script);
+      return () => {
+        if (document.body.contains(script)) {
+          document.body.removeChild(script);
+        }
+      };
+    }
+  }, [activeTab]);
+
   const handleToggleActive = async (rule) => {
     if (!isAdmin) return;
     try {
@@ -275,7 +296,140 @@ export const RuleBaseIndex = () => {
     setShowDeleteModal(true);
   };
 
+  const fetchAllConditions = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/rule-conditions');
+      const data = await res.json();
+      setAllConditions(data || []);
+    } catch (err) {
+      console.error('Gagal mengambil conditions', err);
+    }
+  };
+
+  const getRuleNarrative = (code) => {
+    const q = (id) => questions.find(x => x.fact_name === id)?.question_text || id;
+    
+    const paths = {
+      'R-001': [
+        { q: q('is_penerimaan'), a: 'YES' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_penjualan_barang'), a: 'NO', skipIf: 'Jasa' },
+        { q: q('is_penjualan_jasa'), a: 'NO', skipIf: 'Dagang' },
+        { q: q('is_pinjaman_bank'), a: 'NO' },
+        { q: q('is_setoran_modal'), a: 'NO' }
+      ],
+      'R-002': [
+        { q: q('is_penerimaan'), a: 'YES' },
+        { q: q('is_kredit'), a: 'YES' }
+      ],
+      'R-003': [
+        { q: q('is_penerimaan'), a: 'NO' },
+        { q: q('is_pengeluaran'), a: 'YES' },
+        { q: q('is_dijual_kembali'), a: 'YES' },
+        { q: q('is_kredit'), a: 'NO' }
+      ],
+      'R-004': [
+        { q: q('is_penerimaan'), a: 'NO' },
+        { q: q('is_pengeluaran'), a: 'YES' },
+        { q: q('is_dijual_kembali'), a: 'YES' },
+        { q: q('is_kredit'), a: 'YES' }
+      ],
+      'R-005': [
+        { q: q('is_penerimaan'), a: 'NO' },
+        { q: q('is_pengeluaran'), a: 'YES' },
+        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
+        { q: q('is_kredit'), a: 'YES' },
+        { q: q('is_pembelian_aset'), a: 'NO' }
+      ],
+      'R-006': [
+        { q: q('is_penerimaan'), a: 'NO' },
+        { q: q('is_pengeluaran'), a: 'YES' },
+        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_pembelian_aset'), a: 'YES' },
+        { q: q('is_manfaat_lebih_1_tahun'), a: 'YES' }
+      ],
+      'R-007': [
+        { q: q('is_penerimaan'), a: 'YES' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_penjualan_barang'), a: 'NO', skipIf: 'Jasa' },
+        { q: q('is_penjualan_jasa'), a: 'NO', skipIf: 'Dagang' },
+        { q: q('is_pinjaman_bank'), a: 'NO' },
+        { q: q('is_setoran_modal'), a: 'YES' }
+      ],
+      'R-008': [
+        { q: q('is_penerimaan'), a: 'NO' },
+        { q: q('is_pengeluaran'), a: 'YES' },
+        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_pembelian_aset'), a: 'NO' },
+        { q: q('is_prive'), a: 'YES' }
+      ],
+      'R-009': [
+        { q: q('is_penerimaan'), a: 'YES' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_penjualan_barang'), a: 'YES' }
+      ],
+      'R-010': [
+        { q: q('is_penerimaan'), a: 'YES' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_penjualan_jasa'), a: 'YES' }
+      ],
+      'R-011': [
+        { q: q('is_penerimaan'), a: 'NO' },
+        { q: q('is_pengeluaran'), a: 'YES' },
+        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_pembelian_aset'), a: 'NO' },
+        { q: q('is_prive'), a: 'NO' },
+        { q: q('is_beban_gaji'), a: 'YES' }
+      ],
+      'R-012': [
+        { q: q('is_penerimaan'), a: 'NO' },
+        { q: q('is_pengeluaran'), a: 'YES' },
+        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_pembelian_aset'), a: 'NO' },
+        { q: q('is_prive'), a: 'NO' },
+        { q: q('is_beban_gaji'), a: 'NO' },
+        { q: q('is_beban_utilitas'), a: 'YES' }
+      ],
+      'R-013': [
+        { q: q('is_penerimaan'), a: 'NO' },
+        { q: q('is_pengeluaran'), a: 'YES' },
+        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_pembelian_aset'), a: 'NO' },
+        { q: q('is_prive'), a: 'NO' },
+        { q: q('is_beban_gaji'), a: 'NO' },
+        { q: q('is_beban_utilitas'), a: 'NO' },
+        { q: q('is_beban_sewa'), a: 'YES' }
+      ],
+      'R-014': [
+        { q: q('is_penerimaan'), a: 'NO' },
+        { q: q('is_pengeluaran'), a: 'YES' },
+        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_pembelian_aset'), a: 'NO' },
+        { q: q('is_prive'), a: 'NO' },
+        { q: q('is_beban_gaji'), a: 'NO' },
+        { q: q('is_beban_utilitas'), a: 'NO' },
+        { q: q('is_beban_sewa'), a: 'NO' },
+        { q: q('is_beban_atk'), a: 'YES' }
+      ],
+      'R-015': [
+        { q: q('is_penerimaan'), a: 'YES' },
+        { q: q('is_kredit'), a: 'NO' },
+        { q: q('is_penjualan_barang'), a: 'NO', skipIf: 'Jasa' },
+        { q: q('is_penjualan_jasa'), a: 'NO', skipIf: 'Dagang' },
+        { q: q('is_pinjaman_bank'), a: 'YES' }
+      ]
+    };
+    return paths[code] || [];
+  };
+
   const handleDeleteConfirm = async () => {
+
     try {
       const response = await fetch(`/api/rules/${selectedRuleId}`, {
         method: 'DELETE',
@@ -614,23 +768,39 @@ export const RuleBaseIndex = () => {
 
       {/* Tabs Navigation Bar */}
       <div className="card" style={{ padding: 0, marginBottom: '1.5rem', borderRadius: '12px', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--background)', padding: '0 0.5rem' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--background)', padding: '0 0.5rem', overflowX: 'auto' }}>
           <button
             onClick={() => setActiveTab('list')}
             className={`rule-tab-btn ${activeTab === 'list' ? 'active' : ''}`}
+            style={{ whiteSpace: 'nowrap' }}
           >
             📁 Daftar Aturan
           </button>
           <button
+            onClick={() => setActiveTab('fakta')}
+            className={`rule-tab-btn ${activeTab === 'fakta' ? 'active' : ''}`}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            📝 Daftar Fakta
+          </button>
+          <button
+            onClick={() => setActiveTab('rules_diagram')}
+            className={`rule-tab-btn ${activeTab === 'rules_diagram' ? 'active' : ''}`}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            📊 Flowchart & Matriks
+          </button>
+          <button
             onClick={() => setActiveTab('visualizer')}
             className={`rule-tab-btn ${activeTab === 'visualizer' ? 'active' : ''}`}
+            style={{ whiteSpace: 'nowrap' }}
           >
             👁️‍🗨️ Visualizer Logika
           </button>
           <button
             onClick={() => setActiveTab('diagnostics')}
             className={`rule-tab-btn ${activeTab === 'diagnostics' ? 'active' : ''}`}
-            style={{ display: 'flex', alignItems: 'center' }}
+            style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}
           >
             🛡️ Panel Diagnostik
             {detectedConflicts.length > 0 && (
@@ -639,7 +809,8 @@ export const RuleBaseIndex = () => {
                 height: '8px',
                 borderRadius: '50%',
                 backgroundColor: 'var(--danger)',
-                display: 'inline-block'
+                display: 'inline-block',
+                marginLeft: '4px'
               }} />
             )}
           </button>
@@ -730,7 +901,8 @@ export const RuleBaseIndex = () => {
                     </tr>
                   ) : filteredRules.length > 0 ? (
                     filteredRules.map(rule => {
-                      const categoryTheme = CATEGORY_THEMES[rule.account_category] || CATEGORY_THEMES['Aset'];
+                      const debitTheme = CATEGORY_THEMES[rule.debit_account_category] || CATEGORY_THEMES['Beban'];
+                      const creditTheme = CATEGORY_THEMES[rule.credit_account_category] || CATEGORY_THEMES['Kewajiban'];
                       return (
                         <tr
                           key={rule.id}
@@ -758,15 +930,32 @@ export const RuleBaseIndex = () => {
                             </span>
                           </td>
                           <td>
-                            <span className="badge" style={{
-                              backgroundColor: categoryTheme.bg,
-                              color: categoryTheme.color,
-                              border: `1px solid ${categoryTheme.border}`,
-                              fontSize: '0.75rem',
-                              fontWeight: 700
-                            }}>
-                              {rule.account_code} - {rule.account_name}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span className="badge" style={{
+                                backgroundColor: rule.debit_account_id ? debitTheme.bg : 'var(--background)',
+                                color: rule.debit_account_id ? debitTheme.color : 'var(--text-secondary)',
+                                border: `1px solid ${rule.debit_account_id ? debitTheme.border : 'var(--border)'}`,
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                display: 'inline-flex',
+                                alignItems: 'center'
+                              }}>
+                                <span style={{ marginRight: '4px', opacity: 0.7 }}>[Dr]</span>
+                                {rule.debit_account_id ? `${rule.debit_account_code} - ${rule.debit_account_name}` : 'Pilih Dinamis (Beban/Aset)'}
+                              </span>
+                              <span className="badge" style={{
+                                backgroundColor: rule.credit_account_id ? creditTheme.bg : 'var(--background)',
+                                color: rule.credit_account_id ? creditTheme.color : 'var(--text-secondary)',
+                                border: `1px solid ${rule.credit_account_id ? creditTheme.border : 'var(--border)'}`,
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                display: 'inline-flex',
+                                alignItems: 'center'
+                              }}>
+                                <span style={{ marginRight: '4px', opacity: 0.7 }}>[Cr]</span>
+                                {rule.credit_account_id ? `${rule.credit_account_code} - ${rule.credit_account_name}` : 'Pilih Dinamis (Hutang/Kas)'}
+                              </span>
+                            </div>
                           </td>
                           <td>
                             <button
@@ -903,22 +1092,21 @@ export const RuleBaseIndex = () => {
                   {/* Connective Line */}
                   <div className="flow-line"><span style={{ fontSize: '0.7rem', backgroundColor: 'var(--background)', color: 'var(--text-muted)', padding: '0 4px', fontWeight: 800 }}>IF</span></div>
 
-                  {/* Node 2: Conditions list */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '320px', zIndex: 1 }}>
-                    {selectedRule.conditions?.map((cond, idx) => (
+                  {/* Node 2: Sequence of Questions (Narrative Path) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '400px', zIndex: 1 }}>
+                    {getRuleNarrative(selectedRule.code).map((step, idx) => (
                       <React.Fragment key={idx}>
                         {idx > 0 && (
                           <div style={{ textAlign: 'center', margin: '2px 0' }}>
                             <span style={{
                               backgroundColor: 'var(--border)',
-                              color: 'var(--text-primary)',
-                              fontSize: '0.7rem',
+                              color: 'var(--text-secondary)',
+                              fontSize: '0.65rem',
                               fontWeight: 800,
                               padding: '0.15rem 0.5rem',
-                              borderRadius: '4px',
-                              letterSpacing: '0.05em'
+                              borderRadius: '4px'
                             }}>
-                              AND
+                              SELANJUTNYA ⬇
                             </span>
                           </div>
                         )}
@@ -932,76 +1120,154 @@ export const RuleBaseIndex = () => {
                           alignItems: 'center',
                           boxShadow: '0 2px 8px rgba(0,0,0,0.01)'
                         }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', maxWidth: '78%' }}>
-                            <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                              {getQuestionCode(cond.fact_name)} ({cond.fact_name})
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '80%' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>
+                              Pertanyaan {idx + 1}
                             </span>
                             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                              {getQuestionText(cond.fact_name)}
+                              {step.q}
+                            </span>
+                            {step.skipIf && (
+                              <span style={{ fontSize: '0.65rem', color: 'var(--warning)', marginTop: '4px', fontStyle: 'italic' }}>
+                                *Dilewati otomatis jika profil UMKM adalah {step.skipIf}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>Jawaban</span>
+                            <span style={{
+                              backgroundColor: step.a.includes('YES') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                              color: step.a.includes('YES') ? 'var(--success)' : 'var(--danger)',
+                              fontSize: '0.75rem',
+                              fontWeight: 800,
+                              padding: '0.2rem 0.6rem',
+                              borderRadius: '4px'
+                            }}>
+                              {step.a}
                             </span>
                           </div>
-                          <span style={{
-                            backgroundColor: cond.expected_value === 'yes' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            color: cond.expected_value === 'yes' ? 'var(--success)' : 'var(--danger)',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            padding: '0.2rem 0.6rem',
-                            borderRadius: '4px'
-                          }}>
-                            {cond.expected_value.toUpperCase()}
-                          </span>
                         </div>
                       </React.Fragment>
                     ))}
-                    {selectedRule.conditions?.length === 0 && (
-                      <div style={{ textAlign: 'center', padding: '1rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>Tidak ada kondisi logika.</div>
+                    {getRuleNarrative(selectedRule.code).length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '1rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>Tidak ada urutan pertanyaan tersedia.</div>
                     )}
                   </div>
 
                   {/* Connective Line */}
                   <div className="flow-line"><span style={{ fontSize: '0.7rem', backgroundColor: 'var(--background)', color: 'var(--text-muted)', padding: '0 4px', fontWeight: 800 }}>THEN</span></div>
 
-                  {/* Node 3: Output (SAK EMKM Account Solution) */}
-                  {(() => {
-                    const theme = CATEGORY_THEMES[selectedRule.account_category] || CATEGORY_THEMES['Aset'];
-                    return (
-                      <div 
-                        className="flow-node"
-                        style={{
-                          background: theme.gradient,
-                          color: 'white',
-                          border: 'none',
-                          minWidth: '220px',
-                          padding: '1.25rem',
-                          textAlign: 'left',
-                          boxShadow: `0 8px 20px ${theme.shadow}`
-                        }}
-                      >
-                        <span style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.75)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          Hasil Klasifikasi
-                        </span>
-                        <h4 style={{ color: 'white', fontSize: '1.2rem', fontWeight: 800, margin: '0.25rem 0', fontFamily: 'var(--font-mono)' }}>
-                          {selectedRule.account_code}
-                        </h4>
-                        <div style={{ color: 'white', fontWeight: 700, fontSize: '0.875rem', lineHeight: 1.3, marginBottom: '0.5rem' }}>
-                          {selectedRule.account_name}
+                  {/* Node 3: Output (Double-Entry Solution) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {/* Debit Node */}
+                    {(() => {
+                      const theme = CATEGORY_THEMES[selectedRule.debit_account_category] || CATEGORY_THEMES['Beban'];
+                      return (
+                        <div 
+                          className="flow-node"
+                          style={{
+                            background: selectedRule.debit_account_id ? theme.gradient : 'var(--surface)',
+                            color: selectedRule.debit_account_id ? 'white' : 'var(--text-secondary)',
+                            border: selectedRule.debit_account_id ? 'none' : '1px dashed var(--border)',
+                            minWidth: '220px',
+                            padding: '1rem',
+                            textAlign: 'left',
+                            boxShadow: selectedRule.debit_account_id ? `0 8px 20px ${theme.shadow}` : 'none'
+                          }}
+                        >
+                          <span style={{ display: 'block', fontSize: '0.65rem', color: selectedRule.debit_account_id ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Akun Debit [Dr]
+                          </span>
+                          <h4 style={{ color: selectedRule.debit_account_id ? 'white' : 'var(--text-primary)', fontSize: '1rem', fontWeight: 800, margin: '0.25rem 0', fontFamily: 'var(--font-mono)' }}>
+                            {selectedRule.debit_account_id ? selectedRule.debit_account_code : 'DINAMIS'}
+                          </h4>
+                          <div style={{ color: selectedRule.debit_account_id ? 'white' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.8rem', lineHeight: 1.3 }}>
+                            {selectedRule.debit_account_id ? selectedRule.debit_account_name : '(Pilihan User)'}
+                          </div>
                         </div>
-                        <span style={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                          border: '1px solid rgba(255, 255, 255, 0.25)',
-                          color: 'white',
-                          fontSize: '0.65rem',
-                          fontWeight: 700,
-                          padding: '0.15rem 0.4rem',
-                          borderRadius: '4px',
-                          display: 'inline-block'
-                        }}>
-                          SAK EMKM
-                        </span>
-                      </div>
-                    );
-                  })()}
+                      );
+                    })()}
+                    
+                    {/* Credit Node */}
+                    {(() => {
+                      const theme = CATEGORY_THEMES[selectedRule.credit_account_category] || CATEGORY_THEMES['Kewajiban'];
+                      return (
+                        <div 
+                          className="flow-node"
+                          style={{
+                            background: selectedRule.credit_account_id ? theme.gradient : 'var(--surface)',
+                            color: selectedRule.credit_account_id ? 'white' : 'var(--text-secondary)',
+                            border: selectedRule.credit_account_id ? 'none' : '1px dashed var(--border)',
+                            minWidth: '220px',
+                            padding: '1rem',
+                            textAlign: 'left',
+                            boxShadow: selectedRule.credit_account_id ? `0 8px 20px ${theme.shadow}` : 'none'
+                          }}
+                        >
+                          <span style={{ display: 'block', fontSize: '0.65rem', color: selectedRule.credit_account_id ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Akun Kredit [Cr]
+                          </span>
+                          <h4 style={{ color: selectedRule.credit_account_id ? 'white' : 'var(--text-primary)', fontSize: '1rem', fontWeight: 800, margin: '0.25rem 0', fontFamily: 'var(--font-mono)' }}>
+                            {selectedRule.credit_account_id ? selectedRule.credit_account_code : 'DINAMIS'}
+                          </h4>
+                          <div style={{ color: selectedRule.credit_account_id ? 'white' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.8rem', lineHeight: 1.3 }}>
+                            {selectedRule.credit_account_id ? selectedRule.credit_account_name : '(Pilihan User)'}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
 
+                </div>
+
+                {/* Narrative Path Box */}
+                <div style={{
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  marginTop: '0.5rem'
+                }}>
+                  <h5 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Narasi Jalur Pertanyaan (Step-by-Step)</h5>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {getRuleNarrative(selectedRule.code).map((step, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                        <div style={{
+                          backgroundColor: step.a === 'YES' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                          color: step.a === 'YES' ? 'var(--success)' : 'var(--danger)',
+                          padding: '0.2rem 0.75rem',
+                          borderRadius: '4px',
+                          fontWeight: 800,
+                          fontSize: '0.75rem',
+                          minWidth: '55px',
+                          textAlign: 'center',
+                          marginTop: '2px'
+                        }}>
+                          {step.a}
+                        </div>
+                        <div style={{
+                          color: 'var(--text-primary)',
+                          fontSize: '0.9rem',
+                          lineHeight: 1.5,
+                          flex: 1
+                        }}>
+                          <span style={{ color: 'var(--text-secondary)', marginRight: '8px' }}>→</span>
+                          {step.q}
+                        </div>
+                      </div>
+                    ))}
+                    {getRuleNarrative(selectedRule.code).length > 0 && (
+                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px dashed var(--border)' }}>
+                        <div style={{ fontSize: '1.5rem' }}>🏆</div>
+                        <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1rem' }}>
+                          Kesimpulan: [{selectedRule.name}]
+                        </div>
+                      </div>
+                    )}
+                    {getRuleNarrative(selectedRule.code).length === 0 && (
+                      <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.85rem' }}>Narasi belum tersedia untuk aturan ini.</div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Navigation Back Button */}
@@ -1173,6 +1439,169 @@ export const RuleBaseIndex = () => {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Tab 4: Daftar Fakta */}
+      {activeTab === 'fakta' && (
+        <div className="anim-fade-in">
+          <div className="card" style={{ padding: '2rem', borderRadius: '12px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Daftar Fakta (Facts)</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+              Fakta adalah variabel pertanyaan (parameter input) yang bertugas sebagai penentu kondisi (IF) dalam sistem pakar ini.
+            </p>
+            <table className="table" style={{ border: '1px solid var(--border)' }}>
+              <thead style={{ background: 'var(--background)' }}>
+                <tr>
+                  <th style={{ padding: '1rem' }}>Kode Fakta</th>
+                  <th style={{ padding: '1rem' }}>Variabel (Fact Name)</th>
+                  <th style={{ padding: '1rem' }}>Pertanyaan User</th>
+                </tr>
+              </thead>
+              <tbody>
+                {questions.map(q => (
+                  <tr key={q.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '1rem', fontWeight: 600 }}>{q.code}</td>
+                    <td style={{ padding: '1rem', fontFamily: 'monospace', color: 'var(--primary)' }}>{q.fact_name}</td>
+                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{q.question_text}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 5: Flowchart & Matriks */}
+      {activeTab === 'rules_diagram' && (
+        <div className="anim-fade-in">
+          <div className="card" style={{ padding: '2rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Flowchart (Diagram Alir Logika)</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+              Representasi diagram alir memetakan percabangan sistem secara eksak sesuai pertanyaan yang muncul kepada pengguna.
+            </p>
+            <div style={{ backgroundColor: '#ffffff', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border)', overflowX: 'auto', textAlign: 'center' }}>
+               <div className="mermaid">
+{`graph TD
+    Start([Mulai Transaksi]) --> Q000{Jenis Usaha?}
+    
+    %% CABANG DAGANG
+    Q000 -- DAGANG --> DirD{Arah Transaksi?}
+    
+    %% Dagang - Penerimaan
+    DirD -- TERIMA --> Q009D{Setoran Modal?}
+    Q009D -- Ya --> R007[3-1000 Modal Pemilik]
+    Q009D -- Tidak --> Q015D{Pinjaman Bank?}
+    Q015D -- Ya --> R015[2-2000 Hutang Bank]
+    Q015D -- Tidak --> Q003{Penjualan Barang?}
+    Q003 -- Ya --> Q005D1{Kredit?}
+    Q005D1 -- Ya --> R002[1-1200 Piutang Usaha]
+    Q005D1 -- Tidak --> R009[4-1000 Pendapatan Penjualan]
+    Q003 -- Tidak --> R001[1-1000 Kas Utama]
+
+    %% Dagang - Pengeluaran
+    DirD -- KELUAR --> Q006{Beli utk Dijual<br/>Kembali?}
+    Q006 -- Ya --> Q005D2{Kredit?}
+    Q005D2 -- Ya --> R004[1-1300 Persediaan Kredit & Hutang]
+    Q005D2 -- Tidak --> R003[1-1300 Persediaan Tunai]
+    Q006 -- Tidak --> BebanUmum{Cek Beban/Aset/Prive}
+
+    %% CABANG JASA
+    Q000 -- JASA --> DirJ{Arah Transaksi?}
+    
+    %% Jasa - Penerimaan
+    DirJ -- TERIMA --> Q009J{Setoran Modal?}
+    Q009J -- Ya --> R007
+    Q009J -- Tidak --> Q015J{Pinjaman Bank?}
+    Q015J -- Ya --> R015
+    Q015J -- Tidak --> Q004{Penjualan Jasa?}
+    Q004 -- Ya --> Q005J1{Kredit?}
+    Q005J1 -- Ya --> R002
+    Q005J1 -- Tidak --> R010[4-1100 Pendapatan Jasa]
+    Q004 -- Tidak --> R001
+
+    %% Jasa - Pengeluaran (Langsung ke Beban/Aset)
+    DirJ -- KELUAR --> BebanUmum
+    
+    %% BLOK BEBAN/ASET/PRIVE (Berlaku untuk Dagang & Jasa)
+    BebanUmum --> Q007{Beli Aset Tetap?}
+    Q007 -- Ya --> Q008{Manfaat > 1 Thn?}
+    Q008 -- Ya --> R006[1-2100 Aset Tetap]
+    Q008 -- Tidak --> BebanLainnya
+    Q007 -- Tidak --> BebanLainnya
+    
+    BebanLainnya --> Q010{Ambil Prive?}
+    Q010 -- Ya --> R008[3-2000 Prive Pemilik]
+    Q010 -- Tidak --> Q011{Bayar Gaji?}
+    
+    Q011 -- Ya --> R011[5-1000 Beban Gaji]
+    Q011 -- Tidak --> Q012{Bayar Utilitas?}
+    
+    Q012 -- Ya --> R012[5-1100 Beban Utilitas]
+    Q012 -- Tidak --> Q013{Bayar Sewa?}
+    
+    Q013 -- Ya --> R013[5-1200 Beban Sewa]
+    Q013 -- Tidak --> Q014{Beli ATK?}
+    
+    Q014 -- Ya --> R014[5-1500 Beban ATK]
+    Q014 -- Tidak --> Q005U{Pengeluaran Kredit?}
+    
+    Q005U -- Ya --> R005[2-1000 Hutang Dagang]
+    Q005U -- Tidak --> Drop([Cek Kembali Transaksi])`}
+               </div>
+            </div>
+          </div>
+
+          <div className="card" style={{ padding: '2rem', borderRadius: '12px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Decision Table (Tabel Keputusan)</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem', lineHeight: 1.6 }}>
+              Tabel ini sangat cocok dicetak dan ditunjukkan kepada pakar akuntansi untuk <em>Face Validity</em>. Pakar dapat dengan mudah membaca kombinasi dari kiri ke kanan untuk memvalidasi apakah kode akun di kolom paling kanan sudah tepat. Tanda strip (" - ") mengindikasikan <em>Don't Care</em>.
+            </p>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table" style={{ border: '1px solid var(--border)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                <thead style={{ background: 'var(--primary-light)' }}>
+                  <tr>
+                    <th style={{ padding: '1rem', borderRight: '1px solid var(--border)' }}>Rule ID</th>
+                    <th style={{ padding: '1rem' }}>Kategori Akun</th>
+                    <th style={{ padding: '1rem' }}>Jenis Usaha</th>
+                    <th style={{ padding: '1rem' }}>Arah Transaksi</th>
+                    <th style={{ padding: '1rem' }}>Kondisi Spesifik (Fakta yang bernilai "YES")</th>
+                    <th style={{ padding: '1rem' }}>Kredit?</th>
+                    <th style={{ padding: '1rem', backgroundColor: 'var(--primary)', color: 'white' }}>Hasil (Kode Akun)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { id: 'R-001', cat: 'Aset', usaha: 'SEMUA', arah: 'Penerimaan', kondisi: 'Transaksi operasional/lainnya (Bukan Setoran/Pinjaman/Penjualan)', kredit: 'NO', hasil: '1-1000 (Kas)' },
+                    { id: 'R-002', cat: 'Piutang', usaha: 'SEMUA', arah: 'Penerimaan', kondisi: 'is_penjualan_barang ATAU is_penjualan_jasa', kredit: 'YES', hasil: '1-1200 (Piutang Usaha)' },
+                    { id: 'R-003', cat: 'Aset', usaha: 'DAGANG', arah: 'Pengeluaran', kondisi: 'is_dijual_kembali', kredit: 'NO', hasil: '1-1300 (Persediaan)' },
+                    { id: 'R-004', cat: 'Aset', usaha: 'DAGANG', arah: 'Pengeluaran', kondisi: 'is_dijual_kembali', kredit: 'YES', hasil: '1-1300 (Persediaan)' },
+                    { id: 'R-006', cat: 'Aset', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_pembelian_aset AND is_manfaat_lebih_1_tahun', kredit: '-', hasil: '1-2100 (Aset Tetap)' },
+                    { id: 'R-005', cat: 'Kewajiban', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'Pembelian selain aset/persediaan', kredit: 'YES', hasil: '2-1000 (Hutang Dagang)' },
+                    { id: 'R-015', cat: 'Kewajiban', usaha: 'SEMUA', arah: 'Penerimaan', kondisi: 'is_pinjaman_bank', kredit: '-', hasil: '2-2000 (Hutang Bank)' },
+                    { id: 'R-007', cat: 'Ekuitas', usaha: 'SEMUA', arah: 'Penerimaan', kondisi: 'is_setoran_modal', kredit: '-', hasil: '3-1000 (Modal Pemilik)' },
+                    { id: 'R-008', cat: 'Ekuitas', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_prive', kredit: '-', hasil: '3-2000 (Prive)' },
+                    { id: 'R-009', cat: 'Pendapatan', usaha: 'DAGANG', arah: 'Penerimaan', kondisi: 'is_penjualan_barang', kredit: 'NO', hasil: '4-1000 (Pendapatan Jual)' },
+                    { id: 'R-010', cat: 'Pendapatan', usaha: 'JASA', arah: 'Penerimaan', kondisi: 'is_penjualan_jasa', kredit: 'NO', hasil: '4-1100 (Pendapatan Jasa)' },
+                    { id: 'R-011', cat: 'Beban', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_beban_gaji', kredit: '-', hasil: '5-1000 (Beban Gaji)' },
+                    { id: 'R-012', cat: 'Beban', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_beban_utilitas', kredit: '-', hasil: '5-1100 (Beban Utilitas)' },
+                    { id: 'R-013', cat: 'Beban', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_beban_sewa', kredit: '-', hasil: '5-1200 (Beban Sewa)' },
+                    { id: 'R-014', cat: 'Beban', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_beban_atk', kredit: '-', hasil: '5-1500 (Beban ATK)' },
+                  ].map((row, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ fontWeight: 800, borderRight: '1px solid var(--border)' }}>{row.id}</td>
+                      <td>{row.cat}</td>
+                      <td>{row.usaha}</td>
+                      <td>{row.arah}</td>
+                      <td style={{ fontFamily: 'monospace', color: 'var(--primary)', fontWeight: 600 }}>{row.kondisi}</td>
+                      <td style={{ color: row.kredit === 'YES' ? 'var(--success)' : row.kredit === 'NO' ? 'var(--danger)' : 'inherit', fontWeight: 800 }}>{row.kredit}</td>
+                      <td style={{ fontWeight: 800, color: 'var(--primary)' }}>{row.hasil}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

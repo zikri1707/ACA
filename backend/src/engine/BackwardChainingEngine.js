@@ -1,25 +1,16 @@
 import { query } from '../config/database.js';
 
 export class BackwardChainingEngine {
-  /**
-   * Run the backward chaining inference.
-   * @param {string} businessType - 'jasa' or 'dagang'
-   * @param {Object} facts - User answers (e.g. { is_penerimaan: 'yes', is_kredit: 'no' })
-   * @returns {Promise<Object>}
-   */
   static async evaluate(businessType, facts = {}) {
     // 1. Fetch rules and their details
     const rulesRows = await query(`
-      SELECT r.id, r.code, r.name, r.business_type, r.description,
-             a.id as account_id, a.code as account_code, a.name as account_name, 
-             a.category as account_category, a.subcategory as account_subcategory, a.description as account_desc
-      FROM rules r
-      JOIN accounts a ON r.conclusion_account_id = a.id
-      WHERE r.is_active = 1 AND (r.business_type = 'semua' OR r.business_type = ?)
-      ORDER BY r.code ASC
+      SELECT id, code, name, business_type, description, debit_account_id, credit_account_id
+      FROM rules
+      WHERE is_active = 1 AND (business_type = 'semua' OR business_type = ?)
+      ORDER BY code ASC
     `, [businessType]);
 
-    // 2. Fetch all conditions for these rules
+    // 2. Fetch all conditions
     const conditionsRows = await query(`
       SELECT rc.rule_id, rc.fact_name, rc.operator, rc.expected_value
       FROM rule_conditions rc
@@ -27,7 +18,6 @@ export class BackwardChainingEngine {
       WHERE r.is_active = 1
     `);
 
-    // Group conditions by rule_id
     const conditionsByRule = {};
     conditionsRows.forEach(cond => {
       if (!conditionsByRule[cond.rule_id]) {
@@ -36,129 +26,151 @@ export class BackwardChainingEngine {
       conditionsByRule[cond.rule_id].push(cond);
     });
 
-    // 3. Fetch all questions to map fact names to user questions
-    const questionsRows = await query('SELECT code, question_text, fact_name FROM questions');
+    // 3. Fetch questions map
+    const questionsRows = await query('SELECT id as question_id, code, question_text, fact_name FROM questions');
     const questionsMap = {};
     questionsRows.forEach(q => {
       questionsMap[q.fact_name] = q;
     });
 
-    // 4. Inference loop
+    // 4. Fetch accounts map
+    const accountsRows = await query('SELECT id, code, name, category, subcategory FROM accounts');
+    const accountsMapById = {};
+    const accountsMapByCode = {};
+    accountsRows.forEach(acc => {
+      accountsMapById[acc.id] = acc;
+      accountsMapByCode[acc.code] = acc;
+    });
+
     let provenGoal = null;
     let nextQuestion = null;
     const ruleTrace = [];
-    const verifiedFacts = [];
+    const verifiedFacts = Object.entries(facts).map(([k, v]) => ({ fact_name: k, value: v }));
 
-    // Track which facts were used/verified
-    for (const [key, val] of Object.entries(facts)) {
-      verifiedFacts.push({ fact_name: key, value: val });
+    // Create a copy of facts to inject logical defaults based on business type
+    // This prevents rules from being permanently blocked by skipped questions
+    const effectiveFacts = { ...facts };
+    if (businessType === 'jasa') {
+      if (effectiveFacts['is_penjualan_barang'] === undefined) effectiveFacts['is_penjualan_barang'] = 'no';
+      if (effectiveFacts['is_dijual_kembali'] === undefined) effectiveFacts['is_dijual_kembali'] = 'no';
+    } else if (businessType === 'dagang') {
+      if (effectiveFacts['is_penjualan_jasa'] === undefined) effectiveFacts['is_penjualan_jasa'] = 'no';
+    }
+
+    // Mutual exclusivity for cash flows
+    if (effectiveFacts['is_penerimaan'] === 'yes') {
+      effectiveFacts['is_pengeluaran'] = 'no';
+    } else if (effectiveFacts['is_pengeluaran'] === 'yes') {
+      effectiveFacts['is_penerimaan'] = 'no';
+    }
+
+    // Mutual exclusivity for Penerimaan subtypes
+    const penerimaanTypes = ['is_penjualan_barang', 'is_penjualan_jasa', 'is_pinjaman_bank', 'is_setoran_modal'];
+    for (const type of penerimaanTypes) {
+      if (effectiveFacts[type] === 'yes') {
+        for (const other of penerimaanTypes) {
+          if (other !== type && effectiveFacts[other] === undefined) {
+            effectiveFacts[other] = 'no';
+          }
+        }
+      }
+    }
+
+    // Mutual exclusivity for Pengeluaran subtypes
+    const pengeluaranTypes = ['is_pembelian_aset', 'is_prive', 'is_beban_gaji', 'is_beban_utilitas', 'is_beban_sewa', 'is_beban_atk'];
+    for (const type of pengeluaranTypes) {
+      if (effectiveFacts[type] === 'yes') {
+        for (const other of pengeluaranTypes) {
+          if (other !== type && effectiveFacts[other] === undefined) {
+            effectiveFacts[other] = 'no';
+          }
+        }
+      }
     }
 
     for (const rule of rulesRows) {
       const conditions = conditionsByRule[rule.id] || [];
-      let ruleStatus = 'passed'; // Default to passed, will downgrade
+      let ruleStatus = 'passed';
       const conditionTraces = [];
 
       for (const cond of conditions) {
-        const factValue = facts[cond.fact_name];
-
+        const factValue = effectiveFacts[cond.fact_name];
         if (factValue !== undefined) {
-          // Fact is known
           if (factValue === cond.expected_value) {
-            conditionTraces.push({
-              fact_name: cond.fact_name,
-              expected: cond.expected_value,
-              actual: factValue,
-              status: 'satisfied'
-            });
+            conditionTraces.push({ fact_name: cond.fact_name, expected: cond.expected_value, actual: factValue, status: 'satisfied' });
           } else {
-            conditionTraces.push({
-              fact_name: cond.fact_name,
-              expected: cond.expected_value,
-              actual: factValue,
-              status: 'violated'
-            });
+            conditionTraces.push({ fact_name: cond.fact_name, expected: cond.expected_value, actual: factValue, status: 'violated' });
             ruleStatus = 'failed';
           }
         } else {
-          // Fact is unknown
-          conditionTraces.push({
-            fact_name: cond.fact_name,
-            expected: cond.expected_value,
-            status: 'unknown'
-          });
-
-          if (ruleStatus !== 'failed') {
-            ruleStatus = 'blocked';
-          }
+          conditionTraces.push({ fact_name: cond.fact_name, expected: cond.expected_value, status: 'unknown' });
+          if (ruleStatus !== 'failed') ruleStatus = 'blocked';
         }
       }
 
-      // Record rule trace
+      // Dynamic Resolvers if passed
+      let resolvedDebit = accountsMapById[rule.debit_account_id] || null;
+      let resolvedCredit = accountsMapById[rule.credit_account_id] || null;
+      let requiresUserInput = null;
+
+      if (ruleStatus === 'passed') {
+        if (rule.code === 'R-002' && !resolvedCredit) {
+          resolvedCredit = businessType === 'dagang' ? accountsMapByCode['4-1000'] : accountsMapByCode['4-1100'];
+        }
+        if (rule.code === 'R-006' && !resolvedCredit) {
+          resolvedCredit = facts['is_kredit'] === 'yes' ? accountsMapByCode['2-1000'] : accountsMapByCode['1-1000'];
+        }
+        if (rule.code === 'R-005' && !resolvedDebit) {
+          // This one explicitly needs user input based on requirements
+          requiresUserInput = 'debit';
+          resolvedDebit = { id: null, code: 'DYNAMIC_BEBAN', name: 'Pilih Jenis Beban', category: 'Beban', isDynamic: true };
+        }
+      }
+
       ruleTrace.push({
         rule_code: rule.code,
         rule_name: rule.name,
         status: ruleStatus,
         conditions: conditionTraces,
-        conclusion: {
-          code: rule.account_code,
-          name: rule.account_name,
-          category: rule.account_category
-        }
+        conclusion: { debit: resolvedDebit, credit: resolvedCredit }
       });
 
-      // If we proved a rule and don't have a proven goal yet
       if (ruleStatus === 'passed' && !provenGoal) {
         provenGoal = {
-          account_id: rule.account_id,
-          code: rule.account_code,
-          name: rule.account_name,
-          category: rule.account_category,
-          subcategory: rule.account_subcategory,
-          description: rule.account_desc,
+          rule_id: rule.id,
           rule_code: rule.code,
           rule_name: rule.name,
-          rule_desc: rule.description
+          rule_desc: rule.description,
+          debit: resolvedDebit,
+          credit: resolvedCredit,
+          requiresUserInput
         };
+        break; // STOP: We found the highest priority passed rule!
       }
 
-      // If the rule is blocked and we haven't selected a next question yet
       if (ruleStatus === 'blocked' && !nextQuestion && !provenGoal) {
-        // Find the first unknown condition in this blocked rule
-        const firstUnknown = conditions.find(c => facts[c.fact_name] === undefined);
+        const firstUnknown = conditions.find(c => {
+          if (effectiveFacts[c.fact_name] !== undefined) return false;
+          // Skip irrelevant questions based on business type
+          if (businessType === 'jasa' && c.fact_name === 'is_penjualan_barang') return false;
+          if (businessType === 'dagang' && c.fact_name === 'is_penjualan_jasa') return false;
+          if (businessType === 'jasa' && c.fact_name === 'is_dijual_kembali') return false;
+          return true;
+        });
+        
         if (firstUnknown && questionsMap[firstUnknown.fact_name]) {
           nextQuestion = questionsMap[firstUnknown.fact_name];
+          break; // STOP: We must ask this question before evaluating lower priority rules!
         }
       }
     }
 
     if (provenGoal) {
-      return {
-        status: 'proven',
-        nextQuestion: null,
-        provenGoal,
-        ruleTrace,
-        verifiedFacts,
-        confidence: 95 // Preset high-confidence score for validated logic paths
-      };
+      return { status: 'proven', nextQuestion: null, provenGoal, ruleTrace, verifiedFacts, confidence: 95 };
     } else if (nextQuestion) {
-      return {
-        status: 'processing',
-        nextQuestion,
-        provenGoal: null,
-        ruleTrace,
-        verifiedFacts,
-        confidence: 0
-      };
+      return { status: 'processing', nextQuestion, provenGoal: null, ruleTrace, verifiedFacts, confidence: 0 };
     } else {
-      return {
-        status: 'unproven',
-        nextQuestion: null,
-        provenGoal: null,
-        ruleTrace,
-        verifiedFacts,
-        confidence: 0
-      };
+      return { status: 'unproven', nextQuestion: null, provenGoal: null, ruleTrace, verifiedFacts, confidence: 0 };
     }
   }
 }

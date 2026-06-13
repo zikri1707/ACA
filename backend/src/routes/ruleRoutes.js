@@ -8,9 +8,16 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const rules = await query(`
-      SELECT r.*, a.code as account_code, a.name as account_name, a.category as account_category
+      SELECT r.*,
+             ad.code as debit_account_code,
+             ad.name as debit_account_name,
+             ad.category as debit_account_category,
+             ac.code as credit_account_code,
+             ac.name as credit_account_name,
+             ac.category as credit_account_category
       FROM rules r
-      JOIN accounts a ON r.conclusion_account_id = a.id
+      LEFT JOIN accounts ad ON r.debit_account_id = ad.id
+      LEFT JOIN accounts ac ON r.credit_account_id = ac.id
       ORDER BY r.code ASC
     `);
 
@@ -57,9 +64,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
 // Create Rule (Admin only)
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
-  const { code, name, business_type, conclusion_account_id, description, conditions } = req.body;
+  const { code, name, business_type, journal_debit, journal_credit, description, conditions } = req.body;
 
-  if (!code || !name || !business_type || !conclusion_account_id || !conditions || !Array.isArray(conditions)) {
+  if (!code || !name || !business_type || !journal_debit || !journal_credit || !conditions || !Array.isArray(conditions)) {
     return res.status(400).json({ message: 'Lengkapi seluruh field wajib dan daftar kondisi.' });
   }
 
@@ -71,9 +78,9 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     }
 
     const ruleRes = await run(`
-      INSERT INTO rules (code, name, business_type, conclusion_account_id, description, is_active)
-      VALUES (?, ?, ?, ?, ?, 1)
-    `, [code, name, business_type, conclusion_account_id, description || null]);
+      INSERT INTO rules (code, name, business_type, journal_debit, journal_credit, description, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, 1)
+    `, [code, name, business_type, journal_debit, journal_credit, description || null]);
 
     const ruleId = ruleRes.id;
 
@@ -81,8 +88,8 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     for (const cond of conditions) {
       await run(`
         INSERT INTO rule_conditions (rule_id, fact_name, operator, expected_value)
-        VALUES (?, ?, 'equals', ?)
-      `, [ruleId, cond.fact_name, cond.expected_value]);
+        VALUES (?, ?, ?, ?)
+      `, [ruleId, cond.fact_name, cond.operator || 'equals', cond.expected_value]);
     }
 
     await run('INSERT INTO activity_logs (user_id, action) VALUES (?, ?)', [
@@ -98,9 +105,9 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 
 // Update Rule (Admin only)
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
-  const { code, name, business_type, conclusion_account_id, description, is_active, conditions } = req.body;
+  const { code, name, business_type, journal_debit, journal_credit, description, is_active, conditions } = req.body;
 
-  if (!code || !name || !business_type || !conclusion_account_id || !conditions || !Array.isArray(conditions)) {
+  if (!code || !name || !business_type || !journal_debit || !journal_credit || !conditions || !Array.isArray(conditions)) {
     return res.status(400).json({ message: 'Lengkapi seluruh field wajib dan daftar kondisi.' });
   }
 
@@ -118,9 +125,9 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 
     await run(`
       UPDATE rules 
-      SET code = ?, name = ?, business_type = ?, conclusion_account_id = ?, description = ?, is_active = ?
+      SET code = ?, name = ?, business_type = ?, journal_debit = ?, journal_credit = ?, description = ?, is_active = ?
       WHERE id = ?
-    `, [code, name, business_type, conclusion_account_id, description || null, is_active, req.params.id]);
+    `, [code, name, business_type, journal_debit, journal_credit, description || null, is_active, req.params.id]);
 
     // Clear old conditions
     await run('DELETE FROM rule_conditions WHERE rule_id = ?', [req.params.id]);
@@ -129,8 +136,8 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     for (const cond of conditions) {
       await run(`
         INSERT INTO rule_conditions (rule_id, fact_name, operator, expected_value)
-        VALUES (?, ?, 'equals', ?)
-      `, [req.params.id, cond.fact_name, cond.expected_value]);
+        VALUES (?, ?, ?, ?)
+      `, [req.params.id, cond.fact_name, cond.operator || 'equals', cond.expected_value]);
     }
 
     await run('INSERT INTO activity_logs (user_id, action) VALUES (?, ?)', [
