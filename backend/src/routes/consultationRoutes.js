@@ -2,6 +2,7 @@ import express from 'express';
 import { run, query, get } from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { BackwardChainingEngine } from '../engine/BackwardChainingEngine.js';
+import { InventoryEngine } from '../engine/InventoryEngine.js';
 
 const router = express.Router();
 
@@ -30,7 +31,9 @@ router.post('/save', authenticateToken, async (req, res) => {
     amount,
     debit_account_id,
     credit_account_id,
-    description
+    description,
+    items,
+    rule_code
   } = req.body;
 
   if (!business_type || !answers || !Array.isArray(answers)) {
@@ -78,6 +81,15 @@ router.post('/save', authenticateToken, async (req, res) => {
         INSERT INTO journals (consultation_id, debit_account_id, credit_account_id, amount, description)
         VALUES (?, ?, ?, ?, ?)
       `, [consultationId, debit_account_id, credit_account_id, parsedAmount, journalDesc]);
+      
+      // Integritas Moving Average & HPP
+      if (items && items.length > 0 && rule_code) {
+        if (rule_code === 'R-003' || rule_code === 'R-004') {
+          await InventoryEngine.calculateAndSaveMovingAverage(items, consultationId);
+        } else if (rule_code === 'R-002' || rule_code === 'R-009') {
+          await InventoryEngine.generateHppJournal(items, consultationId);
+        }
+      }
     }
 
     await run('INSERT INTO activity_logs (user_id, action) VALUES (?, ?)', [

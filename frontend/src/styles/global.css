@@ -416,7 +416,6 @@ a:hover {
 /* Mobile Responsiveness */
 @media (max-width: 1024px) {
   .main-content {
-    margin-left: 0;
     padding: 1.5rem;
   }
   .grid-cols-4 {

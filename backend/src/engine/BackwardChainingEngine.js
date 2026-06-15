@@ -58,14 +58,14 @@ export class BackwardChainingEngine {
     }
 
     // Mutual exclusivity for cash flows
-    if (effectiveFacts['is_penerimaan'] === 'yes') {
-      effectiveFacts['is_pengeluaran'] = 'no';
-    } else if (effectiveFacts['is_pengeluaran'] === 'yes') {
-      effectiveFacts['is_penerimaan'] = 'no';
+    if (effectiveFacts['is_inbound'] === 'yes') {
+      effectiveFacts['is_outbound'] = 'no';
+    } else if (effectiveFacts['is_outbound'] === 'yes') {
+      effectiveFacts['is_inbound'] = 'no';
     }
 
     // Mutual exclusivity for Penerimaan subtypes
-    const penerimaanTypes = ['is_penjualan_barang', 'is_penjualan_jasa', 'is_pinjaman_bank', 'is_setoran_modal'];
+    const penerimaanTypes = ['is_penjualan_barang', 'is_penjualan_jasa', 'is_pinjaman_bank', 'is_setoran_modal', 'is_penerimaan_piutang'];
     for (const type of penerimaanTypes) {
       if (effectiveFacts[type] === 'yes') {
         for (const other of penerimaanTypes) {
@@ -77,7 +77,7 @@ export class BackwardChainingEngine {
     }
 
     // Mutual exclusivity for Pengeluaran subtypes
-    const pengeluaranTypes = ['is_pembelian_aset', 'is_prive', 'is_beban_gaji', 'is_beban_utilitas', 'is_beban_sewa', 'is_beban_atk'];
+    const pengeluaranTypes = ['is_pembelian_aset', 'is_prive', 'is_beban_gaji', 'is_beban_utilitas', 'is_beban_sewa', 'is_beban_atk', 'is_beban_pemasaran', 'is_pelunasan_hutang_dagang', 'is_pelunasan_hutang_bank'];
     for (const type of pengeluaranTypes) {
       if (effectiveFacts[type] === 'yes') {
         for (const other of pengeluaranTypes) {
@@ -108,6 +108,13 @@ export class BackwardChainingEngine {
         }
       }
 
+      // INJEKSI SOLUSI GAP 1 & 3: Wajibkan pengecekan is_kredit untuk rule pengeluaran spesifik
+      const dynamicCreditRules = ['R-006', 'R-008', 'R-011', 'R-012', 'R-013', 'R-014', 'R-016', 'R-017'];
+      if (dynamicCreditRules.includes(rule.code) && effectiveFacts['is_kredit'] === undefined) {
+        conditionTraces.push({ fact_name: 'is_kredit', expected: 'yes/no', status: 'unknown (injected)' });
+        if (ruleStatus === 'passed') ruleStatus = 'blocked';
+      }
+
       // Dynamic Resolvers if passed
       let resolvedDebit = accountsMapById[rule.debit_account_id] || null;
       let resolvedCredit = accountsMapById[rule.credit_account_id] || null;
@@ -117,11 +124,14 @@ export class BackwardChainingEngine {
         if (rule.code === 'R-002' && !resolvedCredit) {
           resolvedCredit = businessType === 'dagang' ? accountsMapByCode['4-1000'] : accountsMapByCode['4-1100'];
         }
-        if (rule.code === 'R-006' && !resolvedCredit) {
-          resolvedCredit = facts['is_kredit'] === 'yes' ? accountsMapByCode['2-1000'] : accountsMapByCode['1-1000'];
+        
+        // INJEKSI SOLUSI GAP 1 & 3: Secara otomatis tentukan Kas atau Hutang berdasarkan is_kredit
+        if (dynamicCreditRules.includes(rule.code)) {
+          resolvedCredit = effectiveFacts['is_kredit'] === 'yes' ? accountsMapByCode['2-1000'] : accountsMapByCode['1-1000'];
         }
-        if (rule.code === 'R-005' && !resolvedDebit) {
-          // This one explicitly needs user input based on requirements
+
+        // R-099 dan R-098 adalah fallback yang sudah digeser ke prioritas paling rendah
+        if ((rule.code === 'R-099' || rule.code === 'R-098') && !resolvedDebit) {
           requiresUserInput = 'debit';
           resolvedDebit = { id: null, code: 'DYNAMIC_BEBAN', name: 'Pilih Jenis Beban', category: 'Beban', isDynamic: true };
         }
@@ -149,6 +159,12 @@ export class BackwardChainingEngine {
       }
 
       if (ruleStatus === 'blocked' && !nextQuestion && !provenGoal) {
+        // INJEKSI SOLUSI GAP 1 & 3: Tanyakan is_kredit jika belum ditanyakan
+        if (dynamicCreditRules.includes(rule.code) && effectiveFacts['is_kredit'] === undefined) {
+            nextQuestion = questionsMap['is_kredit'];
+            break;
+        }
+
         const firstUnknown = conditions.find(c => {
           if (effectiveFacts[c.fact_name] !== undefined) return false;
           // Skip irrelevant questions based on business type
@@ -166,6 +182,13 @@ export class BackwardChainingEngine {
     }
 
     if (provenGoal) {
+      // INJEKSI HPP & MOVING AVERAGE FLAGS
+      if (provenGoal.rule_code === 'R-002' || provenGoal.rule_code === 'R-009') {
+        provenGoal.triggerHpp = true;
+      }
+      if (provenGoal.rule_code === 'R-003' || provenGoal.rule_code === 'R-004') {
+        provenGoal.triggerMovingAverage = true;
+      }
       return { status: 'proven', nextQuestion: null, provenGoal, ruleTrace, verifiedFacts, confidence: 95 };
     } else if (nextQuestion) {
       return { status: 'processing', nextQuestion, provenGoal: null, ruleTrace, verifiedFacts, confidence: 0 };
