@@ -311,21 +311,28 @@ export const DashboardPage = () => {
                     </div>
 
                     {/* Result Account */}
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      {con.account_code ? (
-                        <span className="badge badge-info" style={{ fontSize: '0.68rem' }}>
-                          {con.account_code} · {con.account_name}
-                        </span>
+                    <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '150px' }}>
+                      {(con.journals && con.journals.length > 0) ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#059669' }}>
+                            Rp {con.journals[0].amount.toLocaleString('id-ID')}
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.3rem' }}>
+                            <span className="badge" style={{ fontSize: '0.62rem', backgroundColor: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                              {con.journals[0].debit_category || 'Debit'}
+                            </span>
+                            <span className="badge" style={{ fontSize: '0.62rem', backgroundColor: '#fce7f3', color: '#db2777', border: '1px solid #fbcfe8', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                              {con.journals[0].credit_category || 'Kredit'}
+                            </span>
+                          </div>
+                        </div>
                       ) : (
                         <span className="badge badge-danger" style={{ fontSize: '0.68rem' }}>Tidak Terklasifikasi</span>
                       )}
-                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                        {con.account_category || '—'}
-                      </div>
                     </div>
 
                     {/* Status dot */}
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: con.account_code ? 'var(--success)' : 'var(--danger)', flexShrink: 0 }} />
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: (con.journals && con.journals.length > 0) ? 'var(--success)' : 'var(--danger)', flexShrink: 0 }} />
                   </div>
                 ))}
               </div>

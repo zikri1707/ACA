@@ -351,16 +351,26 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
 
     // Recent Consultations
     const recentConsultations = await query(`
-      SELECT c.id, c.date, u.name as user_name, c.business_type, c.confidence_level,
-             (SELECT ad.code || ' & ' || ac.code FROM journals j JOIN accounts ad ON j.debit_account_id = ad.id JOIN accounts ac ON j.credit_account_id = ac.id WHERE j.consultation_id = c.id LIMIT 1) as account_code,
-             'Jurnal Berpasangan' as account_name,
-             'Tersimpan' as account_category
+      SELECT c.id, c.date, u.name as user_name, c.business_type, c.confidence_level
       FROM consultations c 
       JOIN users u ON c.user_id = u.id
       ${cFilter}
       ORDER BY c.date DESC 
       LIMIT 5
     `);
+
+    for (let i = 0; i < recentConsultations.length; i++) {
+      const journals = await query(`
+        SELECT j.amount, 
+               ad.code as debit_code, ad.name as debit_name, ad.category as debit_category,
+               ac.code as credit_code, ac.name as credit_name, ac.category as credit_category
+        FROM journals j
+        JOIN accounts ad ON j.debit_account_id = ad.id
+        JOIN accounts ac ON j.credit_account_id = ac.id
+        WHERE j.consultation_id = ?
+      `, [recentConsultations[i].id]);
+      recentConsultations[i].journals = journals;
+    }
 
     // Monthly Chart Data
     const monthlyTrend = await query(`
