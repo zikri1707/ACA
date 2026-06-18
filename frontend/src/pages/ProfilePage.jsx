@@ -113,10 +113,13 @@ export const ProfilePage = () => {
                 value={businessType} 
                 onChange={(e) => setBusinessType(e.target.value)}
                 required
+                disabled
+                style={{ backgroundColor: 'var(--surface-hover)', cursor: 'not-allowed' }}
               >
                 <option value="jasa">UMKM Jasa</option>
                 <option value="dagang">UMKM Dagang</option>
               </select>
+              <small style={{ color: 'var(--text-muted)', fontSize: '0.7rem', display: 'block', marginTop: '0.25rem' }}>* Ditentukan saat pendaftaran akun.</small>
             </div>
           </div>
 

@@ -128,8 +128,8 @@ router.get('/', authenticateToken, async (req, res) => {
     for (let i = 0; i < history.length; i++) {
       const journals = await query(`
         SELECT j.amount, 
-               ad.code as debit_code, ad.name as debit_name,
-               ac.code as credit_code, ac.name as credit_name
+               ad.code as debit_code, ad.name as debit_name, ad.category as debit_category,
+               ac.code as credit_code, ac.name as credit_name, ac.category as credit_category
         FROM journals j
         JOIN accounts ad ON j.debit_account_id = ad.id
         JOIN accounts ac ON j.credit_account_id = ac.id
@@ -170,8 +170,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     const journals = await query(`
       SELECT j.*, 
-             ad.code as debit_account_code, ad.name as debit_account_name,
-             ac.code as credit_account_code, ac.name as credit_account_name
+             ad.code as debit_account_code, ad.name as debit_account_name, ad.category as debit_category,
+             ac.code as credit_account_code, ac.name as credit_account_name, ac.category as credit_category
       FROM journals j
       JOIN accounts ad ON j.debit_account_id = ad.id
       JOIN accounts ac ON j.credit_account_id = ac.id

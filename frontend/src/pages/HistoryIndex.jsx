@@ -36,6 +36,7 @@ export const HistoryIndex = () => {
   const [showModal, setShowModal]         = useState(false);
   const [detail, setDetail]               = useState(null);
   const [detailAnswers, setDetailAnswers] = useState([]);
+  const [detailJournals, setDetailJournals] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
 
   const isAdmin = user?.role === 'Admin';
@@ -54,7 +55,7 @@ export const HistoryIndex = () => {
 
         // Compute stats from real data
         const total       = list.length;
-        const classified  = list.filter(h => h.account_code).length;
+        const classified  = list.filter(h => h.journals && h.journals.length > 0).length;
         const avgConf     = total > 0
           ? (list.reduce((s, h) => s + (h.confidence_level || 0), 0) / total).toFixed(1)
           : 0;
@@ -70,7 +71,24 @@ export const HistoryIndex = () => {
     }
   };
 
-  useEffect(() => { fetchHistory(); }, []);
+  const [summaryData, setSummaryData] = useState(null);
+
+  const fetchSummary = async () => {
+    try {
+      const res = await fetch('/api/reports/summary', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) setSummaryData(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => { 
+    fetchHistory(); 
+    fetchSummary();
+  }, []);
 
   // ─── View detail ───
   const handleViewDetail = async (con) => {
@@ -78,6 +96,7 @@ export const HistoryIndex = () => {
     setDetailLoading(true);
     setDetail(null);
     setDetailAnswers([]);
+    setDetailJournals([]);
     try {
       const res  = await fetch(`/api/consultations/${con.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -86,6 +105,7 @@ export const HistoryIndex = () => {
       if (res.ok) {
         setDetail(data.consultation);
         setDetailAnswers(data.answers || []);
+        setDetailJournals(data.journals || []);
       } else {
         showToast(data.message, 'danger');
       }
@@ -111,7 +131,8 @@ export const HistoryIndex = () => {
         setHistory(prev => prev.filter(h => h.id !== id));
         setStats(prev => {
           if (!prev) return prev;
-          const wasClassified = history.find(h => h.id === id)?.account_code;
+          const item = history.find(h => h.id === id);
+          const wasClassified = item && item.journals && item.journals.length > 0;
           const total      = prev.total - 1;
           const classified = wasClassified ? prev.classified - 1 : prev.classified;
           const accuracy   = total > 0 ? ((classified / total) * 100).toFixed(1) : 0;
@@ -172,6 +193,184 @@ export const HistoryIndex = () => {
           </div>
         ))}
       </div>
+
+      {/* ─── Dashboard Charts & Tables ─── */}
+      {summaryData && (
+        <div className="no-print" style={{ display: 'grid', gridTemplateColumns: '4fr 3fr 3fr', gap: '1.5rem' }}>
+          {/* Trend Bar Chart */}
+          <div className="card" style={{ padding: '1.5rem' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.15rem' }}>Trend Konsultasi Sistem</h3>
+            <div style={{ height: '220px', marginTop: '1.5rem', position: 'relative' }}>
+              {(() => {
+                const monthlyData = summaryData.monthlyTrend || [];
+                const bulanIndo = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+                const now = new Date();
+                const chartData = Array.from({ length: 6 }, (_, i) => {
+                  const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+                  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  const found = monthlyData.find(m => m.month === key);
+                  return { label: bulanIndo[d.getMonth()], count: found ? found.count : 0 };
+                });
+                
+                const maxVal = Math.max(...chartData.map(d => d.count), 1);
+                const hasData = chartData.some(d => d.count > 0);
+
+                return (
+                  <div style={{ display: 'flex', alignItems: 'flex-end', height: '180px', gap: '2rem', paddingBottom: '1px', borderBottom: '1px solid var(--border)', position: 'relative' }}>
+                    {[100, 75, 50, 25].map(pct => (
+                      <div key={pct} style={{ position: 'absolute', left: 0, right: 0, bottom: `${pct}%`, borderTop: '1px dashed var(--border)', zIndex: 0 }} />
+                    ))}
+                    {chartData.map((d, idx) => {
+                      const pct = hasData ? Math.round((d.count / maxVal) * 100) : 0;
+                      return (
+                        <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end', gap: '4px', zIndex: 1 }}>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: d.count > 0 ? 'var(--text-secondary)' : 'transparent' }}>{d.count}</span>
+                          <div style={{ width: '100%', height: `${Math.max(hasData ? pct : 8, 4)}%`, background: d.count > 0 ? 'linear-gradient(to top, #3b82f6, #93c5fd)' : 'var(--border)', borderRadius: '4px 4px 0 0', opacity: d.count === 0 ? 0.4 : 1 }} />
+                          <span style={{ position: 'absolute', bottom: '-25px', fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>{d.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Debit Distribution Pie */}
+          <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem' }}>Distribusi Debit</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, justifyContent: 'center', gap: '1.5rem' }}>
+              {(() => {
+                const dist = summaryData.debitDistribution || [];
+                const colorMap = { 'Aset': '#3b82f6', 'Kewajiban': '#f59e0b', 'Liabilitas': '#f59e0b', 'Ekuitas': '#8b5cf6', 'Pendapatan': '#10b981', 'Beban': '#ef4444' };
+                
+                if (dist.length === 0) {
+                  return (
+                    <>
+                      <div style={{ position: 'relative', width: '140px', height: '140px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-muted)' }}>0%</span>
+                        </div>
+                      </div>
+                      <div style={{ width: '100%', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Belum ada transaksi</div>
+                    </>
+                  );
+                }
+                
+                let gradientStops = [];
+                let currentPct = 0;
+                dist.forEach(cat => {
+                  const color = colorMap[cat.category] || '#94a3b8';
+                  const nextPct = currentPct + cat.percentage;
+                  gradientStops.push(`${color} ${currentPct}% ${nextPct}%`);
+                  currentPct = nextPct;
+                });
+                
+                if (gradientStops.length > 0) {
+                   const lastIndex = gradientStops.length - 1;
+                   gradientStops[lastIndex] = gradientStops[lastIndex].replace(/[\d.]+%$/, '100%');
+                }
+
+                const gradientStr = `conic-gradient(${gradientStops.join(', ')})`;
+                const topCategory = dist[0];
+
+                return (
+                  <>
+                    <div style={{ position: 'relative', width: '140px', height: '140px', borderRadius: '50%', background: gradientStr, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)' }}>
+                      <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1 }}>{topCategory.percentage}%</span>
+                        <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginTop: '0.2rem', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>{topCategory.category}</span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {dist.map((cat, idx) => {
+                        const color = colorMap[cat.category] || '#94a3b8';
+                        return (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              <div style={{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: color }} />
+                              <span style={{ color: 'var(--text-primary)' }}>{cat.category}</span>
+                            </div>
+                            <span style={{ color: 'var(--text-secondary)' }}>{cat.percentage}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Credit Distribution Pie */}
+          <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem' }}>Distribusi Kredit</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, justifyContent: 'center', gap: '1.5rem' }}>
+              {(() => {
+                const dist = summaryData.creditDistribution || [];
+                const colorMap = { 'Aset': '#3b82f6', 'Kewajiban': '#f59e0b', 'Liabilitas': '#f59e0b', 'Ekuitas': '#8b5cf6', 'Pendapatan': '#10b981', 'Beban': '#ef4444' };
+                
+                if (dist.length === 0) {
+                  return (
+                    <>
+                      <div style={{ position: 'relative', width: '140px', height: '140px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-muted)' }}>0%</span>
+                        </div>
+                      </div>
+                      <div style={{ width: '100%', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Belum ada transaksi</div>
+                    </>
+                  );
+                }
+                
+                let gradientStops = [];
+                let currentPct = 0;
+                dist.forEach(cat => {
+                  const color = colorMap[cat.category] || '#94a3b8';
+                  const nextPct = currentPct + cat.percentage;
+                  gradientStops.push(`${color} ${currentPct}% ${nextPct}%`);
+                  currentPct = nextPct;
+                });
+                
+                if (gradientStops.length > 0) {
+                   const lastIndex = gradientStops.length - 1;
+                   gradientStops[lastIndex] = gradientStops[lastIndex].replace(/[\d.]+%$/, '100%');
+                }
+
+                const gradientStr = `conic-gradient(${gradientStops.join(', ')})`;
+                const topCategory = dist[0];
+
+                return (
+                  <>
+                    <div style={{ position: 'relative', width: '140px', height: '140px', borderRadius: '50%', background: gradientStr, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)' }}>
+                      <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1 }}>{topCategory.percentage}%</span>
+                        <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginTop: '0.2rem', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>{topCategory.category}</span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {dist.map((cat, idx) => {
+                        const color = colorMap[cat.category] || '#94a3b8';
+                        return (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              <div style={{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: color }} />
+                              <span style={{ color: 'var(--text-primary)' }}>{cat.category}</span>
+                            </div>
+                            <span style={{ color: 'var(--text-secondary)' }}>{cat.percentage}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── Filter + Search Bar ─── */}
       <div className="card" style={{ padding: '1rem 1.25rem' }}>
@@ -258,12 +457,12 @@ export const HistoryIndex = () => {
                 {/* Avatar */}
                 <div style={{
                   width: '44px', height: '44px', borderRadius: '12px',
-                  background: con.account_code
-                    ? `linear-gradient(135deg, ${catStyle.dot}cc, ${catStyle.dot})`
-                    : 'linear-gradient(135deg, #94a3b8, #64748b)',
+                  background: (con.journals && con.journals.length > 0)
+                    ? `linear-gradient(135deg, #3b82f6cc, #2563eb)`
+                    : 'linear-gradient(135deg, #ef4444cc, #dc2626)',
                   color: 'white', fontWeight: 800, fontSize: '0.85rem',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, boxShadow: `0 2px 8px ${catStyle.dot}40`
+                  flexShrink: 0, boxShadow: `0 2px 8px rgba(0,0,0,0.1)`
                 }}>
                   {initials}
                 </div>
@@ -286,13 +485,20 @@ export const HistoryIndex = () => {
 
                 {/* Account Result */}
                 <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '160px' }}>
-                  {con.account_code ? (
-                    <>
-                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: catStyle.dot }}>{con.account_name}</div>
-                      <span className={`badge ${catStyle.badge}`} style={{ fontSize: '0.65rem', marginTop: '0.25rem' }}>
-                        {con.account_code} · {con.account_category}
-                      </span>
-                    </>
+                  {(con.journals && con.journals.length > 0) ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#059669' }}>
+                        Rp {con.journals[0].amount.toLocaleString('id-ID')}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd' }}>
+                          {con.journals[0].debit_category || 'Debit'}
+                        </span>
+                        <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#fce7f3', color: '#db2777', border: '1px solid #fbcfe8' }}>
+                          {con.journals[0].credit_category || 'Kredit'}
+                        </span>
+                      </div>
+                    </div>
                   ) : (
                     <span className="badge badge-danger" style={{ fontSize: '0.72rem' }}>Tidak Terklasifikasi</span>
                   )}
@@ -417,19 +623,26 @@ export const HistoryIndex = () => {
               ) : detail ? (
                 <>
                   {/* Result banner */}
-                  {detail.account_code ? (
+                  {(detailJournals && detailJournals.length > 0) ? (
                     <div style={{
                       borderRadius: '14px', padding: '1.25rem 1.5rem',
-                      background: `linear-gradient(135deg, ${getCatStyle(detail.account_category).dot}18, ${getCatStyle(detail.account_category).dot}08)`,
-                      border: `1px solid ${getCatStyle(detail.account_category).dot}33`,
+                      background: `linear-gradient(135deg, #eff6ff, #f8fafc)`,
+                      border: `1px solid #bfdbfe`,
                       marginBottom: '1.5rem', textAlign: 'center'
                     }}>
-                      <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Hasil Klasifikasi Akun</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: getCatStyle(detail.account_category).dot }}>
-                        {detail.account_code} — {detail.account_name}
+                      <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Jurnal Berpasangan Terposting</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669', marginBottom: '0.5rem' }}>
+                        Rp {detailJournals[0].amount.toLocaleString('id-ID')}
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-                        {detail.account_category} {detail.account_subcategory ? `· ${detail.account_subcategory}` : ''}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd' }}>{detailJournals[0].debit_category || 'Debit'}</span>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1d4ed8' }}>{detailJournals[0].debit_account_code} — {detailJournals[0].debit_account_name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#fce7f3', color: '#db2777', border: '1px solid #fbcfe8' }}>{detailJournals[0].credit_category || 'Kredit'}</span>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#be185d' }}>{detailJournals[0].credit_account_code} — {detailJournals[0].credit_account_name}</span>
+                        </div>
                       </div>
                       <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
                         <div style={{ textAlign: 'center' }}>

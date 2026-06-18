@@ -127,9 +127,9 @@ export const ReportsIndex = () => {
         </div>
       )}
 
-      {/* Dashboard Charts & Tables */}
+      {/* ─── Dashboard Charts & Tables ─── */}
       {summaryData && (
-        <div className="no-print" style={{ display: 'grid', gridTemplateColumns: '7fr 3fr', gap: '1.5rem' }}>
+        <div className="no-print" style={{ display: 'grid', gridTemplateColumns: '4fr 3fr 3fr', gap: '1.5rem' }}>
           {/* Trend Bar Chart */}
           <div className="card" style={{ padding: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.15rem' }}>Trend Konsultasi Sistem</h3>
@@ -169,13 +169,13 @@ export const ReportsIndex = () => {
             </div>
           </div>
 
-          {/* Category Distribution Pie */}
+          {/* Debit Distribution Pie */}
           <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem' }}>Distribusi Kategori</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem' }}>Distribusi Debit</h3>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, justifyContent: 'center', gap: '1.5rem' }}>
               {(() => {
-                const dist = summaryData.categoryDistribution || [];
-                const colorMap = { 'Aset': '#3b82f6', 'Kewajiban': '#f59e0b', 'Ekuitas': '#8b5cf6', 'Pendapatan': '#10b981', 'Beban': '#ef4444' };
+                const dist = summaryData.debitDistribution || [];
+                const colorMap = { 'Aset': '#3b82f6', 'Kewajiban': '#f59e0b', 'Liabilitas': '#f59e0b', 'Ekuitas': '#8b5cf6', 'Pendapatan': '#10b981', 'Beban': '#ef4444' };
                 
                 if (dist.length === 0) {
                   return (
@@ -205,7 +205,74 @@ export const ReportsIndex = () => {
                 }
 
                 const gradientStr = `conic-gradient(${gradientStops.join(', ')})`;
-                const topCategory = dist.reduce((max, cat) => cat.percentage > max.percentage ? cat : max, dist[0]);
+                const topCategory = dist[0];
+
+                return (
+                  <>
+                    <div style={{ position: 'relative', width: '140px', height: '140px', borderRadius: '50%', background: gradientStr, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)' }}>
+                      <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1 }}>{topCategory.percentage}%</span>
+                        <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginTop: '0.2rem', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>{topCategory.category}</span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {dist.map((cat, idx) => {
+                        const color = colorMap[cat.category] || '#94a3b8';
+                        return (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              <div style={{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: color }} />
+                              <span style={{ color: 'var(--text-primary)' }}>{cat.category}</span>
+                            </div>
+                            <span style={{ color: 'var(--text-secondary)' }}>{cat.percentage}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Credit Distribution Pie */}
+          <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem' }}>Distribusi Kredit</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, justifyContent: 'center', gap: '1.5rem' }}>
+              {(() => {
+                const dist = summaryData.creditDistribution || [];
+                const colorMap = { 'Aset': '#3b82f6', 'Kewajiban': '#f59e0b', 'Liabilitas': '#f59e0b', 'Ekuitas': '#8b5cf6', 'Pendapatan': '#10b981', 'Beban': '#ef4444' };
+                
+                if (dist.length === 0) {
+                  return (
+                    <>
+                      <div style={{ position: 'relative', width: '140px', height: '140px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-muted)' }}>0%</span>
+                        </div>
+                      </div>
+                      <div style={{ width: '100%', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Belum ada transaksi</div>
+                    </>
+                  );
+                }
+                
+                let gradientStops = [];
+                let currentPct = 0;
+                dist.forEach(cat => {
+                  const color = colorMap[cat.category] || '#94a3b8';
+                  const nextPct = currentPct + cat.percentage;
+                  gradientStops.push(`${color} ${currentPct}% ${nextPct}%`);
+                  currentPct = nextPct;
+                });
+                
+                if (gradientStops.length > 0) {
+                   const lastIndex = gradientStops.length - 1;
+                   gradientStops[lastIndex] = gradientStops[lastIndex].replace(/[\d.]+%$/, '100%');
+                }
+
+                const gradientStr = `conic-gradient(${gradientStops.join(', ')})`;
+                const topCategory = dist[0];
 
                 return (
                   <>

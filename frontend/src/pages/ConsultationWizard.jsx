@@ -47,9 +47,9 @@ export const ConsultationWizard = () => {
     }
   }, [provenGoal, token]);
 
-  // Auto-start for non-admin users
+  // Auto-start for ALL users based on their registered business_type
   useEffect(() => {
-    if (user && user.role !== 'Admin' && step === 'business_select') {
+    if (user && step === 'business_select') {
       startConsultation();
     }
   }, [user, step]);
@@ -62,13 +62,9 @@ export const ConsultationWizard = () => {
     setAmount('');
     setDescription('');
     setSelectedDynamicAccountId('');
-    if (user?.role === 'Admin') {
-      setStep('business_select');
-    } else {
-      // Auto start directly
-      setStep('questions');
-      evaluateSession({});
-    }
+    // Auto start directly
+    setStep('questions');
+    evaluateSession({});
   };
 
   const startConsultation = () => {
@@ -468,7 +464,7 @@ export const ConsultationWizard = () => {
                       />
                     </div>
 
-                    <div className="form-group" style={{ marginBottom: '0' }}>
+                    <div className="form-group" style={{ marginBottom: '0', display: 'none' }}>
                       <label className="form-label">Keterangan / Memo (Opsional)</label>
                       <input 
                         type="text" 

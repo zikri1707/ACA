@@ -4,12 +4,22 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Helper for date filtering
+// Helper for date filtering and user role filtering
 const getDateFilter = (req, dateColumn = 'j.transaction_date') => {
   const { startDate, endDate } = req.query;
   let filterStr = '';
   const params = [];
   
+  // Role-based filtering
+  if (req.user && req.user.role !== 'Admin') {
+    // If the query joins consultations as 'c', we should filter by c.user_id
+    // But since this helper is mainly for journal queries, we need to join consultations if necessary
+    // Most reports queries in this file don't join consultations directly, 
+    // so we need to be careful. If the query has journals 'j', we can filter by j.consultation_id IN (...)
+    filterStr += ` AND ${dateColumn.split('.')[0]}.consultation_id IN (SELECT id FROM consultations WHERE user_id = ?)`;
+    params.push(req.user.id);
+  }
+
   if (startDate) {
     filterStr += ` AND ${dateColumn} >= ?`;
     params.push(`${startDate} 00:00:00`);
@@ -222,41 +232,60 @@ router.get('/summary', authenticateToken, async (req, res) => {
     });
 
     // 1. Monthly Trend (Konsultasi per bulan)
-    // We will get the last 6 months of consultations
+    // We will get the last 6 months of consultations for the user
+    const isAdmin = req.user.role === 'Admin';
+    const userId = req.user.id;
+    const cFilterAnd = isAdmin ? '' : `AND user_id = ${userId}`;
+    const jFilter = isAdmin ? '' : `WHERE consultation_id IN (SELECT id FROM consultations WHERE user_id = ${userId})`;
+
     const trendSql = `
       SELECT strftime('%Y-%m', date) as month, COUNT(*) as count
       FROM consultations
-      WHERE date >= date('now', '-6 months')
+      WHERE date >= date('now', '-6 months') ${cFilterAnd}
       GROUP BY month
       ORDER BY month ASC
     `;
     const monthlyTrend = await query(trendSql);
 
     // 2. Category Distribution (based on journal entries frequency)
-    const catSql = `
+    const debitSql = `
       SELECT a.category, COUNT(*) as count
       FROM journals j
-      JOIN accounts a ON (j.debit_account_id = a.id OR j.credit_account_id = a.id)
+      JOIN accounts a ON j.debit_account_id = a.id
       ${filterStr.replace('j.transaction_date', 'j.transaction_date')}
       GROUP BY a.category
+      ORDER BY count DESC
     `;
-    const catDistData = await query(catSql, params);
-    const totalCatCount = catDistData.reduce((sum, row) => sum + row.count, 0);
-    const categoryDistribution = catDistData.map(row => ({
+    const debitDistData = await query(debitSql, params);
+    const totalDebitCount = debitDistData.reduce((sum, row) => sum + row.count, 0);
+    const debitDistribution = debitDistData.map(row => ({
       category: row.category,
-      percentage: totalCatCount > 0 ? Math.round((row.count / totalCatCount) * 100) : 0
-    }));
+      percentage: totalDebitCount > 0 ? Math.round((row.count / totalDebitCount) * 100) : 0
+    })).sort((a, b) => b.percentage - a.percentage);
+
+    const creditSql = `
+      SELECT a.category, COUNT(*) as count
+      FROM journals j
+      JOIN accounts a ON j.credit_account_id = a.id
+      ${filterStr.replace('j.transaction_date', 'j.transaction_date')}
+      GROUP BY a.category
+      ORDER BY count DESC
+    `;
+    const creditDistData = await query(creditSql, params);
+    const totalCreditCount = creditDistData.reduce((sum, row) => sum + row.count, 0);
+    const creditDistribution = creditDistData.map(row => ({
+      category: row.category,
+      percentage: totalCreditCount > 0 ? Math.round((row.count / totalCreditCount) * 100) : 0
+    })).sort((a, b) => b.percentage - a.percentage);
 
     // 3. Top 5 Frequently Used Accounts
     const topSql = `
       SELECT a.id, a.code, a.name, a.category,
-             (SELECT COUNT(*) FROM journals j WHERE j.debit_account_id = a.id OR j.credit_account_id = a.id) as frequency,
-             COALESCE(SUM(CASE WHEN j2.debit_account_id = a.id THEN j2.amount ELSE 0 END), 0) as total_debit,
-             COALESCE(SUM(CASE WHEN j2.credit_account_id = a.id THEN j2.amount ELSE 0 END), 0) as total_credit
+             (SELECT COUNT(*) FROM journals j WHERE (j.debit_account_id = a.id OR j.credit_account_id = a.id) ${isAdmin ? '' : `AND j.consultation_id IN (SELECT id FROM consultations WHERE user_id = ${userId})`}) as frequency,
+             COALESCE((SELECT SUM(j.amount) FROM journals j WHERE j.debit_account_id = a.id ${isAdmin ? '' : `AND j.consultation_id IN (SELECT id FROM consultations WHERE user_id = ${userId})`}), 0) as total_debit,
+             COALESCE((SELECT SUM(j.amount) FROM journals j WHERE j.credit_account_id = a.id ${isAdmin ? '' : `AND j.consultation_id IN (SELECT id FROM consultations WHERE user_id = ${userId})`}), 0) as total_credit
       FROM accounts a
-      LEFT JOIN journals j2 ON (j2.debit_account_id = a.id OR j2.credit_account_id = a.id)
-      GROUP BY a.id
-      HAVING frequency > 0
+      WHERE frequency > 0
       ORDER BY frequency DESC
       LIMIT 5
     `;
@@ -273,9 +302,94 @@ router.get('/summary', authenticateToken, async (req, res) => {
       };
     });
 
-    return res.json({ summary, monthlyTrend, categoryDistribution, topAccounts });
+    return res.json({ summary, monthlyTrend, debitDistribution, creditDistribution, topAccounts });
   } catch (err) {
     return res.status(500).json({ message: 'Gagal memuat Summary.', error: err.message });
+  }
+});
+
+// 7. Dashboard KPI & Stats
+router.get('/dashboard', authenticateToken, async (req, res) => {
+  try {
+    const isAdmin = req.user.role === 'Admin';
+    const userId = req.user.id;
+
+    // Filters for consultations
+    const cFilter = isAdmin ? '' : `WHERE user_id = ${userId}`;
+    const cFilterAnd = isAdmin ? '' : `AND user_id = ${userId}`;
+    
+    // Filters for journals (using consultation_id)
+    const jFilter = isAdmin ? '' : `WHERE consultation_id IN (SELECT id FROM consultations WHERE user_id = ${userId})`;
+    const jFilterAnd = isAdmin ? '' : `AND consultation_id IN (SELECT id FROM consultations WHERE user_id = ${userId})`;
+
+    // Basic Counts
+    const [totalConsultations] = await query(`SELECT COUNT(*) as count FROM consultations ${cFilter}`);
+    const [totalRules] = await query('SELECT COUNT(*) as count FROM rules'); // Rules are global
+    const [totalAccounts] = await query('SELECT COUNT(*) as count FROM accounts'); // Accounts are global
+    
+    // Accuracy & Confidence
+    const [classified] = await query(`SELECT COUNT(DISTINCT consultation_id) as count FROM journals ${jFilter}`);
+    const [confSum] = await query(`SELECT SUM(confidence_level) as sum FROM consultations WHERE id IN (SELECT consultation_id FROM journals) ${cFilterAnd}`);
+    
+    const countTotal = totalConsultations?.count || 0;
+    const countClassified = classified?.count || 0;
+    const accuracyRate = countTotal > 0 ? Math.round((countClassified / countTotal) * 100) : 0;
+    const avgConfidence = countClassified > 0 ? Math.round((confSum?.sum || 0) / countClassified) : 0;
+
+    // This Month Growth
+    const [thisMonth] = await query(`SELECT COUNT(*) as count FROM consultations WHERE strftime('%Y-%m', date) = strftime('%Y-%m', 'now') ${cFilterAnd}`);
+    const [lastMonth] = await query(`SELECT COUNT(*) as count FROM consultations WHERE strftime('%Y-%m', date) = strftime('%Y-%m', 'now', '-1 month') ${cFilterAnd}`);
+    
+    const countThisMonth = thisMonth?.count || 0;
+    const countLastMonth = lastMonth?.count || 0;
+    let growthPct = 0;
+    if (countLastMonth > 0) {
+      growthPct = Math.round(((countThisMonth - countLastMonth) / countLastMonth) * 100);
+    } else if (countThisMonth > 0) {
+      growthPct = 100;
+    }
+
+    // Recent Consultations
+    const recentConsultations = await query(`
+      SELECT c.id, c.date, u.name as user_name, c.business_type, c.confidence_level,
+             (SELECT ad.code || ' & ' || ac.code FROM journals j JOIN accounts ad ON j.debit_account_id = ad.id JOIN accounts ac ON j.credit_account_id = ac.id WHERE j.consultation_id = c.id LIMIT 1) as account_code,
+             'Jurnal Berpasangan' as account_name,
+             'Tersimpan' as account_category
+      FROM consultations c 
+      JOIN users u ON c.user_id = u.id
+      ${cFilter}
+      ORDER BY c.date DESC 
+      LIMIT 5
+    `);
+
+    // Monthly Chart Data
+    const monthlyTrend = await query(`
+      SELECT strftime('%Y-%m', date) as month, COUNT(*) as count
+      FROM consultations
+      WHERE date >= date('now', '-6 months') ${cFilterAnd}
+      GROUP BY month
+      ORDER BY month ASC
+    `);
+
+    return res.json({
+      stats: {
+        totalConsultations: countTotal,
+        totalRules: totalRules?.count || 0,
+        totalAccounts: totalAccounts?.count || 0,
+        classifiedCount: countClassified,
+        accuracyRate,
+        avgConfidence,
+        thisMonth: countThisMonth,
+        growthPct
+      },
+      recentConsultations,
+      charts: {
+        monthly: monthlyTrend
+      }
+    });
+
+  } catch (err) {
+    return res.status(500).json({ message: 'Gagal memuat Dashboard.', error: err.message });
   }
 });
 
