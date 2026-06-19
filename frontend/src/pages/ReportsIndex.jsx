@@ -473,7 +473,7 @@ export const ReportsIndex = () => {
             )}
 
             {/* LABA RUGI VIEW */}
-            {activeTab === 'laba-rugi' && data && data.pendapatan && data.beban && (
+            {activeTab === 'laba-rugi' && data && (
               <div style={{ maxWidth: '600px', margin: '0 auto', fontSize: '0.9rem' }}>
                 <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', color: 'var(--success)' }}>PENDAPATAN</h3>
                 {data.pendapatan?.map(p => (
@@ -507,7 +507,7 @@ export const ReportsIndex = () => {
             )}
 
             {/* NERACA VIEW */}
-            {activeTab === 'neraca' && data && data.aset && data.kewajiban && data.ekuitas && (
+            {activeTab === 'neraca' && data && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', fontSize: '0.85rem' }}>
                 {/* KIRI: ASET */}
                 <div>
