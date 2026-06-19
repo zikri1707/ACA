@@ -86,8 +86,21 @@ export const RuleBaseIndex = () => {
   const [isActive, setIsActive] = useState(1);
   const [conditions, setConditions] = useState([{ fact_name: 'is_penerimaan', expected_value: 'yes' }]);
 
+  // Fact (Question) form states
+  const [showFactModal, setShowFactModal] = useState(false);
+  const [factFormMode, setFactFormMode] = useState('add'); // 'add' | 'edit'
+  const [selectedFactId, setSelectedFactId] = useState(null);
+  const [factCode, setFactCode] = useState('');
+  const [factName, setFactName] = useState('');
+  const [factQuestionText, setFactQuestionText] = useState('');
+
   // Zoom & Pan state for interactive flowchart
-  const [scale, setScale] = useState(0.85);
+  const [scale, setScale] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768 ? 0.45 : 0.85;
+    }
+    return 0.85;
+  });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -328,6 +341,90 @@ export const RuleBaseIndex = () => {
     setName(rule.name);
     setCode(rule.code);
     setShowDeleteModal(true);
+  };
+
+  // Fact (Question) CRUD actions
+  const handleFactAddClick = () => {
+    if (!isAdmin) return;
+    setFactFormMode('add');
+    setSelectedFactId(null);
+    setFactCode('');
+    setFactName('');
+    setFactQuestionText('');
+    setShowFactModal(true);
+  };
+
+  const handleFactEditClick = (fact) => {
+    if (!isAdmin) return;
+    setFactFormMode('edit');
+    setSelectedFactId(fact.id);
+    setFactCode(fact.code);
+    setFactName(fact.fact_name);
+    setFactQuestionText(fact.question_text);
+    setShowFactModal(true);
+  };
+
+  const handleFactSubmit = async (e) => {
+    e.preventDefault();
+    if (!factCode || !factName || !factQuestionText) {
+      showToast('Semua field wajib diisi!', 'warning');
+      return;
+    }
+    
+    if (!factName.startsWith('is_')) {
+      showToast('Nama variabel fakta harus diawali dengan "is_" (contoh: is_pembelian)', 'warning');
+      return;
+    }
+
+    try {
+      const url = factFormMode === 'add' ? '/api/questions' : `/api/questions/${selectedFactId}`;
+      const method = factFormMode === 'add' ? 'POST' : 'PUT';
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          code: factCode,
+          fact_name: factName,
+          question_text: factQuestionText
+        })
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        showToast(data.message, 'success');
+        setShowFactModal(false);
+        fetchDependencies(); // refresh questions
+      } else {
+        showToast(data.message, 'danger');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Gagal memproses data fakta.', 'danger');
+    }
+  };
+
+  const handleFactDeleteClick = async (fact) => {
+    if (!isAdmin) return;
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus fakta ${fact.code} (${fact.fact_name})?`)) return;
+    try {
+      const response = await fetch(`/api/questions/${fact.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        showToast(data.message, 'success');
+        fetchDependencies(); // refresh questions
+      } else {
+        showToast(data.message, 'danger');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Gagal menghapus fakta.', 'danger');
+    }
   };
 
   const fetchAllConditions = async () => {
@@ -861,14 +958,10 @@ export const RuleBaseIndex = () => {
           <h2 style={{ fontSize: '2rem', fontWeight: 800, marginTop: '0.25rem', color: 'var(--text-primary)' }}>{rules.filter(r => r.is_active === 1).length}</h2>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{rules.filter(r => r.is_active === 0).length} Disimpan Draft</span>
         </div>
-        <div className="card" style={{ padding: '1.25rem', borderRadius: '12px', borderLeft: `4px solid ${detectedConflicts.length > 0 ? 'var(--danger)' : '#059669'}` }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Conflict Check</span>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginTop: '0.25rem', color: detectedConflicts.length > 0 ? 'var(--danger)' : '#059669' }}>
-            {detectedConflicts.length}
-          </h2>
-          <span style={{ fontSize: '0.75rem', color: detectedConflicts.length > 0 ? 'var(--danger)' : '#059669', fontWeight: 700 }}>
-            {detectedConflicts.length > 0 ? '⚠️ Ditemukan Tumpang Tindih' : '✓ Logika Sistem Konsisten'}
-          </span>
+        <div className="card" style={{ padding: '1.25rem', borderRadius: '12px', borderLeft: '4px solid #7c3aed' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Fakta</span>
+          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginTop: '0.25rem', color: '#7c3aed' }}>{questions.length}</h2>
+          <span style={{ fontSize: '0.75rem', color: '#7c3aed', fontWeight: 700 }}>Parameter Pertanyaan</span>
         </div>
       </div>
 
@@ -902,23 +995,6 @@ export const RuleBaseIndex = () => {
             style={{ whiteSpace: 'nowrap' }}
           >
             👁️‍🗨️ Visualizer Logika
-          </button>
-          <button
-            onClick={() => setActiveTab('diagnostics')}
-            className={`rule-tab-btn ${activeTab === 'diagnostics' ? 'active' : ''}`}
-            style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}
-          >
-            🛡️ Panel Diagnostik
-            {detectedConflicts.length > 0 && (
-              <span style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--danger)',
-                display: 'inline-block',
-                marginLeft: '4px'
-              }} />
-            )}
           </button>
         </div>
       </div>
@@ -1397,186 +1473,65 @@ export const RuleBaseIndex = () => {
         </div>
       )}
 
-      {/* Tab 3: Panel Diagnostik */}
-      {activeTab === 'diagnostics' && (
-        <div className="anim-fade-in">
-          <div className="layout-main-side">
-            
-            {/* Main diagnostics panel */}
-            <div className="card" style={{ borderRadius: '12px', padding: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--text-primary)' }}>
-                Hasil Pindai Integritas Aturan Pakar
-              </h3>
-
-              {detectedConflicts.length === 0 ? (
-                <div style={{
-                  backgroundColor: 'rgba(16, 185, 129, 0.05)',
-                  border: '1px solid rgba(16, 185, 129, 0.15)',
-                  borderRadius: '12px',
-                  padding: '2rem',
-                  textAlign: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '3rem' }}>🛡️</span>
-                  <h4 style={{ color: 'var(--success)', fontWeight: 800, margin: 0, fontSize: '1.1rem' }}>Keamanan Sistem Stabil</h4>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, maxWidth: '400px', lineHeight: 1.5 }}>
-                    Semua aturan logika 100% konsisten. Tidak ditemukan adanya aturan bertabrakan (contradictions) atau logika kondisi duplikat di database.
-                  </p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{
-                    backgroundColor: 'rgba(239, 68, 68, 0.05)',
-                    border: '1px solid rgba(239, 68, 68, 0.15)',
-                    borderRadius: '8px',
-                    padding: '1rem 1.25rem',
-                    color: 'var(--danger)',
-                    fontSize: '0.875rem',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
-                    <span>⚠️ Peringatan: Terdeteksi {detectedConflicts.length} konflik logika dalam sistem!</span>
-                  </div>
-
-                  {/* List of conflict items */}
-                  {detectedConflicts.map((conf, index) => (
-                    <div key={index} style={{
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                      padding: '1rem 1.25rem',
-                      backgroundColor: 'var(--background)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: '0.5rem' }}>
-                        <span>Laporan #{index + 1}: Kontradiksi Kondisi</span>
-                      </div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.4, margin: '0 0 0.75rem 0' }}>
-                        {conf.message}
-                      </p>
-                      
-                      {/* Short-cuts to repair */}
-                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <button
-                          onClick={() => handleEditClick(conf.rule1)}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          Edit Aturan {conf.rule1.code}
-                        </button>
-                        <button
-                          onClick={() => handleEditClick(conf.rule2)}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          Edit Aturan {conf.rule2.code}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Side Tips Accordion */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div className="card" style={{ padding: '1.25rem', borderRadius: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '1.1rem' }}>💡</span>
-                  <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.9rem' }}>Panduan Optimasi Logika</span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {[
-                    {
-                      title: 'Urutkan Kode Rule dengan Benar',
-                      desc: 'Sistem memproses aturan secara serial (R-001, R-002, ...). Aturan yang paling khusus/spesifik sebaiknya diletakkan di nomor kecil agar diproses terlebih dahulu sebelum aturan yang lebih umum.'
-                    },
-                    {
-                      title: 'Gunakan Kondisi Spesifik',
-                      desc: 'Mencantumkan kondisi JIKA secara spesifik meminimalkan ambiguitas klasifikasi akun. Hindari membuat aturan dengan kondisi tunggal yang terlalu luas.'
-                    },
-                    {
-                      title: 'Hindari Duplikasi Kondisi',
-                      desc: 'Pastikan tidak ada dua aturan aktif yang memiliki kombinasi kondisi persis sama karena akan membingungkan mesin inferensi SAK EMKM.'
-                    },
-                    {
-                      title: 'Gunakan Status Draft/Aktif',
-                      desc: 'Gunakan tombol status untuk mematikan (draft) logika aturan yang sedang diuji tanpa perlu menghapusnya secara permanen dari sistem.'
-                    }
-                  ].map((tip, idx) => {
-                    const isOpen = openTipIdx === idx;
-                    return (
-                      <div key={idx} style={{
-                        border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        overflow: 'hidden'
-                      }}>
-                        <button
-                          onClick={() => setOpenTipIdx(isOpen ? -1 : idx)}
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem 1rem',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontWeight: 700,
-                            fontSize: '0.8rem',
-                            color: 'var(--text-primary)',
-                            backgroundColor: isOpen ? 'var(--background)' : 'var(--surface)',
-                            border: 'none',
-                            cursor: 'pointer',
-                            textAlign: 'left'
-                          }}
-                        >
-                          <span>{idx + 1}. {tip.title}</span>
-                          <span>{isOpen ? '▲' : '▼'}</span>
-                        </button>
-                        {isOpen && (
-                          <div style={{ padding: '0.75rem 1rem', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, backgroundColor: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
-                            {tip.desc}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
-
       {/* Tab 4: Daftar Fakta */}
       {activeTab === 'fakta' && (
         <div className="anim-fade-in">
           <div className="card" style={{ padding: '2rem', borderRadius: '12px' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Daftar Fakta (Facts)</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
-              Fakta adalah variabel pertanyaan (parameter input) yang bertugas sebagai penentu kondisi (IF) dalam sistem pakar ini.
-            </p>
-            <table className="table" style={{ border: '1px solid var(--border)' }}>
-              <thead style={{ background: 'var(--background)' }}>
-                <tr>
-                  <th style={{ padding: '1rem' }}>Kode Fakta</th>
-                  <th style={{ padding: '1rem' }}>Variabel (Fact Name)</th>
-                  <th style={{ padding: '1rem' }}>Pertanyaan User</th>
-                </tr>
-              </thead>
-              <tbody>
-                {questions.map(q => (
-                  <tr key={q.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '1rem', fontWeight: 600 }}>{q.code}</td>
-                    <td style={{ padding: '1rem', fontFamily: 'monospace', color: 'var(--primary)' }}>{q.fact_name}</td>
-                    <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{q.question_text}</td>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Daftar Fakta (Facts)</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+                  Fakta adalah variabel pertanyaan (parameter input) yang bertugas sebagai penentu kondisi (IF) dalam sistem pakar ini.
+                </p>
+              </div>
+              {isAdmin && (
+                <button className="btn btn-primary" onClick={handleFactAddClick} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, padding: '0.6rem 1.25rem', borderRadius: '10px' }}>
+                  ➕ Tambah Fakta Baru
+                </button>
+              )}
+            </div>
+
+            <div className="table-container" style={{ border: 'none', margin: 0 }}>
+              <table className="table">
+                <thead style={{ background: 'var(--background)' }}>
+                  <tr>
+                    <th style={{ padding: '1rem', width: '15%' }}>Kode Fakta</th>
+                    <th style={{ padding: '1rem', width: '25%' }}>Variabel (Fact Name)</th>
+                    <th style={{ padding: '1rem', width: '45%' }}>Pertanyaan User</th>
+                    {isAdmin && <th style={{ padding: '1rem', width: '15%', textAlign: 'center' }}>Aksi</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {questions.map(q => (
+                    <tr key={q.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '1rem', fontWeight: 600 }}>{q.code}</td>
+                      <td style={{ padding: '1rem', fontFamily: 'monospace', color: 'var(--primary)' }}>{q.fact_name}</td>
+                      <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{q.question_text}</td>
+                      {isAdmin && (
+                        <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                          <button
+                            onClick={() => handleFactEditClick(q)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', borderRadius: '6px', cursor: 'pointer' }}
+                            title="Edit Fakta"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => handleFactDeleteClick(q)}
+                            className="btn btn-danger"
+                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', borderRadius: '6px', cursor: 'pointer', backgroundColor: 'var(--danger)', color: 'white', border: 'none' }}
+                            title="Hapus Fakta"
+                          >
+                            🗑️ Hapus
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -1602,16 +1557,29 @@ export const RuleBaseIndex = () => {
               }}
               onMouseUp={() => setIsDragging(false)}
               onMouseLeave={() => setIsDragging(false)}
+              onTouchStart={(e) => {
+                if (e.touches.length !== 1) return;
+                setIsDragging(true);
+                const touch = e.touches[0];
+                setDragStart({ x: touch.clientX - pan.x, y: touch.clientY - pan.y });
+              }}
+              onTouchMove={(e) => {
+                if (!isDragging || e.touches.length !== 1) return;
+                const touch = e.touches[0];
+                setPan({ x: touch.clientX - dragStart.x, y: touch.clientY - dragStart.y });
+              }}
+              onTouchEnd={() => setIsDragging(false)}
               style={{
                 backgroundColor: '#f8fafc',
                 borderRadius: '12px',
                 border: '1px solid var(--border)',
                 height: 'calc(100vh - 280px)',
-                minHeight: '600px',
+                minHeight: '500px',
                 overflow: 'hidden',
                 position: 'relative',
                 cursor: isDragging ? 'grabbing' : 'grab',
-                userSelect: 'none'
+                userSelect: 'none',
+                touchAction: 'none'
               }}
             >
               {/* Floating Zoom Controls */}
@@ -1673,7 +1641,12 @@ export const RuleBaseIndex = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setScale(0.85); setPan({ x: 0, y: 0 }); }}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    const defaultScale = window.innerWidth < 768 ? 0.45 : 0.85;
+                    setScale(defaultScale); 
+                    setPan({ x: 0, y: 0 }); 
+                  }}
                   style={{
                     width: '32px',
                     height: '32px',
@@ -1707,89 +1680,89 @@ export const RuleBaseIndex = () => {
               }}>
                 <div className="mermaid" style={{ display: 'inline-block' }}>
 {`graph TD
-    Start([Mulai Transaksi]) --> Q001{Arah Transaksi?<br/>(is_inbound)}
+    Start(["Mulai Transaksi"]) --> Q001{"Arah Transaksi?<br/>(is_inbound)"}
     
     %% CABANG INBOUND (PENERIMAAN)
-    Q001 -- TERIMA --> Q005In{Pembayaran Kredit?<br/>(is_kredit)}
+    Q001 -- TERIMA --> Q005In{"Pembayaran Kredit?<br/>(is_kredit)"}
     
     %% Inbound Kredit (Piutang)
-    Q005In -- Ya --> R002[1-1200 Piutang Usaha]
+    Q005In -- Ya --> R002["1-1200 Piutang Usaha"]
     
     %% Inbound Tunai
-    Q005In -- Tidak --> Q009{Setoran Modal?<br/>(is_setoran_modal)}
-    Q009 -- Ya --> R007[3-1000 Modal Pemilik]
+    Q005In -- Tidak --> Q009{"Setoran Modal?<br/>(is_setoran_modal)"}
+    Q009 -- Ya --> R007["3-1000 Modal Pemilik"]
     
-    Q009 -- Tidak --> Q015{Pinjaman Bank?<br/>(is_pinjaman_bank)}
-    Q015 -- Ya --> R015[2-2000 Hutang Bank]
+    Q009 -- Tidak --> Q015{"Pinjaman Bank?<br/>(is_pinjaman_bank)"}
+    Q015 -- Ya --> R015["2-2000 Hutang Bank"]
     
-    Q015 -- Tidak --> Q000In{Jenis Usaha?}
+    Q015 -- Tidak --> Q000In{"Jenis Usaha?"}
     
     %% Dagang - Penjualan Barang
-    Q000In -- Dagang --> Q003{Penjualan Barang?<br/>(is_penjualan_barang)}
-    Q003 -- Ya --> R009[4-1000 Pendapatan Penjualan]
-    Q003 -- Tidak --> Q112D{Terima Piutang?<br/>(is_penerimaan_piutang)}
+    Q000In -- Dagang --> Q003{"Penjualan Barang?<br/>(is_penjualan_barang)"}
+    Q003 -- Ya --> R009["4-1000 Pendapatan Penjualan"]
+    Q003 -- Tidak --> Q112D{"Terima Piutang?<br/>(is_penerimaan_piutang)"}
     
     %% Jasa - Penjualan Jasa
-    Q000In -- Jasa --> Q004{Penjualan Jasa?<br/>(is_penjualan_jasa)}
-    Q004 -- Ya --> R010[4-1100 Pendapatan Jasa]
-    Q004 -- Tidak --> Q112J{Terima Piutang?<br/>(is_penerimaan_piutang)}
+    Q000In -- Jasa --> Q004{"Penjualan Jasa?<br/>(is_penjualan_jasa)"}
+    Q004 -- Ya --> R010["4-1100 Pendapatan Jasa"]
+    Q004 -- Tidak --> Q112J{"Terima Piutang?<br/>(is_penerimaan_piutang)"}
     
-    Q112D -- Ya --> R019[1-1000 Kas Utama]
-    Q112D -- Tidak --> R001[1-1000 Kas Utama]
+    Q112D -- Ya --> R019["1-1000 Kas Utama"]
+    Q112D -- Tidak --> R001["1-1000 Kas Utama"]
     Q112J -- Ya --> R019
     Q112J -- Tidak --> R001
     
     %% CABANG OUTBOUND (PENGELUARAN)
-    Q001 -- KELUAR --> Q005Out{Pembayaran Kredit?<br/>(is_kredit)}
+    Q001 -- KELUAR --> Q005Out{"Pembayaran Kredit?<br/>(is_kredit)"}
     
-    Q005Out -- Ya --> Q000OutK{Jenis Usaha?}
-    Q005Out -- Tidak --> Q000OutT{Jenis Usaha?}
+    Q005Out -- Ya --> Q000OutK{"Jenis Usaha?"}
+    Q005Out -- Tidak --> Q000OutT{"Jenis Usaha?"}
     
     %% Outbound Kredit
-    Q000OutK -- Dagang --> Q006K{Beli utk Dijual Kembali?<br/>(is_dijual_kembali)}
-    Q006K -- Ya --> R004[1-1300 Persediaan & Hutang]
-    Q006K -- Tidak --> Q007K{Beli Aset Tetap?<br/>(is_pembelian_aset)}
+    Q000OutK -- Dagang --> Q006K{"Beli utk Dijual Kembali?<br/>(is_dijual_kembali)"}
+    Q006K -- Ya --> R004["1-1300 Persediaan & Hutang"]
+    Q006K -- Tidak --> Q007K{"Beli Aset Tetap?<br/>(is_pembelian_aset)"}
     Q000OutK -- Jasa --> Q007K
     
-    Q007K -- Ya --> Q008K{Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)}
-    Q008K -- Ya --> R006K[1-2100 Aset Tetap]
-    Q008K -- Tidak --> R017K[1-1500 Perlengkapan]
-    Q007K -- Tidak --> R099[2-1000 Hutang Dagang]
+    Q007K -- Ya --> Q008K{"Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)"}
+    Q008K -- Ya --> R006K["1-2100 Aset Tetap"]
+    Q008K -- Tidak --> R017K["1-1500 Perlengkapan"]
+    Q007K -- Tidak --> R099["2-1000 Hutang Dagang"]
     
     %% Outbound Tunai
-    Q000OutT -- Dagang --> Q006T{Beli utk Dijual Kembali?<br/>(is_dijual_kembali)}
-    Q006T -- Ya --> R003[1-1300 Persediaan Tunai]
-    Q006T -- Tidak --> Q007T{Beli Aset Tetap?<br/>(is_pembelian_aset)}
+    Q000OutT -- Dagang --> Q006T{"Beli utk Dijual Kembali?<br/>(is_dijual_kembali)"}
+    Q006T -- Ya --> R003["1-1300 Persediaan Tunai"]
+    Q006T -- Tidak --> Q007T{"Beli Aset Tetap?<br/>(is_pembelian_aset)"}
     Q000OutT -- Jasa --> Q007T
     
-    Q007T -- Ya --> Q008T{Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)}
-    Q008T -- Ya --> R006[1-2100 Aset Tetap]
-    Q008T -- Tidak --> R017[1-1500 Perlengkapan]
+    Q007T -- Ya --> Q008T{"Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)"}
+    Q008T -- Ya --> R006["1-2100 Aset Tetap"]
+    Q008T -- Tidak --> R017["1-1500 Perlengkapan"]
     
-    Q007T -- Tidak --> Q010{Ambil Prive?<br/>(is_prive)}
-    Q010 -- Ya --> R008[3-2000 Prive Pemilik]
+    Q007T -- Tidak --> Q010{"Ambil Prive?<br/>(is_prive)"}
+    Q010 -- Ya --> R008["3-2000 Prive Pemilik"]
     
-    Q010 -- Tidak --> Q011{Bayar Gaji?<br/>(is_beban_gaji)}
-    Q011 -- Ya --> R011[5-1000 Beban Gaji]
+    Q010 -- Tidak --> Q011{"Bayar Gaji?<br/>(is_beban_gaji)"}
+    Q011 -- Ya --> R011["5-1000 Beban Gaji"]
     
-    Q011 -- Tidak --> Q012{Bayar Utilitas?<br/>(is_beban_utilitas)}
-    Q012 -- Ya --> R012[5-1100 Beban Utilitas]
+    Q011 -- Tidak --> Q012{"Bayar Utilitas?<br/>(is_beban_utilitas)"}
+    Q012 -- Ya --> R012["5-1100 Beban Utilitas"]
     
-    Q012 -- Tidak --> Q013{Bayar Sewa?<br/>(is_beban_sewa)}
-    Q013 -- Ya --> R013[5-1200 Beban Sewa]
+    Q012 -- Tidak --> Q013{"Bayar Sewa?<br/>(is_beban_sewa)"}
+    Q013 -- Ya --> R013["5-1200 Beban Sewa"]
     
-    Q013 -- Tidak --> Q014{Beli ATK?<br/>(is_beban_atk)}
-    Q014 -- Ya --> R014[5-1500 Beban ATK]
+    Q013 -- Tidak --> Q014{"Beli ATK?<br/>(is_beban_atk)"}
+    Q014 -- Ya --> R014["5-1500 Beban ATK"]
     
-    Q014 -- Tidak --> Q110{Bayar Pemasaran?<br/>(is_beban_pemasaran)}
-    Q110 -- Ya --> R016[5-1300 Beban Pemasaran]
+    Q014 -- Tidak --> Q110{"Bayar Pemasaran?<br/>(is_beban_pemasaran)"}
+    Q110 -- Ya --> R016["5-1300 Beban Pemasaran"]
     
-    Q110 -- Tidak --> Q111{Pelunasan Hutang?<br/>(is_pelunasan_hutang_dagang)}
-    Q111 -- Ya --> R018A[2-1000 Hutang Dagang]
+    Q110 -- Tidak --> Q111{"Pelunasan Hutang?<br/>(is_pelunasan_hutang_dagang)"}
+    Q111 -- Ya --> R018A["2-1000 Hutang Dagang"]
     
-    Q111 -- Tidak --> Q113{Cicilan Bank?<br/>(is_pelunasan_hutang_bank)}
-    Q113 -- Ya --> R018B[2-2000 Hutang Bank]
-    Q113 -- Tidak --> R098[1-1000 Kas Utama]`}
+    Q111 -- Tidak --> Q113{"Cicilan Bank?<br/>(is_pelunasan_hutang_bank)"}
+    Q113 -- Ya --> R018B["2-2000 Hutang Bank"]
+    Q113 -- Tidak --> R098["1-1000 Kas Utama"]`}
                 </div>
               </div>
             </div>
@@ -1800,8 +1773,8 @@ export const RuleBaseIndex = () => {
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem', lineHeight: 1.6 }}>
               Tabel ini sangat cocok dicetak dan ditunjukkan kepada pakar akuntansi untuk <em>Face Validity</em>. Pakar dapat dengan mudah membaca kombinasi dari kiri ke kanan untuk memvalidasi apakah kode akun di kolom paling kanan sudah tepat. Tanda strip (" - ") mengindikasikan <em>Don't Care</em>.
             </p>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="table" style={{ border: '1px solid var(--border)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+            <div className="table-container" style={{ border: 'none', margin: 0 }}>
+              <table className="table" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                 <thead style={{ background: 'var(--primary-light)' }}>
                   <tr>
                     <th style={{ padding: '1rem', borderRight: '1px solid var(--border)' }}>Rule ID</th>
@@ -1814,7 +1787,7 @@ export const RuleBaseIndex = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {rules.map((rule) => {
+                  {filteredRules.map((rule) => {
                     const kreditVal = getKredit(rule.conditions);
                     return (
                       <tr key={rule.id} style={{ borderBottom: '1px solid var(--border)' }}>
@@ -2450,6 +2423,82 @@ export const RuleBaseIndex = () => {
                 Hapus Rule
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Add/Edit Fact */}
+      {showFactModal && (
+        <div className="modal-overlay animate-fade-in">
+          <div className="modal-content animate-slide-up" style={{ maxWidth: '500px', borderRadius: '16px', border: '1px solid var(--border)', padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                {factFormMode === 'add' ? 'Tambah Fakta Baru' : 'Edit Fakta'}
+              </h3>
+              <button 
+                onClick={() => setShowFactModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >✕</button>
+            </div>
+
+            <form onSubmit={handleFactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Kode Fakta <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  value={factCode}
+                  onChange={(e) => setFactCode(e.target.value)}
+                  placeholder="Contoh: Q-010"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Nama Variabel (Fact Name) <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  value={factName}
+                  onChange={(e) => setFactName(e.target.value)}
+                  placeholder="Contoh: is_beban_akrual (Harus diawali 'is_')"
+                  required
+                />
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'block' }}>
+                  Wajib menggunakan snake_case dan diawali dengan <code>is_</code> (contoh: <code>is_tunai</code>, <code>is_jasa</code>).
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Teks Pertanyaan User <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <textarea 
+                  className="form-control" 
+                  value={factQuestionText}
+                  onChange={(e) => setFactQuestionText(e.target.value)}
+                  placeholder="Contoh: Apakah transaksi ini merupakan beban yang ditangguhkan?"
+                  rows="3"
+                  required
+                />
+              </div>
+
+              <div className="modal-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem', marginTop: '0.5rem', margin: 0, gap: '0.5rem', justifyContent: 'flex-end' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowFactModal(false)}
+                  style={{ padding: '0.6rem 1.25rem', borderRadius: '8px' }}
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  style={{ padding: '0.6rem 1.25rem', borderRadius: '8px', fontWeight: 700 }}
+                >
+                  {factFormMode === 'add' ? 'Simpan Fakta' : 'Perbarui Fakta'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

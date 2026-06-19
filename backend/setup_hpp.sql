@@ -20,8 +20,7 @@ CREATE TABLE IF NOT EXISTS transaction_details (
 
 INSERT INTO accounts (code, name, category, subcategory) VALUES ('5-3000', 'Harga Pokok Penjualan', 'Beban', 'Harga Pokok Penjualan');
 
-INSERT INTO rules (code, name, business_type, description, debit_account_id, credit_account_id, is_active) 
-VALUES ('R-020', 'Pencatatan HPP (Otomatis)', 'dagang', 'Pencatatan Harga Pokok Penjualan secara otomatis saat barang terjual', (SELECT id FROM accounts WHERE code = '5-3000'), 4, 1);
+
 
 UPDATE questions SET fact_name = 'is_inbound' WHERE fact_name = 'is_penerimaan';
 UPDATE questions SET fact_name = 'is_outbound' WHERE fact_name = 'is_pengeluaran';

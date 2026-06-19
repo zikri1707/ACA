@@ -394,7 +394,6 @@ export const DashboardPage = () => {
                 { label: 'Konsultasi Baru', icon: '➕', page: 'consultation', primary: true },
                 { label: 'Riwayat Konsultasi', icon: '🕐', page: 'history' },
                 { label: 'Basis Pengetahuan', icon: '⚙️', page: 'rules' },
-                { label: 'Daftar Akun CoA', icon: '📖', page: 'accounts' },
               ].map(item => (
                 <button key={item.page} onClick={() => navigateTo(item.page)} style={{
                   display: 'flex', alignItems: 'center', gap: '0.75rem',
@@ -457,10 +456,9 @@ export const DashboardPage = () => {
             </div>
             {[
               { label: 'Basis Pengetahuan', value: `${stats.totalRules} rule`, ok: stats.totalRules > 0 },
-              { label: 'Akun Akuntansi (CoA)', value: `${stats.totalAccounts} akun`, ok: stats.totalAccounts > 0 },
               { label: 'Akurasi Klasifikasi', value: `${stats.accuracyRate}%`, ok: stats.accuracyRate >= 80 },
             ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: i < 1 ? '1px solid var(--border)' : 'none' }}>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{item.label}</span>
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, color: item.ok ? '#16a34a' : 'var(--danger)' }}>
                   {item.ok ? '✓ ' : '✕ '}{item.value}
@@ -474,13 +472,13 @@ export const DashboardPage = () => {
 
       {/* ─── Detail Modal ─── */}
       {showModal && (
-        <div style={{
+        <div className="modal-overlay-print" style={{
           position: 'fixed', inset: 0, zIndex: 9999,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)',
           animation: 'fadeInOverlay 0.2s ease'
         }}>
-          <div style={{
+          <div className="modal-content-print" style={{
             width: '100%', maxWidth: '680px', margin: '1rem',
             borderRadius: '20px', backgroundColor: 'var(--surface)',
             boxShadow: '0 32px 80px rgba(0,0,0,0.25)',
@@ -488,7 +486,7 @@ export const DashboardPage = () => {
             animation: 'slideUpModal 0.3s cubic-bezier(0.34,1.56,0.64,1)'
           }}>
             {/* Modal header */}
-            <div style={{
+            <div className="no-print" style={{
               padding: '1.5rem 1.75rem', display: 'flex',
               justifyContent: 'space-between', alignItems: 'center',
               borderBottom: '1px solid var(--border)',
@@ -501,6 +499,7 @@ export const DashboardPage = () => {
                 </p>
               </div>
               <button
+                className="no-print"
                 onClick={() => setShowModal(false)}
                 style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', color: 'var(--text-muted)' }}
               >✕</button>
@@ -514,127 +513,315 @@ export const DashboardPage = () => {
                 </div>
               ) : detail ? (
                 <>
-                  {/* Result banner */}
-                  {(detailJournals && detailJournals.length > 0) ? (
-                    <div style={{
-                      borderRadius: '14px', padding: '1.25rem 1.5rem',
-                      background: `linear-gradient(135deg, #eff6ff, #f8fafc)`,
-                      border: `1px solid #bfdbfe`,
-                      marginBottom: '1.5rem', textAlign: 'center'
-                    }}>
-                      <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Jurnal Berpasangan Terposting</div>
-                      <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#059669', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Terposting
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd' }}>{detailJournals[0].debit_category || 'Debit'}</span>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1d4ed8' }}>{detailJournals[0].debit_account_code} — {detailJournals[0].debit_account_name}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#fce7f3', color: '#db2777', border: '1px solid #fbcfe8' }}>{detailJournals[0].credit_category || 'Kredit'}</span>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#be185d' }}>{detailJournals[0].credit_account_code} — {detailJournals[0].credit_account_name}</span>
-                        </div>
-                      </div>
-                      <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981' }}>{detail.confidence_level}%</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Confidence</div>
-                        </div>
-                        <div style={{ width: '1px', backgroundColor: 'var(--border)' }} />
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'capitalize' }}>{detail.business_type}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Jenis Usaha</div>
-                        </div>
-                        <div style={{ width: '1px', backgroundColor: 'var(--border)' }} />
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#7c3aed' }}>{detailAnswers.length}</div>
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Pertanyaan</div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ borderRadius: '14px', padding: '1.25rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', marginBottom: '1.5rem', textAlign: 'center' }}>
-                      <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>❌</div>
-                      <div style={{ fontWeight: 700, color: '#ef4444' }}>Tidak Terklasifikasi</div>
-                      <div style={{ fontSize: '0.78rem', color: '#b91c1c', marginTop: '0.25rem' }}>Sistem tidak menemukan aturan yang cocok</div>
-                    </div>
-                  )}
+                  {(() => {
+                    const journal = detailJournals && detailJournals.length > 0 ? detailJournals[0] : null;
+                    const debitDisplay = journal ? `${journal.debit_account_code} — ${journal.debit_account_name}` : '';
+                    const creditDisplay = journal ? `${journal.credit_account_code} — ${journal.credit_account_name}` : '';
+                    const category = journal ? (journal.debit_category || journal.credit_category || 'Akuntansi') : '';
+                    const specificAccount = journal ? (journal.debit_account_name || 'Akun') : '';
+                    const amountFormatted = journal ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(journal.amount) : '';
 
-                  {/* Meta info */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                    {[
-                      { label: 'Pengguna',     value: detail.user_name },
-                      { label: 'Nama Usaha',   value: detail.business_name || '—' },
-                      { label: 'Tanggal',      value: new Date(detail.date).toLocaleString('id-ID') },
-                      { label: 'ID Konsultasi', value: `#CON-${String(detail.id).padStart(4,'0')}` },
-                    ].map((item, i) => (
-                      <div key={i} style={{ backgroundColor: 'var(--background)', borderRadius: '10px', padding: '0.75rem 1rem', border: '1px solid var(--border)' }}>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>{item.label}</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{item.value}</div>
-                      </div>
-                    ))}
-                  </div>
+                    return (
+                      <>
+                        {/* PRINT ONLY HEADER */}
+                        <div className="print-header" style={{ display: 'none' }}>
+                          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: '#111827' }}>
+                            ACA Advisor - Lembar Hasil Audit Konsultasi
+                          </h1>
+                          <p style={{ fontSize: '0.8rem', color: '#4b5563', margin: '0.25rem 0 1.5rem 0', borderBottom: '2px solid #111827', paddingBottom: '0.75rem' }}>
+                            Sistem Pakar Klasifikasi Akun Akuntansi SAK EMKM Terotomatisasi
+                          </p>
+                        </div>
 
-                  {/* Answers */}
-                  {detailAnswers.length > 0 && (
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <h4 style={{ fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                        Jawaban Kuesioner ({detailAnswers.length} fakta)
-                      </h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {detailAnswers.map((ans, i) => (
-                          <div key={i} style={{
-                            display: 'flex', alignItems: 'center', gap: '0.75rem',
-                            padding: '0.7rem 1rem',
-                            backgroundColor: ans.answer === 'yes' ? '#f0fdf4' : '#fef2f2',
-                            border: `1px solid ${ans.answer === 'yes' ? '#bbf7d0' : '#fecaca'}`,
-                            borderRadius: '10px'
+                        {/* Result banner */}
+                        {journal ? (
+                          <div style={{
+                            borderRadius: '14px', padding: '1.25rem 1.5rem',
+                            background: `linear-gradient(135deg, #eff6ff, #f8fafc)`,
+                            border: `1px solid #bfdbfe`,
+                            marginBottom: '1.5rem', textAlign: 'center'
                           }}>
-                            <span style={{ fontSize: '1rem', flexShrink: 0 }}>{ans.answer === 'yes' ? '✅' : '❌'}</span>
-                            <div style={{ flex: 1, fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
-                              <span style={{ fontWeight: 600, color: 'var(--text-muted)', marginRight: '0.35rem', fontFamily: 'monospace', fontSize: '0.72rem' }}>{ans.question_code}</span>
-                              {ans.question_text}
+                            <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Jurnal Berpasangan Terposting</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#059669', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              Terposting
                             </div>
-                            <span style={{
-                              fontSize: '0.7rem', fontWeight: 800, flexShrink: 0,
-                              color: ans.answer === 'yes' ? '#16a34a' : '#ef4444',
-                              backgroundColor: ans.answer === 'yes' ? '#dcfce7' : '#fee2e2',
-                              padding: '0.15rem 0.6rem', borderRadius: '999px'
-                            }}>
-                              {ans.answer === 'yes' ? 'YA' : 'TIDAK'}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd' }}>{journal.debit_category || 'Debit'}</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1d4ed8' }}>{debitDisplay}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#fce7f3', color: '#db2777', border: '1px solid #fbcfe8' }}>{journal.credit_category || 'Kredit'}</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#be185d' }}>{creditDisplay}</span>
+                              </div>
+                            </div>
+                            <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981' }}>{detail.confidence_level}%</div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Confidence</div>
+                              </div>
+                              <div style={{ width: '1px', backgroundColor: 'var(--border)' }} />
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'capitalize' }}>{detail.business_type}</div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Jenis Usaha</div>
+                              </div>
+                              <div style={{ width: '1px', backgroundColor: 'var(--border)' }} />
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#7c3aed' }}>{detailAnswers.length}</div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Pertanyaan</div>
+                              </div>
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                        ) : (
+                          <div style={{ borderRadius: '14px', padding: '1.25rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', marginBottom: '1.5rem', textAlign: 'center' }}>
+                            <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>❌</div>
+                            <div style={{ fontWeight: 700, color: '#ef4444' }}>Tidak Terklasifikasi</div>
+                            <div style={{ fontSize: '0.78rem', color: '#b91c1c', marginTop: '0.25rem' }}>Sistem tidak menemukan aturan yang cocok</div>
+                          </div>
+                        )}
 
-                  {/* Reasoning */}
-                  {detail.reasoning_text && (
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <h4 style={{ fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                        Penjelasan Logika Sistem
-                      </h4>
-                      <div style={{ backgroundColor: 'var(--background)', borderRadius: '12px', padding: '1rem 1.25rem', border: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
-                        {detail.reasoning_text}
-                      </div>
-                    </div>
-                  )}
+                        {/* Meta info */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }} className="meta-grid-print">
+                          {[
+                            { label: 'Pengguna',     value: detail.user_name },
+                            { label: 'Nama Usaha',   value: detail.business_name || '—' },
+                            { label: 'Tanggal',      value: new Date(detail.date).toLocaleString('id-ID') },
+                            { label: 'ID Konsultasi', value: `#CON-${String(detail.id).padStart(4,'0')}` },
+                          ].map((item, i) => (
+                            <div key={i} style={{ backgroundColor: 'var(--background)', borderRadius: '10px', padding: '0.75rem 1rem', border: '1px solid var(--border)' }} className="meta-card-print">
+                              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>{item.label}</div>
+                              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{item.value}</div>
+                            </div>
+                          ))}
+                        </div>
 
-                  {/* Footer */}
-                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                    <button className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ fontWeight: 600 }}>Tutup</button>
-                    <button className="btn btn-primary" onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}>
-                      <PrintIcon className="w-4 h-4" /> Cetak Lembar Audit
-                    </button>
-                  </div>
+                        {/* Kesimpulan & Rekomendasi Akuntansi */}
+                        <div style={{ marginBottom: '1.5rem' }} className="printable-section">
+                          <h4 style={{ fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                            Kesimpulan & Rekomendasi Akuntansi
+                          </h4>
+                          <div style={{
+                            background: 'linear-gradient(135deg, var(--surface), var(--background))',
+                            border: '1px solid var(--border)',
+                            borderRadius: '12px',
+                            padding: '1.25rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem'
+                          }} className="recommendation-box-print">
+                            <div>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Kesimpulan</div>
+                              <p style={{ fontSize: '0.84rem', color: 'var(--text-primary)', lineHeight: 1.5, margin: 0 }}>
+                                {journal ? (
+                                  <>Berdasarkan hasil analisis sistem pakar, transaksi ini terklasifikasi ke dalam kelompok <strong>{category}</strong> dengan akun spesifik <strong>{specificAccount}</strong>.</>
+                                ) : (
+                                  <>Transaksi tidak dapat terklasifikasi ke dalam standar akun SAK EMKM karena tidak memenuhi kondisi logika dalam basis aturan pakar yang aktif.</>
+                                )}
+                              </p>
+                            </div>
+                            <div style={{ borderTop: '1px dashed var(--border)', paddingTop: '0.75rem' }}>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '0.25rem' }} className="rec-title-print">Rekomendasi Pencatatan (SAK EMKM)</div>
+                              <p style={{ fontSize: '0.84rem', color: 'var(--text-primary)', lineHeight: 1.5, margin: 0 }}>
+                                {journal ? (
+                                  <>Jurnal entry yang direkomendasikan adalah mencatat penambahan/pengurangan di sisi <strong>Debit pada {debitDisplay}</strong> dan menyeimbangkannya di sisi <strong>Kredit pada {creditDisplay}</strong> sebesar <strong>{amountFormatted}</strong>. Perlakuan ini telah sepenuhnya sesuai dengan standar akuntansi keuangan entitas mikro (SAK EMKM) yang berlaku.</>
+                                ) : (
+                                  <>Silakan periksa kembali jawaban kuesioner Anda atau hubungi admin/senior akuntan untuk memperbarui basis pengetahuan aturan pakar jika transaksi ini seharusnya terklasifikasi.</>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Answers */}
+                        {detailAnswers.length > 0 && (
+                          <div style={{ marginBottom: '1.5rem' }} className="printable-section">
+                            <h4 style={{ fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                              Jawaban Kuesioner ({detailAnswers.length} fakta)
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }} className="answers-list-print">
+                              {detailAnswers.map((ans, i) => (
+                                <div key={i} style={{
+                                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                  padding: '0.7rem 1rem',
+                                  backgroundColor: ans.answer === 'yes' ? '#f0fdf4' : '#fef2f2',
+                                  border: `1px solid ${ans.answer === 'yes' ? '#bbf7d0' : '#fecaca'}`,
+                                  borderRadius: '10px'
+                                }} className="answer-item-print">
+                                  <span style={{ fontSize: '1rem', flexShrink: 0 }} className="no-print">{ans.answer === 'yes' ? '✅' : '❌'}</span>
+                                  <div style={{ flex: 1, fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                                    <span style={{ fontWeight: 600, color: 'var(--text-muted)', marginRight: '0.35rem', fontFamily: 'monospace', fontSize: '0.72rem' }}>{ans.question_code}</span>
+                                    {ans.question_text}
+                                  </div>
+                                  <span style={{
+                                    fontSize: '0.7rem', fontWeight: 800, flexShrink: 0,
+                                    color: ans.answer === 'yes' ? '#16a34a' : '#ef4444',
+                                    backgroundColor: ans.answer === 'yes' ? '#dcfce7' : '#fee2e2',
+                                    padding: '0.15rem 0.6rem', borderRadius: '999px'
+                                  }} className="badge-print">
+                                    {ans.answer === 'yes' ? 'YA' : 'TIDAK'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Reasoning */}
+                        {detail.reasoning_text && (
+                          <div style={{ marginBottom: '1.5rem' }} className="printable-section">
+                            <h4 style={{ fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                              Penjelasan Logika Sistem
+                            </h4>
+                            <div style={{
+                              background: 'linear-gradient(135deg, rgba(37,99,235,0.02), rgba(124,58,237,0.02))',
+                              borderRadius: '12px',
+                              padding: '1.25rem',
+                              border: '1px solid var(--border)',
+                              fontSize: '0.85rem',
+                              color: 'var(--text-secondary)',
+                              lineHeight: 1.65,
+                              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.01)'
+                            }} className="reasoning-box-print">
+                              {detail.reasoning_text}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* PRINT ONLY SIGNATURE */}
+                        <div className="print-signature" style={{ display: 'none' }}>
+                          <div className="print-signature-box">
+                            <p style={{ margin: 0 }}>Pengguna / Pemilik UMKM</p>
+                            <div className="print-signature-line" style={{ borderTop: '1px solid #111827', marginTop: '4.5rem', paddingTop: '0.4rem', fontWeight: 700 }}>
+                              {detail.user_name}
+                            </div>
+                          </div>
+                          <div className="print-signature-box">
+                            <p style={{ margin: 0 }}>Sistem Inferensi Pakar ACA</p>
+                            <div className="print-signature-line" style={{ borderTop: '1px dashed #4b5563', marginTop: '4.5rem', paddingTop: '0.4rem', fontWeight: 700, color: '#4b5563' }}>
+                              Verified Digital Audit ✓
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="no-print" style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+                          <button className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ fontWeight: 600 }}>Tutup</button>
+                          <button className="btn btn-primary" onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}>
+                            <PrintIcon className="w-4 h-4" /> Cetak Lembar Audit
+                          </button>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </>
               ) : null}
             </div>
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes fadeInOverlay {
+          from { opacity: 0; } to { opacity: 1; }
+        }
+        @keyframes slideUpModal {
+          from { opacity: 0; transform: translateY(24px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media print {
+          /* Hide sidebar, navbar, buttons, and backdrop shadows */
+          aside, nav, header, .no-print, button, .sidebar-toggle {
+            display: none !important;
+          }
+          .app-container, .main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            width: 100% !important;
+            display: block !important;
+          }
+          
+          /* Stretch modal to full page */
+          .modal-overlay-print {
+            position: relative !important;
+            display: block !important;
+            background: none !important;
+            backdrop-filter: none !important;
+            z-index: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
+          
+          .modal-content-print {
+            max-width: 100% !important;
+            max-height: none !important;
+            overflow: visible !important;
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            background: white !important;
+            color: black !important;
+          }
+
+          /* Show Print Only elements */
+          .print-header {
+            display: block !important;
+          }
+          .print-signature {
+            display: flex !important;
+            justify-content: space-between;
+            margin-top: 4rem;
+            page-break-inside: avoid;
+          }
+          .print-signature-box {
+            text-align: center;
+            width: 240px;
+          }
+          
+          /* Style clean printable blocks */
+          .recommendation-box-print {
+            background: #f9fafb !important;
+            border: 1px solid #d1d5db !important;
+            box-shadow: none !important;
+            color: black !important;
+          }
+          .rec-title-print {
+            color: #1d4ed8 !important;
+          }
+          .reasoning-box-print {
+            background: #f9fafb !important;
+            border: 1px solid #d1d5db !important;
+            color: black !important;
+          }
+          .meta-grid-print {
+            grid-template-columns: 1fr 1fr !important;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 1rem;
+          }
+          .meta-card-print {
+            border: 1px solid #e5e7eb !important;
+            background: #f9fafb !important;
+          }
+          .answer-item-print {
+            border: 1px solid #e5e7eb !important;
+            background: #ffffff !important;
+            page-break-inside: avoid;
+          }
+          .badge-print {
+            border: 1px solid #9ca3af !important;
+            color: black !important;
+            background: white !important;
+          }
+          .printable-section {
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
     </div>
   );
 };

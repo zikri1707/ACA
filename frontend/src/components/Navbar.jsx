@@ -13,8 +13,6 @@ export const Navbar = () => {
       case 'consultation':
       case 'consultation-wizard':
         return 'Konsultasi Akun Pakar';
-      case 'accounts':
-        return 'Bagan Akun (Chart of Accounts)';
       case 'rules':
         return 'Basis Pengetahuan (Knowledge Base)';
       case 'history':
@@ -37,8 +35,6 @@ export const Navbar = () => {
       case 'consultation':
       case 'consultation-wizard':
         return 'Identifikasi klasifikasi akun SAK EMKM secara backward chaining.';
-      case 'accounts':
-        return 'Kelola struktur bagan akun standar akuntansi entitas mikro.';
       case 'rules':
         return 'Manajemen rules inferensi logika backward chaining.';
       case 'history':

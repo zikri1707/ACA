@@ -330,12 +330,12 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     
     // Accuracy & Confidence
     const [classified] = await query(`SELECT COUNT(DISTINCT consultation_id) as count FROM journals ${jFilter}`);
-    const [confSum] = await query(`SELECT SUM(confidence_level) as sum FROM consultations WHERE id IN (SELECT consultation_id FROM journals) ${cFilterAnd}`);
+    const [totalConfSum] = await query(`SELECT SUM(confidence_level) as sum FROM consultations ${cFilter}`);
     
     const countTotal = totalConsultations?.count || 0;
     const countClassified = classified?.count || 0;
     const accuracyRate = countTotal > 0 ? Math.round((countClassified / countTotal) * 100) : 0;
-    const avgConfidence = countClassified > 0 ? Math.round((confSum?.sum || 0) / countClassified) : 0;
+    const avgConfidence = countTotal > 0 ? Math.round((totalConfSum?.sum || 0) / countTotal) : 0;
 
     // This Month Growth
     const [thisMonth] = await query(`SELECT COUNT(*) as count FROM consultations WHERE strftime('%Y-%m', date) = strftime('%Y-%m', 'now') ${cFilterAnd}`);

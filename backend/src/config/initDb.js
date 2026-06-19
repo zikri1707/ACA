@@ -198,8 +198,8 @@ async function init() {
       { code: '1-1200', name: 'Piutang Usaha', category: 'Aset', subcategory: 'Piutang Usaha' },
       { code: '1-1300', name: 'Persediaan Barang Dagang', category: 'Aset', subcategory: 'Persediaan' },
       { code: '1-1400', name: 'Sewa Dibayar Dimuka', category: 'Aset', subcategory: 'Uang Muka' },
-      { code: '1-1500', name: 'Perlengkapan (ATK)', category: 'Aset', subcategory: 'Perlengkapan' },
-      { code: '1-2100', name: 'Peralatan Kantor', category: 'Aset', subcategory: 'Aset Tetap' },
+      { code: '1-1500', name: 'Perlengkapan', category: 'Aset', subcategory: 'Perlengkapan' },
+      { code: '1-2100', name: 'Peralatan Kantor (Aset Tetap)', category: 'Aset', subcategory: 'Aset Tetap' },
       { code: '1-2110', name: 'Akumulasi Penyusutan Peralatan', category: 'Aset', subcategory: 'Akumulasi Penyusutan' },
       
       { code: '2-1000', name: 'Hutang Dagang', category: 'Kewajiban', subcategory: 'Hutang Lancar' },
@@ -214,8 +214,8 @@ async function init() {
       { code: '4-9000', name: 'Pendapatan Lain-lain', category: 'Pendapatan', subcategory: 'Pendapatan Lain' },
       
       { code: '5-1000', name: 'Beban Gaji', category: 'Beban', subcategory: 'Beban Operasional' },
-      { code: '5-1100', name: 'Beban Listrik & Air', category: 'Beban', subcategory: 'Beban Operasional' },
-      { code: '5-1200', name: 'Beban Sewa Ruko', category: 'Beban', subcategory: 'Beban Operasional' },
+      { code: '5-1100', name: 'Beban Utilitas', category: 'Beban', subcategory: 'Beban Operasional' },
+      { code: '5-1200', name: 'Beban Sewa', category: 'Beban', subcategory: 'Beban Operasional' },
       { code: '5-1500', name: 'Beban ATK', category: 'Beban', subcategory: 'Beban Operasional' },
       { code: '5-2000', name: 'Beban Penyusutan', category: 'Beban', subcategory: 'Beban Non-Tunai' }
     ];
