@@ -468,11 +468,43 @@ export const RuleBaseIndex = () => {
     return q ? q.code : '';
   };
 
+  const getTransactionCategory = (rule) => {
+    if (rule.code === 'R-098') return 'Beban';
+    if (rule.debit_account_code !== '1-1000' && rule.debit_account_category) {
+      return rule.debit_account_category;
+    }
+    return rule.credit_account_category || 'Aset';
+  };
+
+  const getArah = (conditions) => {
+    if (!conditions) return '-';
+    if (conditions.some(c => c.fact_name === 'is_inbound' && c.expected_value === 'yes')) return 'Penerimaan';
+    if (conditions.some(c => c.fact_name === 'is_outbound' && c.expected_value === 'yes')) return 'Pengeluaran';
+    if (conditions.some(c => c.fact_name === 'is_inbound' && c.expected_value === 'no')) return 'Pengeluaran';
+    if (conditions.some(c => c.fact_name === 'is_outbound' && c.expected_value === 'no')) return 'Penerimaan';
+    return '-';
+  };
+
+  const getKondisiSpesifik = (conditions) => {
+    if (!conditions || conditions.length === 0) return 'Umum';
+    const specific = conditions.filter(c => c.fact_name !== 'is_inbound' && c.fact_name !== 'is_outbound' && c.fact_name !== 'is_kredit');
+    if (specific.length === 0) return 'Umum';
+    return specific.map(c => `${c.fact_name} == ${c.expected_value.toUpperCase()}`).join(' AND ');
+  };
+
+  const getKredit = (conditions) => {
+    if (!conditions) return '-';
+    const cond = conditions.find(c => c.fact_name === 'is_kredit');
+    if (!cond) return '-';
+    return cond.expected_value ? cond.expected_value.toUpperCase() : '-';
+  };
+
   // Filter rules by search and sub-tab type
   const filteredRules = rules.filter(r => {
     const matchesSearch = r.code.toLowerCase().includes(search.toLowerCase()) ||
                           r.name.toLowerCase().includes(search.toLowerCase()) ||
-                          r.account_name.toLowerCase().includes(search.toLowerCase());
+                          (r.debit_account_name && r.debit_account_name.toLowerCase().includes(search.toLowerCase())) ||
+                          (r.credit_account_name && r.credit_account_name.toLowerCase().includes(search.toLowerCase()));
     
     if (nestedFilter === 'semua') return matchesSearch;
     return matchesSearch && r.business_type.toLowerCase() === nestedFilter;
@@ -1502,39 +1534,31 @@ export const RuleBaseIndex = () => {
                     <th style={{ padding: '1rem' }}>Kategori Akun</th>
                     <th style={{ padding: '1rem' }}>Jenis Usaha</th>
                     <th style={{ padding: '1rem' }}>Arah Transaksi</th>
-                    <th style={{ padding: '1rem' }}>Kondisi Spesifik (Fakta yang bernilai "YES")</th>
+                    <th style={{ padding: '1rem' }}>Kondisi Spesifik</th>
                     <th style={{ padding: '1rem' }}>Kredit?</th>
-                    <th style={{ padding: '1rem', backgroundColor: 'var(--primary)', color: 'white' }}>Hasil (Kode Akun)</th>
+                    <th style={{ padding: '1rem', backgroundColor: 'var(--primary)', color: 'white' }}>Hasil Jurnal (Debit / Kredit)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    { id: 'R-001', cat: 'Aset', usaha: 'SEMUA', arah: 'Penerimaan', kondisi: 'Transaksi operasional/lainnya (Bukan Setoran/Pinjaman/Penjualan)', kredit: 'NO', hasil: '1-1000 (Kas)' },
-                    { id: 'R-002', cat: 'Piutang', usaha: 'SEMUA', arah: 'Penerimaan', kondisi: 'is_penjualan_barang ATAU is_penjualan_jasa', kredit: 'YES', hasil: '1-1200 (Piutang Usaha)' },
-                    { id: 'R-003', cat: 'Aset', usaha: 'DAGANG', arah: 'Pengeluaran', kondisi: 'is_dijual_kembali', kredit: 'NO', hasil: '1-1300 (Persediaan)' },
-                    { id: 'R-004', cat: 'Aset', usaha: 'DAGANG', arah: 'Pengeluaran', kondisi: 'is_dijual_kembali', kredit: 'YES', hasil: '1-1300 (Persediaan)' },
-                    { id: 'R-006', cat: 'Aset', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_pembelian_aset AND is_manfaat_lebih_1_tahun', kredit: '-', hasil: '1-2100 (Aset Tetap)' },
-                    { id: 'R-005', cat: 'Kewajiban', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'Pembelian selain aset/persediaan', kredit: 'YES', hasil: '2-1000 (Hutang Dagang)' },
-                    { id: 'R-015', cat: 'Kewajiban', usaha: 'SEMUA', arah: 'Penerimaan', kondisi: 'is_pinjaman_bank', kredit: '-', hasil: '2-2000 (Hutang Bank)' },
-                    { id: 'R-007', cat: 'Ekuitas', usaha: 'SEMUA', arah: 'Penerimaan', kondisi: 'is_setoran_modal', kredit: '-', hasil: '3-1000 (Modal Pemilik)' },
-                    { id: 'R-008', cat: 'Ekuitas', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_prive', kredit: '-', hasil: '3-2000 (Prive)' },
-                    { id: 'R-009', cat: 'Pendapatan', usaha: 'DAGANG', arah: 'Penerimaan', kondisi: 'is_penjualan_barang', kredit: 'NO', hasil: '4-1000 (Pendapatan Jual)' },
-                    { id: 'R-010', cat: 'Pendapatan', usaha: 'JASA', arah: 'Penerimaan', kondisi: 'is_penjualan_jasa', kredit: 'NO', hasil: '4-1100 (Pendapatan Jasa)' },
-                    { id: 'R-011', cat: 'Beban', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_beban_gaji', kredit: '-', hasil: '5-1000 (Beban Gaji)' },
-                    { id: 'R-012', cat: 'Beban', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_beban_utilitas', kredit: '-', hasil: '5-1100 (Beban Utilitas)' },
-                    { id: 'R-013', cat: 'Beban', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_beban_sewa', kredit: '-', hasil: '5-1200 (Beban Sewa)' },
-                    { id: 'R-014', cat: 'Beban', usaha: 'SEMUA', arah: 'Pengeluaran', kondisi: 'is_beban_atk', kredit: '-', hasil: '5-1500 (Beban ATK)' },
-                  ].map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ fontWeight: 800, borderRight: '1px solid var(--border)' }}>{row.id}</td>
-                      <td>{row.cat}</td>
-                      <td>{row.usaha}</td>
-                      <td>{row.arah}</td>
-                      <td style={{ fontFamily: 'monospace', color: 'var(--primary)', fontWeight: 600 }}>{row.kondisi}</td>
-                      <td style={{ color: row.kredit === 'YES' ? 'var(--success)' : row.kredit === 'NO' ? 'var(--danger)' : 'inherit', fontWeight: 800 }}>{row.kredit}</td>
-                      <td style={{ fontWeight: 800, color: 'var(--primary)' }}>{row.hasil}</td>
-                    </tr>
-                  ))}
+                  {rules.map((rule) => {
+                    const kreditVal = getKredit(rule.conditions);
+                    return (
+                      <tr key={rule.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ fontWeight: 800, borderRight: '1px solid var(--border)' }}>{rule.code}</td>
+                        <td>{getTransactionCategory(rule)}</td>
+                        <td>{rule.business_type === 'semua' ? 'SEMUA' : rule.business_type.toUpperCase()}</td>
+                        <td>{getArah(rule.conditions)}</td>
+                        <td style={{ fontFamily: 'monospace', color: 'var(--primary)', fontWeight: 600 }}>{getKondisiSpesifik(rule.conditions)}</td>
+                        <td style={{ color: kreditVal === 'YES' ? 'var(--success)' : kreditVal === 'NO' ? 'var(--danger)' : 'inherit', fontWeight: 800 }}>{kreditVal}</td>
+                        <td style={{ fontWeight: 800, color: 'var(--primary)' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.75rem' }}>
+                            <div><span style={{ opacity: 0.7, fontWeight: 700 }}>[Dr]</span> {rule.debit_account_code ? `${rule.debit_account_code} - ${rule.debit_account_name}` : 'Dinamis (Pilihan User)'}</div>
+                            <div><span style={{ opacity: 0.7, fontWeight: 700 }}>[Cr]</span> {rule.credit_account_code ? `${rule.credit_account_code} - ${rule.credit_account_name}` : 'Dinamis (Kas/Hutang)'}</div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
