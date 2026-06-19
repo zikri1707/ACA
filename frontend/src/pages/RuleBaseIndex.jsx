@@ -1653,46 +1653,51 @@ export const RuleBaseIndex = () => {
     Q009 -- Tidak --> Q015{Pinjaman Bank?<br/>(is_pinjaman_bank)}
     Q015 -- Ya --> R015[2-2000 Hutang Bank]
     
-    Q015 -- Tidak --> Q112{Terima Piutang?<br/>(is_penerimaan_piutang)}
-    Q112 -- Ya --> R019[1-1000 Kas Utama]
-    
-    Q112 -- Tidak --> Q000{Jenis Usaha?}
+    Q015 -- Tidak --> Q000In{Jenis Usaha?}
     
     %% Dagang - Penjualan Barang
-    Q000 -- Dagang --> Q003{Penjualan Barang?<br/>(is_penjualan_barang)}
+    Q000In -- Dagang --> Q003{Penjualan Barang?<br/>(is_penjualan_barang)}
     Q003 -- Ya --> R009[4-1000 Pendapatan Penjualan]
-    Q003 -- Tidak --> R001[1-1000 Kas Utama]
+    Q003 -- Tidak --> Q112D{Terima Piutang?<br/>(is_penerimaan_piutang)}
     
     %% Jasa - Penjualan Jasa
-    Q000 -- Jasa --> Q004{Penjualan Jasa?<br/>(is_penjualan_jasa)}
+    Q000In -- Jasa --> Q004{Penjualan Jasa?<br/>(is_penjualan_jasa)}
     Q004 -- Ya --> R010[4-1100 Pendapatan Jasa]
-    Q004 -- Tidak --> R001
+    Q004 -- Tidak --> Q112J{Terima Piutang?<br/>(is_penerimaan_piutang)}
+    
+    Q112D -- Ya --> R019[1-1000 Kas Utama]
+    Q112D -- Tidak --> R001[1-1000 Kas Utama]
+    Q112J -- Ya --> R019
+    Q112J -- Tidak --> R001
     
     %% CABANG OUTBOUND (PENGELUARAN)
     Q001 -- KELUAR --> Q005Out{Pembayaran Kredit?<br/>(is_kredit)}
     
+    Q005Out -- Ya --> Q000OutK{Jenis Usaha?}
+    Q005Out -- Tidak --> Q000OutT{Jenis Usaha?}
+    
     %% Outbound Kredit
-    Q005Out -- Ya --> Q000Out{Jenis Usaha?}
-    Q000Out -- Dagang --> Q006K{Beli utk Dijual Kembali?<br/>(is_dijual_kembali)}
+    Q000OutK -- Dagang --> Q006K{Beli utk Dijual Kembali?<br/>(is_dijual_kembali)}
     Q006K -- Ya --> R004[1-1300 Persediaan & Hutang]
-    Q006K -- Tidak --> R099[2-1000 Hutang Dagang]
-    Q000Out -- Jasa --> R099
+    Q006K -- Tidak --> Q007K{Beli Aset Tetap?<br/>(is_pembelian_aset)}
+    Q000OutK -- Jasa --> Q007K
+    
+    Q007K -- Ya --> Q008K{Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)}
+    Q008K -- Ya --> R006K[1-2100 Aset Tetap]
+    Q008K -- Tidak --> R017K[1-1500 Perlengkapan]
+    Q007K -- Tidak --> R099[2-1000 Hutang Dagang]
     
     %% Outbound Tunai
-    Q005Out -- Tidak --> Q000Tun{Jenis Usaha?}
-    Q000Tun -- Dagang --> Q006T{Beli utk Dijual Kembali?<br/>(is_dijual_kembali)}
+    Q000OutT -- Dagang --> Q006T{Beli utk Dijual Kembali?<br/>(is_dijual_kembali)}
     Q006T -- Ya --> R003[1-1300 Persediaan Tunai]
-    Q006T -- Tidak --> BebanUmum
-    Q000Tun -- Jasa --> BebanUmum
+    Q006T -- Tidak --> Q007T{Beli Aset Tetap?<br/>(is_pembelian_aset)}
+    Q000OutT -- Jasa --> Q007T
     
-    %% BLOK BEBAN/ASET/PRIVE
-    BebanUmum --> Q007{Beli Aset Tetap?<br/>(is_pembelian_aset)}
-    Q007 -- Ya --> Q008{Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)}
-    Q008 -- Ya --> R006[1-2100 Aset Tetap]
-    Q008 -- Tidak --> BebanLainnya
-    Q007 -- Tidak --> BebanLainnya
+    Q007T -- Ya --> Q008T{Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)}
+    Q008T -- Ya --> R006[1-2100 Aset Tetap]
+    Q008T -- Tidak --> R017[1-1500 Perlengkapan]
     
-    BebanLainnya --> Q010{Ambil Prive?<br/>(is_prive)}
+    Q007T -- Tidak --> Q010{Ambil Prive?<br/>(is_prive)}
     Q010 -- Ya --> R008[3-2000 Prive Pemilik]
     
     Q010 -- Tidak --> Q011{Bayar Gaji?<br/>(is_beban_gaji)}
