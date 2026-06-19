@@ -18,90 +18,130 @@ export const LoginPage = () => {
     <div style={{
       minHeight: '100vh',
       display: 'flex',
-      backgroundColor: '#f1f5f9',
+      backgroundColor: '#090d16', // Sleek dark slate theme background
       fontFamily: 'var(--font-sans)',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem'
+      padding: '2rem',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
+      {/* Decorative Glows */}
+      <div style={{
+        position: 'absolute', top: '-10%', left: '-10%',
+        width: '600px', height: '600px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(37,99,235,0.15) 0%, rgba(37,99,235,0) 75%)',
+        zIndex: 0, pointerEvents: 'none'
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-10%', right: '-10%',
+        width: '600px', height: '600px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, rgba(139,92,246,0) 75%)',
+        zIndex: 0, pointerEvents: 'none'
+      }} />
+
       {/* Split Card */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1.1fr',
-        backgroundColor: 'white',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-premium)',
+        gridTemplateColumns: '1fr 1.15fr',
+        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: '0 30px 100px rgba(0, 0, 0, 0.5)',
         overflow: 'hidden',
-        maxWidth: '1000px',
+        maxWidth: '1080px',
         width: '100%',
-        minHeight: '600px'
+        minHeight: '640px',
+        position: 'relative',
+        zIndex: 10
       }}>
         {/* Left Side: Form */}
         <div style={{
-          padding: '3rem',
+          padding: '3.5rem 3rem',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          backgroundColor: '#0f172a'
         }}>
           {/* Logo & Header */}
           <div>
-            <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '3rem' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2563eb' }}>ACA Advisor</span>
-              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Expert System for SME Accounting Compliance
+            <div 
+              style={{ display: 'flex', flexDirection: 'column', marginBottom: '2.5rem', cursor: 'pointer' }}
+              onClick={() => navigateTo('landing')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <span style={{ fontSize: '1.4rem', fontWeight: 900, background: 'linear-gradient(to right, #3b82f6, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ACA</span>
+                <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'white' }}>Advisor</span>
+              </div>
+              <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: '0.15rem' }}>
+                Expert System / SAK EMKM Compliance
               </span>
             </div>
 
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem', color: '#0f172a' }}>Selamat Datang</h2>
-            <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '2rem' }}>
-              Silakan masuk ke akun Anda untuk melanjutkan konsultasi.
+            <h2 style={{ fontSize: '1.85rem', fontWeight: 900, marginBottom: '0.5rem', color: 'white', letterSpacing: '-0.025em' }}>Selamat Datang</h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+              Silakan masuk dengan kredensial terdaftar untuk berkonsultasi dengan mesin pakar.
             </p>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div className="form-group">
-                <label className="form-label">Email</label>
+                <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.5rem', display: 'block' }}>Alamat Email</label>
                 <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>✉</span>
+                  <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontSize: '0.95rem' }}>✉</span>
                   <input
                     type="email"
                     className="form-control"
                     placeholder="nama@perusahaan.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    style={{ paddingLeft: '36px' }}
+                    style={{
+                      paddingLeft: '38px', height: '46px', borderRadius: '10px',
+                      backgroundColor: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: 'white', fontSize: '0.88rem', width: '100%', outline: 'none', transition: 'all 0.2s'
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
                     required
                   />
                 </div>
               </div>
 
-              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+              <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <label className="form-label" style={{ margin: 0 }}>Password</label>
-                  <button type="button" className="btn-link" style={{ fontSize: '0.75rem' }} onClick={() => alert('Fitur demo: Silakan hubungi admin di admin@aca.com')}>Lupa Password?</button>
+                  <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 700, margin: 0 }}>Password</label>
+                  <button 
+                    type="button" 
+                    className="btn-link" 
+                    style={{ fontSize: '0.75rem', color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }} 
+                    onClick={() => alert('Demo Mode: Gunakan password akun terdaftar Anda.')}
+                  >
+                    Lupa Password?
+                  </button>
                 </div>
                 <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>🔒</span>
+                  <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontSize: '0.95rem' }}>🔒</span>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     className="form-control"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    style={{ paddingLeft: '36px', paddingRight: '40px' }}
+                    style={{
+                      paddingLeft: '38px', paddingRight: '42px', height: '46px', borderRadius: '10px',
+                      backgroundColor: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: 'white', fontSize: '0.88rem', width: '100%', outline: 'none', transition: 'all 0.2s'
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     style={{
-                      position: 'absolute',
-                      right: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem'
+                      position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', opacity: 0.6
                     }}
                   >
                     {showPassword ? '👁️' : '🙈'}
@@ -109,123 +149,143 @@ export const LoginPage = () => {
                 </div>
               </div>
 
-              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <input
                   type="checkbox"
                   id="remember"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#2563eb' }}
                 />
-                <label htmlFor="remember" style={{ fontSize: '0.85rem', color: '#475569', cursor: 'pointer', userSelect: 'none' }}>
-                  Ingat saya untuk 30 hari
+                <label htmlFor="remember" style={{ fontSize: '0.8rem', color: '#94a3b8', cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}>
+                  Ingat sesi saya di perangkat ini
                 </label>
               </div>
 
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem', fontSize: '0.95rem', borderRadius: 'var(--radius-md)' }}>
-                Masuk <span style={{ marginLeft: '0.5rem' }}>→</span>
+              <button 
+                type="submit" 
+                style={{
+                  width: '100%', padding: '0.85rem', fontSize: '0.9rem', fontWeight: 800,
+                  borderRadius: '10px', border: 'none', backgroundColor: '#2563eb', color: 'white',
+                  cursor: 'pointer', transition: 'all 0.2s', marginTop: '0.5rem',
+                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)'
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+              >
+                Masuk ke Aplikasi →
               </button>
             </form>
 
-            <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', color: '#64748b' }}>
+            <div style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>
               Belum memiliki akun?{' '}
-              <button className="btn-link" onClick={() => navigateTo('register')}>Daftar</button>
+              <button 
+                onClick={() => navigateTo('register')} 
+                style={{ background: 'none', border: 'none', color: '#3b82f6', fontWeight: 800, cursor: 'pointer', padding: 0 }}
+              >
+                Daftar Sekarang
+              </button>
             </div>
           </div>
 
           {/* Footer compliance */}
           <div style={{
-            fontSize: '0.7rem',
-            color: '#94a3b8',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            marginTop: '2rem'
+            fontSize: '0.65rem', color: '#475569', fontWeight: 800,
+            display: 'flex', alignItems: 'center', gap: '0.35rem', letterSpacing: '0.05em'
           }}>
-            🛡️ SAK EMKM COMPLIANT SYSTEM VER 2.4.0
+            🛡️ ACA ADVISOR • SAK EMKM AUDIT ENGINE V2.4.0
           </div>
         </div>
 
-        {/* Right Side: Decorative Status Cards */}
+        {/* Right Side: Decorative Compliance Dashboard Cards */}
         <div style={{
-          background: 'linear-gradient(135deg, #bfdbfe 0%, #3b82f6 100%)',
-          padding: '3rem',
+          background: 'linear-gradient(135deg, #1e293b 0%, #090d16 100%)',
+          padding: '3.5rem 3rem',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          borderLeft: '1px solid rgba(255, 255, 255, 0.05)'
         }}>
-          {/* Glass background decoration */}
+          {/* Abstract Grid Background Overlay */}
           <div style={{
-            position: 'absolute',
-            width: '150%',
-            height: '150%',
-            top: '-20%',
-            left: '-20%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%)',
-            pointerEvents: 'none'
+            position: 'absolute', inset: 0,
+            backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(37, 99, 235, 0.12) 0%, transparent 60%)',
+            pointerEvents: 'none', zIndex: 0
           }} />
 
-          {/* Card 1: System Status */}
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(8px)',
-            borderRadius: 'var(--radius-md)',
-            padding: '1.5rem',
-            boxShadow: 'var(--shadow-lg)',
-            border: '1px solid rgba(255,255,255,0.6)',
-            position: 'relative',
-            zIndex: 10,
-            maxWidth: '360px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1e3a8a', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-              📈 System Status
-            </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.25rem' }}>99.8% Accuracy</h3>
-            
-            {/* Custom progress bar */}
-            <div style={{ height: '4px', backgroundColor: '#e2e8f0', borderRadius: '2px', overflow: 'hidden', marginBottom: '0.75rem' }}>
-              <div style={{ width: '99.8%', height: '100%', backgroundColor: '#2563eb' }} />
-            </div>
+          <div style={{ position: 'relative', zIndex: 10 }}>
+            <span style={{
+              backgroundColor: 'rgba(139, 92, 246, 0.15)',
+              color: '#a78bfa', padding: '0.3rem 0.75rem',
+              borderRadius: '99px', fontSize: '0.68rem',
+              fontWeight: 800, textTransform: 'uppercase',
+              letterSpacing: '0.1em', display: 'inline-block',
+              marginBottom: '2rem', border: '1px solid rgba(139, 92, 246, 0.2)'
+            }}>
+              🔮 Knowledge Base Status
+            </span>
 
-            <p style={{ fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>
-              Advanced rule-tracing engine validates every classification against national standards.
+            <h3 style={{ color: 'white', fontSize: '1.6rem', fontWeight: 900, marginBottom: '1.25rem', lineHeight: 1.25, letterSpacing: '-0.02em' }}>
+              Klasifikasi Akuntansi UMKM Secara Instan
+            </h3>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '2rem' }}>
+              Mesin inferensi pakar dirancang untuk membantu UMKM memproses fakta transaksi kuesioner dan menerbitkan rekomendasi jurnal akuntansi Debit/Kredit yang akurat.
             </p>
           </div>
 
-          {/* Center Graphic: Book */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '150px',
-            fontSize: '5rem',
-            position: 'relative',
-            zIndex: 5
-          }}>
-            📖
+          {/* Dynamic glassmorphic mockup cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative', zIndex: 10, marginBottom: '2rem' }}>
+            {/* Stat Item 1 */}
+            <div style={{
+              backgroundColor: 'rgba(30, 41, 59, 0.4)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '14px', padding: '1rem 1.25rem',
+              display: 'flex', alignItems: 'center', justifyItems: 'center', gap: '1rem'
+            }}>
+              <div style={{
+                width: '38px', height: '38px', borderRadius: '8px',
+                backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem'
+              }}>✓</div>
+              <div>
+                <h4 style={{ color: 'white', fontSize: '0.82rem', fontWeight: 800, margin: 0 }}>SAK EMKM Validated</h4>
+                <p style={{ color: '#64748b', fontSize: '0.72rem', margin: '0.1rem 0 0' }}>Bagan kode akun dan aturan terstandarisasi penuh.</p>
+              </div>
+            </div>
+
+            {/* Stat Item 2 */}
+            <div style={{
+              backgroundColor: 'rgba(30, 41, 59, 0.4)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '14px', padding: '1rem 1.25rem',
+              display: 'flex', alignItems: 'center', justifyItems: 'center', gap: '1rem'
+            }}>
+              <div style={{
+                width: '38px', height: '38px', borderRadius: '8px',
+                backgroundColor: 'rgba(37, 99, 235, 0.15)', color: '#60a5fa',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem'
+              }}>⚙️</div>
+              <div>
+                <h4 style={{ color: 'white', fontSize: '0.82rem', fontWeight: 800, margin: 0 }}>Backward Chaining Trace</h4>
+                <p style={{ color: '#64748b', fontSize: '0.72rem', margin: '0.1rem 0 0' }}>Penelusuran rule akuntansi transparan & berdaya cepat.</p>
+              </div>
+            </div>
           </div>
 
-          {/* Card 2: Knowledge Base Update */}
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(8px)',
-            borderRadius: 'var(--radius-md)',
-            padding: '1.25rem',
-            boxShadow: 'var(--shadow-lg)',
-            border: '1px solid rgba(255,255,255,0.6)',
-            position: 'relative',
-            zIndex: 10,
-            maxWidth: '360px',
-            marginLeft: 'auto'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-              🔄 Knowledge Base Updated
+          {/* Footer stats */}
+          <div style={{ display: 'flex', gap: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem', position: 'relative', zIndex: 10 }}>
+            <div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'white' }}>98.9%</div>
+              <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Akurasi Engine</div>
             </div>
-            <p style={{ fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>
-              Current logic paths are synchronized with the latest Indonesian SAK EMKM regulations as of 2024.
-            </p>
+            <div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'white' }}>Aktif</div>
+              <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Database Aturan</div>
+            </div>
           </div>
         </div>
       </div>

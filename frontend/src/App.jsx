@@ -36,15 +36,25 @@ function AppContent() {
 
   // 1. Pages without layout (Landing, Login, Register)
   if (['landing', 'login', 'register'].includes(currentPage) || !user) {
+    let pageContent;
     switch (currentPage) {
       case 'login':
-        return <LoginPage />;
+        pageContent = <LoginPage />;
+        break;
       case 'register':
-        return <RegisterPage />;
+        pageContent = <RegisterPage />;
+        break;
       case 'landing':
       default:
-        return <LandingPage />;
+        pageContent = <LandingPage />;
+        break;
     }
+    return (
+      <>
+        {pageContent}
+        <Toast />
+      </>
+    );
   }
 
   // 2. Protected pages inside ERP dashboard layout

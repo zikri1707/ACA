@@ -96,9 +96,10 @@ export const RuleBaseIndex = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        setRules(data.rules || []);
-        if (data.rules.length > 0 && !selectedRule) {
-          setSelectedRule(data.rules[0]);
+        const visibleRules = (data.rules || []).filter(r => r.code !== 'R-020');
+        setRules(visibleRules);
+        if (visibleRules.length > 0 && !selectedRule) {
+          setSelectedRule(visibleRules[0]);
         }
       }
     } catch (err) {
@@ -309,123 +310,58 @@ export const RuleBaseIndex = () => {
   const getRuleNarrative = (code) => {
     const q = (id) => questions.find(x => x.fact_name === id)?.question_text || id;
     
-    const paths = {
-      'R-001': [
-        { q: q('is_penerimaan'), a: 'YES' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_penjualan_barang'), a: 'NO', skipIf: 'Jasa' },
-        { q: q('is_penjualan_jasa'), a: 'NO', skipIf: 'Dagang' },
-        { q: q('is_pinjaman_bank'), a: 'NO' },
-        { q: q('is_setoran_modal'), a: 'NO' }
-      ],
-      'R-002': [
-        { q: q('is_penerimaan'), a: 'YES' },
-        { q: q('is_kredit'), a: 'YES' }
-      ],
-      'R-003': [
-        { q: q('is_penerimaan'), a: 'NO' },
-        { q: q('is_pengeluaran'), a: 'YES' },
-        { q: q('is_dijual_kembali'), a: 'YES' },
-        { q: q('is_kredit'), a: 'NO' }
-      ],
-      'R-004': [
-        { q: q('is_penerimaan'), a: 'NO' },
-        { q: q('is_pengeluaran'), a: 'YES' },
-        { q: q('is_dijual_kembali'), a: 'YES' },
-        { q: q('is_kredit'), a: 'YES' }
-      ],
-      'R-005': [
-        { q: q('is_penerimaan'), a: 'NO' },
-        { q: q('is_pengeluaran'), a: 'YES' },
-        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
-        { q: q('is_kredit'), a: 'YES' },
-        { q: q('is_pembelian_aset'), a: 'NO' }
-      ],
-      'R-006': [
-        { q: q('is_penerimaan'), a: 'NO' },
-        { q: q('is_pengeluaran'), a: 'YES' },
-        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_pembelian_aset'), a: 'YES' },
-        { q: q('is_manfaat_lebih_1_tahun'), a: 'YES' }
-      ],
-      'R-007': [
-        { q: q('is_penerimaan'), a: 'YES' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_penjualan_barang'), a: 'NO', skipIf: 'Jasa' },
-        { q: q('is_penjualan_jasa'), a: 'NO', skipIf: 'Dagang' },
-        { q: q('is_pinjaman_bank'), a: 'NO' },
-        { q: q('is_setoran_modal'), a: 'YES' }
-      ],
-      'R-008': [
-        { q: q('is_penerimaan'), a: 'NO' },
-        { q: q('is_pengeluaran'), a: 'YES' },
-        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_pembelian_aset'), a: 'NO' },
-        { q: q('is_prive'), a: 'YES' }
-      ],
-      'R-009': [
-        { q: q('is_penerimaan'), a: 'YES' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_penjualan_barang'), a: 'YES' }
-      ],
-      'R-010': [
-        { q: q('is_penerimaan'), a: 'YES' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_penjualan_jasa'), a: 'YES' }
-      ],
-      'R-011': [
-        { q: q('is_penerimaan'), a: 'NO' },
-        { q: q('is_pengeluaran'), a: 'YES' },
-        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_pembelian_aset'), a: 'NO' },
-        { q: q('is_prive'), a: 'NO' },
-        { q: q('is_beban_gaji'), a: 'YES' }
-      ],
-      'R-012': [
-        { q: q('is_penerimaan'), a: 'NO' },
-        { q: q('is_pengeluaran'), a: 'YES' },
-        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_pembelian_aset'), a: 'NO' },
-        { q: q('is_prive'), a: 'NO' },
-        { q: q('is_beban_gaji'), a: 'NO' },
-        { q: q('is_beban_utilitas'), a: 'YES' }
-      ],
-      'R-013': [
-        { q: q('is_penerimaan'), a: 'NO' },
-        { q: q('is_pengeluaran'), a: 'YES' },
-        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_pembelian_aset'), a: 'NO' },
-        { q: q('is_prive'), a: 'NO' },
-        { q: q('is_beban_gaji'), a: 'NO' },
-        { q: q('is_beban_utilitas'), a: 'NO' },
-        { q: q('is_beban_sewa'), a: 'YES' }
-      ],
-      'R-014': [
-        { q: q('is_penerimaan'), a: 'NO' },
-        { q: q('is_pengeluaran'), a: 'YES' },
-        { q: q('is_dijual_kembali'), a: 'NO', skipIf: 'Jasa' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_pembelian_aset'), a: 'NO' },
-        { q: q('is_prive'), a: 'NO' },
-        { q: q('is_beban_gaji'), a: 'NO' },
-        { q: q('is_beban_utilitas'), a: 'NO' },
-        { q: q('is_beban_sewa'), a: 'NO' },
-        { q: q('is_beban_atk'), a: 'YES' }
-      ],
-      'R-015': [
-        { q: q('is_penerimaan'), a: 'YES' },
-        { q: q('is_kredit'), a: 'NO' },
-        { q: q('is_penjualan_barang'), a: 'NO', skipIf: 'Jasa' },
-        { q: q('is_penjualan_jasa'), a: 'NO', skipIf: 'Dagang' },
-        { q: q('is_pinjaman_bank'), a: 'YES' }
-      ]
-    };
-    return paths[code] || [];
+    const rule = rules.find(r => r.code === code);
+    if (!rule || !rule.conditions || rule.conditions.length === 0) {
+      return [];
+    }
+
+    // Urutan prioritas agar pertanyaan tampil secara logis dan natural
+    const FACT_ORDER = [
+      'is_inbound',
+      'is_outbound',
+      'is_kredit',
+      'is_dijual_kembali',
+      'is_penjualan_barang',
+      'is_penjualan_jasa',
+      'is_pembelian_aset',
+      'is_manfaat_lebih_1_tahun',
+      'is_setoran_modal',
+      'is_prive',
+      'is_beban_gaji',
+      'is_beban_utilitas',
+      'is_beban_sewa',
+      'is_beban_atk',
+      'is_beban_pemasaran',
+      'is_pelunasan_hutang_dagang',
+      'is_penerimaan_piutang',
+      'is_pelunasan_hutang_bank',
+      'is_pinjaman_bank'
+    ];
+
+    const sortedConditions = [...rule.conditions].sort((a, b) => {
+      const idxA = FACT_ORDER.indexOf(a.fact_name);
+      const idxB = FACT_ORDER.indexOf(b.fact_name);
+      const orderA = idxA !== -1 ? idxA : 999;
+      const orderB = idxB !== -1 ? idxB : 999;
+      return orderA - orderB;
+    });
+
+    return sortedConditions.map(c => {
+      let skipIf = undefined;
+      if (c.fact_name === 'is_penjualan_barang') {
+        skipIf = 'Jasa';
+      } else if (c.fact_name === 'is_penjualan_jasa') {
+        skipIf = 'Dagang';
+      } else if (c.fact_name === 'is_dijual_kembali') {
+        skipIf = 'Jasa';
+      }
+
+      return {
+        q: q(c.fact_name),
+        a: c.expected_value ? c.expected_value.toUpperCase() : '',
+        skipIf
+      };
+    });
   };
 
   const handleDeleteConfirm = async () => {
