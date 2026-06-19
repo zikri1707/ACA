@@ -388,8 +388,8 @@ export const ConsultationWizard = () => {
               {/* TOP SECTION: LOGIC EXPLANATION */}
               <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>NAMA AKUN TERDETEKSI</span>
-                  {provenGoal && <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--success)', backgroundColor: '#dcfce7', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>95% CONFIDENCE SCORE ✓</span>}
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>KESIMPULAN TRANSAKSI</span>
+                  {provenGoal && <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--success)', backgroundColor: '#dcfce7', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>Tepat & Sesuai Standar ✓</span>}
                 </div>
                 
                 {provenGoal ? (
@@ -402,19 +402,20 @@ export const ConsultationWizard = () => {
                     </span>
                     
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
-                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Penjelasan Logika</h4>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Maksud dari Transaksi Ini</h4>
                       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                        Berdasarkan data yang dimasukkan, transaksi terbukti merupakan bagian dari <strong>{provenGoal.rule_name.split(' (')[0]}</strong>. Aturan pakar <strong>{provenGoal.rule_code}</strong> menyimpulkan bahwa karakteristik transaksi ini memenuhi kriteria standar kepatuhan akuntansi SAK EMKM untuk pencatatan pos terkait.
+                        Sistem mencatat transaksi Anda sebagai <strong>{provenGoal.rule_name.split(' (')[0]}</strong>. Secara otomatis, sistem memastikan catatan ini sudah disesuaikan dengan aturan akuntansi yang benar, jadi Anda tidak perlu pusing memikirkan aturannya!
                       </p>
                       
-                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Rule Tracing (Jalur Logika)</h4>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Ringkasan Jawaban Anda</h4>
                       <div style={{ backgroundColor: 'var(--surface-alt)', borderLeft: '4px solid var(--primary)', padding: '1rem', borderRadius: '0 8px 8px 0', fontSize: '0.85rem' }}>
-                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-                          {provenGoal.rule_code}: {provenGoal.rule_name}
-                        </div>
-                        <div style={{ color: 'var(--text-secondary)' }}>
-                          Kondisi Terpenuhi: {ruleTrace.find(r => r.status === 'passed')?.conditions?.map(c => `${c.fact_name}=${c.actual}`).join(', ')}
-                        </div>
+                        <ul style={{ paddingLeft: '1.2rem', color: 'var(--text-secondary)', margin: 0 }}>
+                          {answersHistory.map((ans, idx) => (
+                            <li key={idx} style={{ marginBottom: '0.25rem' }}>
+                              {ans.question.question_text} <strong style={{ color: 'var(--text-primary)' }}>{facts[ans.question.fact_name] === 'yes' ? 'Ya' : 'Tidak'}</strong>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </div>
                   </>
@@ -428,9 +429,9 @@ export const ConsultationWizard = () => {
               {/* BOTTOM SECTION: FORM */}
               {provenGoal && (
                 <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Simpan Transaksi Ke Jurnal</h4>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Simpan ke Buku Kas</h4>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-                    Sistem telah memformulasikan transaksi ini sebagai jurnal berpasangan. Silakan simpan untuk mempostingnya ke pembukuan.
+                    Sistem sudah menyiapkan catatannya. Lengkapi nominal di bawah ini, lalu klik tombol simpan untuk memasukkannya ke buku kas Anda.
                   </p>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -483,7 +484,7 @@ export const ConsultationWizard = () => {
                       style={{ padding: '0.75rem 2rem', fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '8px' }} 
                       disabled={saving}
                     >
-                      <SaveIcon className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Posting Jurnal (Dr=Cr)'}
+                      <SaveIcon className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Simpan Transaksi'}
                     </button>
                   </div>
                 </div>
@@ -524,8 +525,8 @@ export const ConsultationWizard = () => {
                 </div>
 
                 <div style={{ fontSize: '0.75rem', color: '#e0f2fe', lineHeight: 1.5 }}>
-                  <p style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Penjelasan Preview Jurnal:</p>
-                  <p>Menurut prinsip Akuntansi Berpasangan (Double-Entry), transaksi ini menambah nilai di sisi <strong>Debit</strong> pada akun <strong style={{color:'white'}}>{debitDisplay}</strong> dan menyeimbangkannya di sisi <strong>Kredit</strong> pada akun <strong style={{color:'white'}}>{creditDisplay}</strong>.</p>
+                  <p style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Cara Membacanya:</p>
+                  <p>Pencatatan uang masuk/keluar ini diletakkan di <strong>Debit</strong> pada <strong style={{color:'white'}}>{debitDisplay}</strong>, dengan sumber asalnya dicatat di <strong>Kredit</strong> pada <strong style={{color:'white'}}>{creditDisplay}</strong>.</p>
                 </div>
               </div>
 
