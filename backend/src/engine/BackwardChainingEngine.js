@@ -4,10 +4,10 @@ export class BackwardChainingEngine {
   static async evaluate(businessType, facts = {}) {
     // 1. Fetch rules and their details
     const rulesRows = await query(`
-      SELECT id, code, name, business_type, description, debit_account_id, credit_account_id
+      SELECT id, code, name, business_type, description, debit_account_id, credit_account_id, priority
       FROM rules
       WHERE is_active = 1 AND (business_type = 'semua' OR business_type = ?)
-      ORDER BY code ASC
+      ORDER BY priority DESC, code ASC
     `, [businessType]);
 
     // 2. Fetch all conditions
@@ -88,8 +88,39 @@ export class BackwardChainingEngine {
       }
     }
 
+    // Logical priority order of facts for questioning flow consistency
+    const FACT_ORDER = [
+      'is_inbound',
+      'is_outbound',
+      'is_kredit',
+      'is_dijual_kembali',
+      'is_setoran_modal',
+      'is_pinjaman_bank',
+      'is_penjualan_barang',
+      'is_penjualan_jasa',
+      'is_penerimaan_piutang',
+      'is_pembelian_aset',
+      'is_manfaat_lebih_1_tahun',
+      'is_prive',
+      'is_beban_gaji',
+      'is_beban_utilitas',
+      'is_beban_sewa',
+      'is_beban_atk',
+      'is_beban_pemasaran',
+      'is_pelunasan_hutang_dagang',
+      'is_pelunasan_hutang_bank'
+    ];
+
     for (const rule of rulesRows) {
       const conditions = conditionsByRule[rule.id] || [];
+      
+      // Sort conditions using logical priority order
+      conditions.sort((a, b) => {
+        const idxA = FACT_ORDER.indexOf(a.fact_name);
+        const idxB = FACT_ORDER.indexOf(b.fact_name);
+        return (idxA !== -1 ? idxA : 999) - (idxB !== -1 ? idxB : 999);
+      });
+
       let ruleStatus = 'passed';
       const conditionTraces = [];
 
@@ -109,7 +140,7 @@ export class BackwardChainingEngine {
       }
 
       // INJEKSI SOLUSI GAP 1 & 3: Wajibkan pengecekan is_kredit untuk rule pengeluaran spesifik
-      const dynamicCreditRules = ['R-006', 'R-008', 'R-011', 'R-012', 'R-013', 'R-014', 'R-016', 'R-017'];
+      const dynamicCreditRules = ['R-006', 'R-017'];
       if (dynamicCreditRules.includes(rule.code) && effectiveFacts['is_kredit'] === undefined) {
         conditionTraces.push({ fact_name: 'is_kredit', expected: 'yes/no', status: 'unknown (injected)' });
         if (ruleStatus === 'passed') ruleStatus = 'blocked';

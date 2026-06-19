@@ -18,7 +18,7 @@ router.get('/', authenticateToken, async (req, res) => {
       FROM rules r
       LEFT JOIN accounts ad ON r.debit_account_id = ad.id
       LEFT JOIN accounts ac ON r.credit_account_id = ac.id
-      ORDER BY r.code ASC
+      ORDER BY r.priority DESC, r.code ASC
     `);
 
     const conditions = await query('SELECT * FROM rule_conditions');

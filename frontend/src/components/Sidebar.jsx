@@ -33,7 +33,7 @@ export const Sidebar = () => {
     { id: 'accounts', label: 'Akun Akuntansi', icon: <AccountsIcon className="w-5 h-5" /> },
     { id: 'rules', label: 'Rule Base', icon: <RulesIcon className="w-5 h-5" /> },
     { id: 'history', label: 'Riwayat', icon: <HistoryIcon className="w-5 h-5" /> },
-    // { id: 'reports', label: 'Laporan', icon: <ReportsIcon className="w-5 h-5" /> },
+    { id: 'reports', label: 'Laporan', icon: <ReportsIcon className="w-5 h-5" /> },
     { id: 'profile', label: 'Profil Saya', icon: <ProfileIcon className="w-5 h-5" /> }
   ];
 

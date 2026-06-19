@@ -122,7 +122,7 @@ export const RuleBaseIndex = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        const visibleRules = (data.rules || []).filter(r => r.code !== 'R-020');
+        const visibleRules = data.rules || [];
         setRules(visibleRules);
         if (visibleRules.length > 0 && !selectedRule) {
           setSelectedRule(visibleRules[0]);
@@ -354,11 +354,13 @@ export const RuleBaseIndex = () => {
       'is_outbound',
       'is_kredit',
       'is_dijual_kembali',
+      'is_setoran_modal',
+      'is_pinjaman_bank',
       'is_penjualan_barang',
       'is_penjualan_jasa',
+      'is_penerimaan_piutang',
       'is_pembelian_aset',
       'is_manfaat_lebih_1_tahun',
-      'is_setoran_modal',
       'is_prive',
       'is_beban_gaji',
       'is_beban_utilitas',
@@ -366,9 +368,7 @@ export const RuleBaseIndex = () => {
       'is_beban_atk',
       'is_beban_pemasaran',
       'is_pelunasan_hutang_dagang',
-      'is_penerimaan_piutang',
-      'is_pelunasan_hutang_bank',
-      'is_pinjaman_bank'
+      'is_pelunasan_hutang_bank'
     ];
 
     const sortedConditions = [...rule.conditions].sort((a, b) => {
