@@ -359,7 +359,9 @@ export const RuleBaseIndex = () => {
       return {
         q: q(c.fact_name),
         a: c.expected_value ? c.expected_value.toUpperCase() : '',
-        skipIf
+        skipIf,
+        fact_name: c.fact_name,
+        code: questions.find(x => x.fact_name === c.fact_name)?.code || ''
       };
     });
   };
@@ -1090,7 +1092,7 @@ export const RuleBaseIndex = () => {
                         }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '80%' }}>
                             <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>
-                              Pertanyaan {idx + 1}
+                              Pertanyaan {idx + 1} {step.code && `(${step.code})`} &middot; Fakta: <code style={{ color: 'var(--primary)', fontWeight: 700 }}>{step.fact_name}</code>
                             </span>
                             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
                               {step.q}
@@ -1220,7 +1222,9 @@ export const RuleBaseIndex = () => {
                           flex: 1
                         }}>
                           <span style={{ color: 'var(--text-secondary)', marginRight: '8px' }}>→</span>
+                          {step.code && <span style={{ fontWeight: 700, color: 'var(--text-muted)', marginRight: '6px' }}>[{step.code}]</span>}
                           {step.q}
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px', fontFamily: 'var(--font-mono)' }}>({step.fact_name})</span>
                         </div>
                       </div>
                     ))}
