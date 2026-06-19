@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { PlusIcon, EditIcon, TrashIcon, SearchIcon, CheckIcon, CloseIcon } from '../components/Icons';
 
@@ -85,6 +85,32 @@ export const RuleBaseIndex = () => {
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(1);
   const [conditions, setConditions] = useState([{ fact_name: 'is_penerimaan', expected_value: 'yes' }]);
+
+  // Zoom & Pan state for interactive flowchart
+  const [scale, setScale] = useState(0.85);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const flowchartContainerRef = useRef(null);
+
+  useEffect(() => {
+    const container = flowchartContainerRef.current;
+    if (!container) return;
+
+    const preventDefaultWheel = (e) => {
+      e.preventDefault();
+      const zoomFactor = 0.05;
+      setScale(prev => {
+        let newScale = prev + (e.deltaY < 0 ? zoomFactor : -zoomFactor);
+        return Math.max(0.15, Math.min(newScale, 3));
+      });
+    };
+
+    container.addEventListener('wheel', preventDefaultWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', preventDefaultWheel);
+    };
+  }, [activeTab]);
 
   const isAdmin = user?.role === 'Admin';
 
@@ -516,6 +542,32 @@ export const RuleBaseIndex = () => {
     <div style={{ position: 'relative' }}>
       {/* Inline Styles tag for gorgeous transitions and workspace interactions */}
       <style>{`
+        /* Mermaid flowchart node interactive hover styling */
+        .mermaid svg g.node:hover rect,
+        .mermaid svg g.node:hover polygon,
+        .mermaid svg g.node:hover circle,
+        .mermaid svg g.node:hover ellipse,
+        .mermaid svg g.node:hover path {
+          fill: #eff6ff !important;
+          stroke: #2563eb !important;
+          stroke-width: 2px !important;
+          cursor: pointer;
+          filter: drop-shadow(0 4px 8px rgba(37, 99, 235, 0.15));
+        }
+
+        .mermaid svg g.node rect,
+        .mermaid svg g.node polygon,
+        .mermaid svg g.node circle,
+        .mermaid svg g.node ellipse,
+        .mermaid svg g.node path {
+          transition: fill 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease, filter 0.2s ease;
+        }
+
+        .mermaid svg g.edgePath:hover path.path {
+          stroke: #2563eb !important;
+          stroke-width: 2.5px !important;
+        }
+
         @keyframes ruleFadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
@@ -1453,8 +1505,122 @@ export const RuleBaseIndex = () => {
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
               Representasi diagram alir memetakan percabangan sistem secara eksak sesuai pertanyaan yang muncul kepada pengguna.
             </p>
-            <div style={{ backgroundColor: '#ffffff', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border)', overflowX: 'auto', textAlign: 'center' }}>
-               <div className="mermaid">
+            <div 
+              ref={flowchartContainerRef}
+              onMouseDown={(e) => {
+                if (e.button !== 0) return;
+                setIsDragging(true);
+                setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+              }}
+              onMouseMove={(e) => {
+                if (!isDragging) return;
+                setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+              }}
+              onMouseUp={() => setIsDragging(false)}
+              onMouseLeave={() => setIsDragging(false)}
+              style={{
+                backgroundColor: '#f8fafc',
+                borderRadius: '12px',
+                border: '1px solid var(--border)',
+                height: 'calc(100vh - 280px)',
+                minHeight: '600px',
+                overflow: 'hidden',
+                position: 'relative',
+                cursor: isDragging ? 'grabbing' : 'grab',
+                userSelect: 'none'
+              }}
+            >
+              {/* Floating Zoom Controls */}
+              <div style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                display: 'flex',
+                gap: '0.5rem',
+                zIndex: 10,
+                backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                backdropFilter: 'blur(4px)',
+                padding: '0.35rem',
+                borderRadius: '8px',
+                border: '1px solid var(--border)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+              }}>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setScale(prev => Math.min(prev + 0.1, 3)); }}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'white',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1rem',
+                    color: 'var(--text-primary)'
+                  }}
+                  title="Zoom In"
+                >
+                  ＋
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setScale(prev => Math.max(prev - 0.1, 0.1)); }}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'white',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1rem',
+                    color: 'var(--text-primary)'
+                  }}
+                  title="Zoom Out"
+                >
+                  －
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setScale(0.85); setPan({ x: 0, y: 0 }); }}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'white',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-primary)'
+                  }}
+                  title="Reset Zoom & Position"
+                >
+                  ⟲
+                </button>
+              </div>
+
+              {/* Zoom & Pan Wrapper */}
+              <div style={{
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+                transformOrigin: 'center center',
+                transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                height: '100%'
+              }}>
+                <div className="mermaid" style={{ display: 'inline-block' }}>
 {`graph TD
     Start([Mulai Transaksi]) --> Q000{Jenis Usaha?}
     
@@ -1521,7 +1687,8 @@ export const RuleBaseIndex = () => {
     
     Q005U -- Ya --> R005[2-1000 Hutang Dagang]
     Q005U -- Tidak --> Drop([Cek Kembali Transaksi])`}
-               </div>
+                </div>
+              </div>
             </div>
           </div>
 
