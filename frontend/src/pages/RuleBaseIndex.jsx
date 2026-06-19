@@ -167,7 +167,14 @@ export const RuleBaseIndex = () => {
       script.async = true;
       script.onload = () => {
         if (window.mermaid) {
-          window.mermaid.initialize({ startOnLoad: true, theme: 'default' });
+          window.mermaid.initialize({ 
+            startOnLoad: false, 
+            theme: 'default',
+            flowchart: {
+              useMaxWidth: false,
+              htmlLabels: true
+            }
+          });
           window.mermaid.init(undefined, document.querySelectorAll('.mermaid'));
         }
       };
@@ -540,8 +547,16 @@ export const RuleBaseIndex = () => {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Inline Styles tag for gorgeous transitions and workspace interactions */}
       <style>{`
+        /* Reset Mermaid SVG default sizing constraints for sharp zoom and pan */
+        .mermaid svg {
+          max-width: none !important;
+          width: auto !important;
+          height: auto !important;
+          display: block;
+          margin: 0 auto;
+        }
+
         /* Mermaid flowchart node interactive hover styling */
         .mermaid svg g.node:hover rect,
         .mermaid svg g.node:hover polygon,
@@ -1612,13 +1627,14 @@ export const RuleBaseIndex = () => {
               {/* Zoom & Pan Wrapper */}
               <div style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-                transformOrigin: 'center center',
+                transformOrigin: 'top center',
                 transition: isDragging ? 'none' : 'transform 0.1s ease-out',
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 justifyContent: 'center',
                 width: '100%',
-                height: '100%'
+                height: '100%',
+                paddingTop: '2rem'
               }}>
                 <div className="mermaid" style={{ display: 'inline-block' }}>
 {`graph TD
