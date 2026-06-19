@@ -220,6 +220,9 @@ export const ConsultationWizard = () => {
 
   const creditDisplay = provenGoal?.credit?.name || '-';
 
+  const specificAccount = provenGoal ? provenGoal.rule_name.split(' (')[0] : '';
+  const category = provenGoal ? ((provenGoal.debit?.name?.includes(specificAccount) ? provenGoal.debit?.category : provenGoal.credit?.category) || 'Akuntansi') : '';
+
   return (
     <div className="printable-consultation">
       {step === 'business_select' && (
@@ -402,9 +405,14 @@ export const ConsultationWizard = () => {
                     </span>
                     
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
-                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Maksud dari Transaksi Ini</h4>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Kesimpulan</h4>
                       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                        Sistem mencatat transaksi Anda sebagai <strong>{provenGoal.rule_name.split(' (')[0]}</strong>. Secara otomatis, sistem memastikan catatan ini sudah disesuaikan dengan aturan akuntansi yang benar, jadi Anda tidak perlu pusing memikirkan aturannya!
+                        Berdasarkan analisis, transaksi ini terklasifikasi ke dalam kelompok <strong>{category}</strong> dengan akun spesifik <strong>{specificAccount}</strong>.
+                      </p>
+
+                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Rekomendasi Pencatatan (Standar SAK EMKM)</h4>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                        Jurnal entry yang direkomendasikan adalah mencatat penambahan/pengurangan di sisi <strong>Debit pada {debitDisplay}</strong> dan menyeimbangkannya di sisi <strong>Kredit pada {creditDisplay}</strong>. Perlakuan ini telah sesuai dengan standar akuntansi UMKM yang berlaku.
                       </p>
                       
                       <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Ringkasan Jawaban Anda</h4>
@@ -429,11 +437,6 @@ export const ConsultationWizard = () => {
               {/* BOTTOM SECTION: FORM */}
               {provenGoal && (
                 <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Simpan ke Buku Kas</h4>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-                    Sistem sudah menyiapkan catatannya. Lengkapi nominal di bawah ini, lalu klik tombol simpan untuk memasukkannya ke buku kas Anda.
-                  </p>
-
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {provenGoal.requiresUserInput === 'debit' && (
                       <div className="form-group" style={{ marginBottom: '0' }}>
