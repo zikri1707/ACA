@@ -45,6 +45,7 @@ export const ReportsIndex = () => {
       else if (activeTab === 'neraca-saldo') endpoint = '/api/reports/trial-balance';
       else if (activeTab === 'laba-rugi') endpoint = '/api/reports/income-statement';
       else if (activeTab === 'neraca') endpoint = '/api/reports/balance-sheet';
+      else if (activeTab === 'kesehatan-bisnis') endpoint = '/api/reports/business-health';
 
       if (!endpoint) return;
 
@@ -80,7 +81,8 @@ export const ReportsIndex = () => {
     { id: 'jurnal', label: 'Jurnal Umum' },
     { id: 'neraca-saldo', label: 'Neraca Saldo' },
     { id: 'laba-rugi', label: 'Laba Rugi' },
-    { id: 'neraca', label: 'Neraca (Posisi Keuangan)' }
+    { id: 'neraca', label: 'Neraca (Posisi Keuangan)' },
+    { id: 'kesehatan-bisnis', label: 'Kesehatan Bisnis' }
   ];
 
   return (
@@ -555,6 +557,175 @@ export const ReportsIndex = () => {
                       (data.kewajiban?.reduce((s, i) => s + i.amount, 0) || 0) + 
                       (data.ekuitas?.reduce((s, i) => s + i.amount, 0) || 0)
                     )}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* KESEHATAN BISNIS VIEW */}
+            {activeTab === 'kesehatan-bisnis' && data && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                {/* Row 1: Overall Health Gauge and Recommendation */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem', alignItems: 'stretch' }}>
+                  {/* Health Gauge Card */}
+                  <div className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', border: '1px solid var(--border)', borderRadius: '12px', backgroundColor: 'var(--background)' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kesehatan Finansial</span>
+                    
+                    {/* Circle Progress Meter */}
+                    <div style={{ position: 'relative', width: '130px', height: '130px', margin: '1.5rem 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="130" height="130" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="65" cy="65" r="55" fill="none" stroke="var(--border)" strokeWidth="10" />
+                        <circle cx="65" cy="65" r="55" fill="none" 
+                                stroke={data.color === 'success' ? '#10b981' : data.color === 'danger' ? '#ef4444' : data.color === 'warning' ? '#f59e0b' : '#94a3b8'} 
+                                strokeWidth="10" 
+                                strokeDasharray={2 * Math.PI * 55}
+                                strokeDashoffset={2 * Math.PI * 55 * (1 - (data.score || 0) / 100)}
+                                strokeLinecap="round"
+                                style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
+                        />
+                      </svg>
+                      <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{data.score}</span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700 }}>Skor / 100</span>
+                      </div>
+                    </div>
+
+                    <span style={{ 
+                      display: 'inline-block',
+                      backgroundColor: data.color === 'success' ? 'var(--success-light)' : data.color === 'danger' ? 'var(--danger-light)' : data.color === 'warning' ? '#fef3c7' : 'var(--background)',
+                      color: data.color === 'success' ? 'var(--success)' : data.color === 'danger' ? 'var(--danger)' : data.color === 'warning' ? '#d97706' : 'var(--text-secondary)',
+                      padding: '0.4rem 1.25rem',
+                      borderRadius: '2rem',
+                      fontSize: '0.85rem',
+                      fontWeight: 800,
+                      border: `1px solid ${data.color === 'success' ? 'rgba(16, 185, 129, 0.2)' : data.color === 'danger' ? 'rgba(239, 68, 68, 0.2)' : data.color === 'warning' ? 'rgba(217, 119, 6, 0.2)' : 'var(--border)'}`
+                    }}>
+                      {data.status}
+                    </span>
+                  </div>
+
+                  {/* Recommendation Card */}
+                  <div className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', borderRadius: '12px', justifyContent: 'center' }}>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+                      💡 Rekomendasi Sistem Pakar (SAK EMKM)
+                    </h3>
+                    <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                      {data.recommendation}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Row 2: Ratios cards grid */}
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.2rem', color: 'var(--text-primary)' }}>Indikator Rasio Keuangan Utama</h3>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                    
+                    {/* Current Ratio Card */}
+                    <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>Rasio Lancar (Current Ratio)</span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Aset Lancar / Kewajiban Lancar</span>
+                        </div>
+                        <span className="badge" style={{ 
+                          backgroundColor: data.facts.currentRatioStatus === 'sehat' ? 'var(--success-light)' : 'var(--danger-light)', 
+                          color: data.facts.currentRatioStatus === 'sehat' ? 'var(--success)' : 'var(--danger)',
+                          fontSize: '0.68rem', fontWeight: 700 
+                        }}>
+                          {data.facts.currentRatioStatus === 'sehat' ? 'Sehat' : 'Kurang'}
+                        </span>
+                      </div>
+                      <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{Number(data.ratios.currentRatio).toFixed(2)}x</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Target: &ge; 1.50x</span>
+                      </div>
+                    </div>
+
+                    {/* Cash Ratio Card */}
+                    <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>Rasio Kas (Cash Ratio)</span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Kas & Bank / Kewajiban Lancar</span>
+                        </div>
+                        <span className="badge" style={{ 
+                          backgroundColor: data.facts.cashRatioStatus === 'aman' ? 'var(--success-light)' : 'var(--danger-light)', 
+                          color: data.facts.cashRatioStatus === 'aman' ? 'var(--success)' : 'var(--danger)',
+                          fontSize: '0.68rem', fontWeight: 700 
+                        }}>
+                          {data.facts.cashRatioStatus === 'aman' ? 'Aman' : 'Kritis'}
+                        </span>
+                      </div>
+                      <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{Number(data.ratios.cashRatio).toFixed(2)}x</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Target: &ge; 0.50x</span>
+                      </div>
+                    </div>
+
+                    {/* NPM Card */}
+                    <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>Margin Laba Bersih (NPM)</span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Laba Bersih / Total Pendapatan</span>
+                        </div>
+                        <span className="badge" style={{ 
+                          backgroundColor: data.facts.npmStatus === 'sehat' ? 'var(--success-light)' : data.facts.npmStatus === 'rendah' ? '#fef3c7' : 'var(--danger-light)', 
+                          color: data.facts.npmStatus === 'sehat' ? 'var(--success)' : data.facts.npmStatus === 'rendah' ? '#d97706' : 'var(--danger)',
+                          fontSize: '0.68rem', fontWeight: 700 
+                        }}>
+                          {data.facts.npmStatus === 'sehat' ? 'Sehat' : data.facts.npmStatus === 'rendah' ? 'Rendah' : 'Rugi'}
+                        </span>
+                      </div>
+                      <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{(Number(data.ratios.npm) * 100).toFixed(1)}%</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Target: &ge; 10.0%</span>
+                      </div>
+                    </div>
+
+                    {/* OER Card */}
+                    <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>Rasio Efisiensi Beban (OER)</span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Total Beban / Pendapatan</span>
+                        </div>
+                        <span className="badge" style={{ 
+                          backgroundColor: data.facts.expenseRatioStatus === 'efisien' ? 'var(--success-light)' : 'var(--danger-light)', 
+                          color: data.facts.expenseRatioStatus === 'efisien' ? 'var(--success)' : 'var(--danger)',
+                          fontSize: '0.68rem', fontWeight: 700 
+                        }}>
+                          {data.facts.expenseRatioStatus === 'efisien' ? 'Efisien' : 'Boros'}
+                        </span>
+                      </div>
+                      <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{(Number(data.ratios.oer) * 100).toFixed(1)}%</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Target: &lt; 80.0%</span>
+                      </div>
+                    </div>
+
+                    {/* DER Card */}
+                    <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>Debt-to-Equity Ratio (DER)</span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Total Kewajiban / Ekuitas</span>
+                        </div>
+                        <span className="badge" style={{ 
+                          backgroundColor: data.facts.derStatus === 'aman' ? 'var(--success-light)' : 'var(--danger-light)', 
+                          color: data.facts.derStatus === 'aman' ? 'var(--success)' : 'var(--danger)',
+                          fontSize: '0.68rem', fontWeight: 700 
+                        }}>
+                          {data.facts.derStatus === 'aman' ? 'Aman' : 'Tinggi'}
+                        </span>
+                      </div>
+                      <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{Number(data.ratios.der).toFixed(2)}x</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Target: &lt; 1.00x</span>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div>

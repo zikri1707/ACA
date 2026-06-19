@@ -1,6 +1,7 @@
 import express from 'express';
 import { query } from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { HealthDiagnosticsEngine } from '../engine/HealthDiagnosticsEngine.js';
 
 const router = express.Router();
 
@@ -400,6 +401,16 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
 
   } catch (err) {
     return res.status(500).json({ message: 'Gagal memuat Dashboard.', error: err.message });
+  }
+});
+
+// 7. Business Health Diagnostics
+router.get('/business-health', authenticateToken, async (req, res) => {
+  try {
+    const report = await HealthDiagnosticsEngine.evaluate(req.user.id);
+    return res.json(report);
+  } catch (err) {
+    return res.status(500).json({ message: 'Gagal memuat Analisis Kesehatan Bisnis.', error: err.message });
   }
 });
 
