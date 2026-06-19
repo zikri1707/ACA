@@ -20,7 +20,7 @@ export const ConsultationWizard = () => {
   const [saving, setSaving] = useState(false);
 
   // Form Jurnal Input
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState('1000');
   const [description, setDescription] = useState('');
   const [selectedDynamicAccountId, setSelectedDynamicAccountId] = useState('');
   const [expenseAccounts, setExpenseAccounts] = useState([]);
@@ -59,7 +59,7 @@ export const ConsultationWizard = () => {
     setAnswersHistory([]);
     setProvenGoal(null);
     setRuleTrace([]);
-    setAmount('');
+    setAmount('1000');
     setDescription('');
     setSelectedDynamicAccountId('');
     // Auto start directly
@@ -428,9 +428,9 @@ export const ConsultationWizard = () => {
               {/* BOTTOM SECTION: FORM */}
               {provenGoal && (
                 <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Lengkapi Data Nominal Transaksi</h4>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Simpan Transaksi Ke Jurnal</h4>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-                    Sistem telah memformulasikan transaksi ini sebagai jurnal berpasangan. Masukkan nominal akhir untuk mempostingnya ke Buku Besar.
+                    Sistem telah memformulasikan transaksi ini sebagai jurnal berpasangan. Silakan simpan untuk mempostingnya ke pembukuan.
                   </p>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -452,7 +452,7 @@ export const ConsultationWizard = () => {
                       </div>
                     )}
 
-                    <div className="form-group" style={{ marginBottom: '0' }}>
+                    <div className="form-group" style={{ marginBottom: '0', display: 'none' }}>
                       <label className="form-label">Nominal Transaksi (Rp)</label>
                       <input 
                         type="number" 
@@ -506,7 +506,7 @@ export const ConsultationWizard = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.15)', paddingBottom: '1.5rem', marginBottom: '1rem' }}>
                   <div>
                     <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#bfdbfe' }}>
-                      DEBIT {amount && `(Rp ${parseFloat(amount).toLocaleString('id-ID')})`}
+                      DEBIT
                     </span>
                     <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', marginTop: '0.15rem' }}>
                       {debitDisplay}
@@ -515,7 +515,7 @@ export const ConsultationWizard = () => {
 
                   <div style={{ paddingLeft: '1.5rem' }}>
                     <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#bfdbfe' }}>
-                      KREDIT {amount && `(Rp ${parseFloat(amount).toLocaleString('id-ID')})`}
+                      KREDIT
                     </span>
                     <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', marginTop: '0.15rem' }}>
                       {creditDisplay}

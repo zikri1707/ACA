@@ -487,8 +487,8 @@ export const HistoryIndex = () => {
                 <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '160px' }}>
                   {(con.journals && con.journals.length > 0) ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#059669' }}>
-                        Rp {con.journals[0].amount.toLocaleString('id-ID')}
+                      <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Terposting
                       </div>
                       <div style={{ display: 'flex', gap: '0.35rem' }}>
                         <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd' }}>
@@ -631,8 +631,8 @@ export const HistoryIndex = () => {
                       marginBottom: '1.5rem', textAlign: 'center'
                     }}>
                       <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Jurnal Berpasangan Terposting</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669', marginBottom: '0.5rem' }}>
-                        Rp {detailJournals[0].amount.toLocaleString('id-ID')}
+                      <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#059669', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Terposting
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
