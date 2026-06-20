@@ -84,9 +84,11 @@ router.post('/save', authenticateToken, async (req, res) => {
       
       // Integritas Moving Average & HPP
       if (items && items.length > 0 && rule_code) {
-        if (rule_code === 'R-008' || rule_code === 'R-009') {
+        // G-09, G-10 = Pembelian Persediaan (Kredit/Tunai) → Moving Average
+        if (rule_code === 'G-09' || rule_code === 'G-10') {
           await InventoryEngine.calculateAndSaveMovingAverage(items, consultationId);
-        } else if (rule_code === 'R-004' || rule_code === 'R-005') {
+        // G-04, G-05 = Penjualan Barang (Kredit/Tunai) → HPP
+        } else if (rule_code === 'G-04' || rule_code === 'G-05') {
           await InventoryEngine.generateHppJournal(items, consultationId);
         }
       }

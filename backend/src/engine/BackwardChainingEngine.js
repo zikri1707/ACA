@@ -2,13 +2,13 @@ import { query } from '../config/database.js';
 
 export class BackwardChainingEngine {
   static async evaluate(businessType, facts = {}) {
-    // 1. Fetch rules and their details
+    // 1. Fetch rules and their details (load all rules for dynamic unified flow)
     const rulesRows = await query(`
       SELECT id, code, name, business_type, description, debit_account_id, credit_account_id, priority
       FROM rules
-      WHERE is_active = 1 AND (business_type = 'semua' OR business_type = ?)
+      WHERE is_active = 1
       ORDER BY priority DESC, code ASC
-    `, [businessType]);
+    `);
 
     // 2. Fetch all conditions
     const conditionsRows = await query(`
@@ -50,12 +50,6 @@ export class BackwardChainingEngine {
     // Create a copy of facts to inject logical defaults based on business type
     // This prevents rules from being permanently blocked by skipped questions
     const effectiveFacts = { ...facts };
-    if (businessType === 'jasa') {
-      if (effectiveFacts['is_penjualan_barang'] === undefined) effectiveFacts['is_penjualan_barang'] = 'no';
-      if (effectiveFacts['is_dijual_kembali'] === undefined) effectiveFacts['is_dijual_kembali'] = 'no';
-    } else if (businessType === 'dagang') {
-      if (effectiveFacts['is_penjualan_jasa'] === undefined) effectiveFacts['is_penjualan_jasa'] = 'no';
-    }
 
     // Mutual exclusivity for cash flows
     if (effectiveFacts['is_inbound'] === 'yes') {
@@ -76,11 +70,27 @@ export class BackwardChainingEngine {
       }
     }
 
-    // Mutual exclusivity for Pengeluaran subtypes
-    const pengeluaranTypes = ['is_pembelian_aset', 'is_prive', 'is_beban_gaji', 'is_beban_utilitas', 'is_beban_sewa', 'is_beban_atk', 'is_beban_pemasaran', 'is_pelunasan_hutang_dagang', 'is_pelunasan_hutang_bank'];
-    for (const type of pengeluaranTypes) {
+    // Mutual exclusivity for main categories of pengeluaran
+    const mainPengeluaranCategories = ['is_dijual_kembali', 'is_pembelian_aset', 'is_prive', 'is_pelunasan_hutang', 'is_beban'];
+    for (const type of mainPengeluaranCategories) {
       if (effectiveFacts[type] === 'yes') {
-        for (const other of pengeluaranTypes) {
+        for (const other of mainPengeluaranCategories) {
+          if (other !== type && effectiveFacts[other] === undefined) {
+            effectiveFacts[other] = 'no';
+          }
+        }
+        // Also set is_pengeluaran_atk to no for non-beban categories
+        if (type !== 'is_beban' && effectiveFacts['is_pengeluaran_atk'] === undefined) {
+          effectiveFacts['is_pengeluaran_atk'] = 'no';
+        }
+      }
+    }
+
+    // Mutual exclusivity for specific subtypes of pelunasan hutang
+    const pelunasanSubtypes = ['is_pelunasan_hutang_dagang', 'is_pelunasan_hutang_bank'];
+    for (const type of pelunasanSubtypes) {
+      if (effectiveFacts[type] === 'yes') {
+        for (const other of pelunasanSubtypes) {
           if (other !== type && effectiveFacts[other] === undefined) {
             effectiveFacts[other] = 'no';
           }
@@ -88,7 +98,52 @@ export class BackwardChainingEngine {
       }
     }
 
+    // Mutual exclusivity for specific subtypes of beban
+    const bebanSubtypes = ['is_beban_gaji', 'is_beban_utilitas', 'is_beban_sewa', 'is_beban_pemasaran'];
+    for (const type of bebanSubtypes) {
+      if (effectiveFacts[type] === 'yes') {
+        for (const other of bebanSubtypes) {
+          if (other !== type && effectiveFacts[other] === undefined) {
+            effectiveFacts[other] = 'no';
+          }
+        }
+      }
+    }
+
+    // Logical implications for pelunasan hutang
+    if (effectiveFacts['is_pelunasan_hutang'] === 'no') {
+      if (effectiveFacts['is_pelunasan_hutang_dagang'] === undefined) effectiveFacts['is_pelunasan_hutang_dagang'] = 'no';
+      if (effectiveFacts['is_pelunasan_hutang_bank'] === undefined) effectiveFacts['is_pelunasan_hutang_bank'] = 'no';
+    } else if (effectiveFacts['is_pelunasan_hutang_dagang'] === 'yes' || effectiveFacts['is_pelunasan_hutang_bank'] === 'yes') {
+      effectiveFacts['is_pelunasan_hutang'] = 'yes';
+    }
+
+    // Logical implications for beban
+    if (effectiveFacts['is_beban'] === 'no') {
+      if (effectiveFacts['is_beban_gaji'] === undefined) effectiveFacts['is_beban_gaji'] = 'no';
+      if (effectiveFacts['is_beban_utilitas'] === undefined) effectiveFacts['is_beban_utilitas'] = 'no';
+      if (effectiveFacts['is_beban_sewa'] === undefined) effectiveFacts['is_beban_sewa'] = 'no';
+      if (effectiveFacts['is_beban_pemasaran'] === undefined) effectiveFacts['is_beban_pemasaran'] = 'no';
+    } else if (
+      effectiveFacts['is_beban_gaji'] === 'yes' ||
+      effectiveFacts['is_beban_utilitas'] === 'yes' ||
+      effectiveFacts['is_beban_sewa'] === 'yes' ||
+      effectiveFacts['is_beban_pemasaran'] === 'yes'
+    ) {
+      effectiveFacts['is_beban'] = 'yes';
+    }
+
+    // Logical implications for pengeluaran atk
+    if (effectiveFacts['is_pengeluaran_atk'] === 'yes') {
+      if (effectiveFacts['is_dijual_kembali'] === undefined) effectiveFacts['is_dijual_kembali'] = 'no';
+      if (effectiveFacts['is_pembelian_aset'] === undefined) effectiveFacts['is_pembelian_aset'] = 'no';
+      if (effectiveFacts['is_prive'] === undefined) effectiveFacts['is_prive'] = 'no';
+      if (effectiveFacts['is_pelunasan_hutang'] === undefined) effectiveFacts['is_pelunasan_hutang'] = 'no';
+    }
+
     // Logical priority order of facts for questioning flow consistency
+    // Urutan ini menentukan pertanyaan mana yang ditanyakan lebih dulu
+    // ketika sebuah rule memiliki beberapa kondisi yang belum diketahui
     const FACT_ORDER = [
       'is_inbound',
       'is_outbound',
@@ -103,19 +158,60 @@ export class BackwardChainingEngine {
       'is_manfaat_lebih_1_tahun',
       'is_prive',
       'is_pelunasan_hutang',
-      'is_bayar_beban',
+      'is_pelunasan_hutang_dagang',
+      'is_pelunasan_hutang_bank',
+      'is_beban',
       'is_beban_gaji',
       'is_beban_utilitas',
       'is_beban_sewa',
-      'is_beban_atk',
       'is_beban_pemasaran',
-      'is_pelunasan_hutang_dagang',
-      'is_pelunasan_hutang_bank'
+      'is_pengeluaran_atk',
+      'is_pendekatan_beban'
     ];
 
+    const memoryRules = [];
     for (const rule of rulesRows) {
-      const conditions = conditionsByRule[rule.id] || [];
-      
+      if (rule.code === 'G-21') {
+        // Perlengkapan Kredit (priority higher)
+        memoryRules.push({
+          ...rule,
+          variant: 'kredit',
+          priority: rule.priority + 1,
+          credit_account_id: accountsMapByCode['2-1000']?.id || rule.credit_account_id
+        });
+        // Perlengkapan Tunai
+        memoryRules.push({
+          ...rule,
+          variant: 'tunai',
+          credit_account_id: accountsMapByCode['1-1000']?.id || rule.credit_account_id
+        });
+      } else {
+        memoryRules.push(rule);
+      }
+    }
+
+    // Re-sort rules in memory by priority DESC
+    memoryRules.sort((a, b) => b.priority - a.priority);
+
+    for (const rule of memoryRules) {
+      const conditions = [...(conditionsByRule[rule.id] || [])];
+
+      // Inject gateway conditions dynamically
+      if (rule.code === 'G-13' || rule.code === 'G-14' || rule.code === 'G-15') {
+        conditions.push({ fact_name: 'is_pelunasan_hutang', expected_value: 'yes' });
+      } else if (rule.code === 'G-16' || rule.code === 'G-17' || rule.code === 'G-18' || rule.code === 'G-19') {
+        conditions.push({ fact_name: 'is_beban', expected_value: 'yes' });
+      }
+
+      // Inject kredit condition for G-21 variants
+      if (rule.code === 'G-21') {
+        if (rule.variant === 'kredit') {
+          conditions.push({ fact_name: 'is_kredit', expected_value: 'yes' });
+        } else if (rule.variant === 'tunai') {
+          conditions.push({ fact_name: 'is_kredit', expected_value: 'no' });
+        }
+      }
+
       // Sort conditions using logical priority order
       conditions.sort((a, b) => {
         const idxA = FACT_ORDER.indexOf(a.fact_name);
@@ -170,10 +266,6 @@ export class BackwardChainingEngine {
       if (ruleStatus === 'blocked' && !nextQuestion && !provenGoal) {
         const firstUnknown = conditions.find(c => {
           if (effectiveFacts[c.fact_name] !== undefined) return false;
-          // Skip irrelevant questions based on business type
-          if (businessType === 'jasa' && c.fact_name === 'is_penjualan_barang') return false;
-          if (businessType === 'dagang' && c.fact_name === 'is_penjualan_jasa') return false;
-          if (businessType === 'jasa' && c.fact_name === 'is_dijual_kembali') return false;
           return true;
         });
         
@@ -186,10 +278,12 @@ export class BackwardChainingEngine {
 
     if (provenGoal) {
       // INJEKSI HPP & MOVING AVERAGE FLAGS
-      if (provenGoal.rule_code === 'R-004' || provenGoal.rule_code === 'R-005') {
+      // G-04, G-05 = Penjualan Barang (Kredit/Tunai) → Trigger HPP
+      if (provenGoal.rule_code === 'G-04' || provenGoal.rule_code === 'G-05') {
         provenGoal.triggerHpp = true;
       }
-      if (provenGoal.rule_code === 'R-008' || provenGoal.rule_code === 'R-009') {
+      // G-09, G-10 = Pembelian Persediaan (Kredit/Tunai) → Trigger Moving Average
+      if (provenGoal.rule_code === 'G-09' || provenGoal.rule_code === 'G-10') {
         provenGoal.triggerMovingAverage = true;
       }
       return { status: 'proven', nextQuestion: null, provenGoal, ruleTrace, verifiedFacts, confidence: 95 };

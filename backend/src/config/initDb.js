@@ -220,7 +220,9 @@ async function init() {
       { code: '5-1300', name: 'Beban Pemasaran', category: 'Beban', subcategory: 'Beban Operasional' },
       { code: '5-1500', name: 'Beban ATK', category: 'Beban', subcategory: 'Beban Operasional' },
       { code: '5-2000', name: 'Beban Penyusutan', category: 'Beban', subcategory: 'Beban Non-Tunai' },
-      { code: '5-3000', name: 'Harga Pokok Penjualan', category: 'Beban', subcategory: 'Harga Pokok Penjualan' }
+      { code: '5-3000', name: 'Harga Pokok Penjualan', category: 'Beban', subcategory: 'Harga Pokok Penjualan' },
+      { code: '2-9000', name: 'Hutang Lain-lain', category: 'Kewajiban', subcategory: 'Hutang Lancar' },
+      { code: '5-9000', name: 'Beban Lain-lain', category: 'Beban', subcategory: 'Beban Operasional' }
     ];
 
     for (const acc of defaultAccounts) {
@@ -231,7 +233,7 @@ async function init() {
     }
     console.log('COA seeded.');
 
-    // Seeding Questions
+    // Seeding Questions (22 pertanyaan sesuai dokumentasi backward chaining dan flowchart)
     const defaultQuestions = [
       { code: 'Q-001', question_text: 'Apakah transaksi merupakan penerimaan uang?', fact_name: 'is_inbound' },
       { code: 'Q-002', question_text: 'Apakah transaksi merupakan pengeluaran uang?', fact_name: 'is_outbound' },
@@ -246,10 +248,11 @@ async function init() {
       { code: 'Q-011', question_text: 'Apakah pengeluaran merupakan pembayaran gaji?', fact_name: 'is_beban_gaji' },
       { code: 'Q-012', question_text: 'Apakah pengeluaran merupakan pembayaran utilitas (listrik, air, internet)?', fact_name: 'is_beban_utilitas' },
       { code: 'Q-013', question_text: 'Apakah pengeluaran merupakan pembayaran sewa?', fact_name: 'is_beban_sewa' },
-      { code: 'Q-014', question_text: 'Apakah pengeluaran merupakan pembelian alat tulis kantor (ATK)?', fact_name: 'is_beban_atk' },
+      { code: 'Q-014', question_text: 'Apakah pembelian perlengkapan dicatat menggunakan pendekatan beban?', fact_name: 'is_pendekatan_beban' },
       { code: 'Q-015', question_text: 'Apakah penerimaan berasal dari pinjaman bank?', fact_name: 'is_pinjaman_bank' },
-      { code: 'Q-016', question_text: 'Apakah pengeluaran ditujukan untuk pelunasan kewajiban/hutang?', fact_name: 'is_pelunasan_hutang' },
-      { code: 'Q-017', question_text: 'Apakah pengeluaran ditujukan untuk pembayaran beban?', fact_name: 'is_bayar_beban' },
+      { code: 'Q-016', question_text: 'Apakah transaksi merupakan pembelian ATK atau perlengkapan operasional?', fact_name: 'is_pengeluaran_atk' },
+      { code: 'Q-017', question_text: 'Apakah pengeluaran ditujukan untuk pelunasan kewajiban/hutang?', fact_name: 'is_pelunasan_hutang' },
+      { code: 'Q-018', question_text: 'Apakah pengeluaran ditujukan untuk pembayaran beban?', fact_name: 'is_beban' },
       { code: 'Q-110', question_text: 'Apakah pengeluaran merupakan biaya pemasaran atau promosi?', fact_name: 'is_beban_pemasaran' },
       { code: 'Q-111', question_text: 'Apakah transaksi merupakan pelunasan hutang dagang?', fact_name: 'is_pelunasan_hutang_dagang' },
       { code: 'Q-112', question_text: 'Apakah transaksi merupakan penerimaan pembayaran piutang dari pelanggan?', fact_name: 'is_penerimaan_piutang' },
@@ -266,34 +269,48 @@ async function init() {
     const accMap = {};
     accountsRows.forEach(a => accMap[a.code] = a.id);
 
+    // 22 Rules (G-01 s.d. G-22) sesuai dokumentasi backward chaining
+    // Priority menentukan urutan evaluasi (tinggi = dievaluasi duluan)
     const defaultRules = [
+      // ========== INBOUND (Penerimaan) ==========
       {
-        code: 'R-001', name: 'Setoran Modal', business_type: 'semua',
-        debit: accMap['1-1000'], credit: accMap['3-1000'], description: 'Penyetoran modal investasi oleh pemilik.',
+        code: 'G-01', name: 'Modal Pemilik', business_type: 'semua',
+        debit: accMap['1-1000'], credit: accMap['3-1000'],
+        description: 'Penyetoran modal investasi oleh pemilik.',
+        priority: 220,
         conditions: [
           { fact_name: 'is_inbound', expected_value: 'yes' },
           { fact_name: 'is_setoran_modal', expected_value: 'yes' }
         ]
       },
       {
-        code: 'R-002', name: 'Pinjaman Bank', business_type: 'semua',
-        debit: accMap['1-1000'], credit: accMap['2-2000'], description: 'Pencairan dana pinjaman bank.',
+        code: 'G-02', name: 'Hutang Bank', business_type: 'semua',
+        debit: accMap['1-1000'], credit: accMap['2-2000'],
+        description: 'Pencairan dana pinjaman bank.',
+        priority: 210,
         conditions: [
           { fact_name: 'is_inbound', expected_value: 'yes' },
+          { fact_name: 'is_setoran_modal', expected_value: 'no' },
           { fact_name: 'is_pinjaman_bank', expected_value: 'yes' }
         ]
       },
       {
-        code: 'R-003', name: 'Penerimaan Piutang', business_type: 'semua',
-        debit: accMap['1-1000'], credit: accMap['1-1200'], description: 'Penerimaan pembayaran piutang dari pelanggan.',
+        code: 'G-03', name: 'Penerimaan Piutang', business_type: 'semua',
+        debit: accMap['1-1000'], credit: accMap['1-1200'],
+        description: 'Penerimaan pembayaran piutang dari pelanggan.',
+        priority: 200,
         conditions: [
           { fact_name: 'is_inbound', expected_value: 'yes' },
+          { fact_name: 'is_setoran_modal', expected_value: 'no' },
+          { fact_name: 'is_pinjaman_bank', expected_value: 'no' },
           { fact_name: 'is_penerimaan_piutang', expected_value: 'yes' }
         ]
       },
       {
-        code: 'R-004', name: 'Penjualan Barang Kredit', business_type: 'dagang',
-        debit: accMap['1-1200'], credit: accMap['4-1000'], description: 'Penjualan barang secara kredit.',
+        code: 'G-04', name: 'Penjualan Barang Kredit', business_type: 'dagang',
+        debit: accMap['1-1200'], credit: accMap['4-1000'],
+        description: 'Penjualan barang secara kredit. Trigger: Perhitungan HPP.',
+        priority: 190,
         conditions: [
           { fact_name: 'is_inbound', expected_value: 'yes' },
           { fact_name: 'is_penjualan_barang', expected_value: 'yes' },
@@ -301,8 +318,10 @@ async function init() {
         ]
       },
       {
-        code: 'R-005', name: 'Penjualan Barang Tunai', business_type: 'dagang',
-        debit: accMap['1-1000'], credit: accMap['4-1000'], description: 'Penjualan barang secara tunai.',
+        code: 'G-05', name: 'Penjualan Barang Tunai', business_type: 'dagang',
+        debit: accMap['1-1000'], credit: accMap['4-1000'],
+        description: 'Penjualan barang secara tunai. Trigger: Perhitungan HPP.',
+        priority: 185,
         conditions: [
           { fact_name: 'is_inbound', expected_value: 'yes' },
           { fact_name: 'is_penjualan_barang', expected_value: 'yes' },
@@ -310,8 +329,10 @@ async function init() {
         ]
       },
       {
-        code: 'R-006', name: 'Penjualan Jasa Kredit', business_type: 'jasa',
-        debit: accMap['1-1200'], credit: accMap['4-1100'], description: 'Penjualan jasa secara kredit.',
+        code: 'G-06', name: 'Penjualan Jasa Kredit', business_type: 'jasa',
+        debit: accMap['1-1200'], credit: accMap['4-1100'],
+        description: 'Penjualan jasa secara kredit.',
+        priority: 180,
         conditions: [
           { fact_name: 'is_inbound', expected_value: 'yes' },
           { fact_name: 'is_penjualan_jasa', expected_value: 'yes' },
@@ -319,8 +340,10 @@ async function init() {
         ]
       },
       {
-        code: 'R-007', name: 'Penjualan Jasa Tunai', business_type: 'jasa',
-        debit: accMap['1-1000'], credit: accMap['4-1100'], description: 'Penjualan jasa secara tunai.',
+        code: 'G-07', name: 'Penjualan Jasa Tunai', business_type: 'jasa',
+        debit: accMap['1-1000'], credit: accMap['4-1100'],
+        description: 'Penjualan jasa secara tunai.',
+        priority: 175,
         conditions: [
           { fact_name: 'is_inbound', expected_value: 'yes' },
           { fact_name: 'is_penjualan_jasa', expected_value: 'yes' },
@@ -328,8 +351,20 @@ async function init() {
         ]
       },
       {
-        code: 'R-008', name: 'Pembelian Persediaan Kredit', business_type: 'dagang',
-        debit: accMap['1-1300'], credit: accMap['2-1000'], description: 'Pembelian barang dagang secara kredit.',
+        code: 'G-08', name: 'Penerimaan Tunai Lainnya', business_type: 'semua',
+        debit: accMap['1-1000'], credit: accMap['4-9000'],
+        description: 'Penerimaan kas lain yang tidak terklasifikasi pada goal sebelumnya.',
+        priority: 5,
+        conditions: [
+          { fact_name: 'is_inbound', expected_value: 'yes' }
+        ]
+      },
+      // ========== OUTBOUND (Pengeluaran) ==========
+      {
+        code: 'G-09', name: 'Pembelian Persediaan Kredit', business_type: 'dagang',
+        debit: accMap['1-1300'], credit: accMap['2-1000'],
+        description: 'Pembelian barang dagang secara kredit. Trigger: Moving Average.',
+        priority: 170,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
           { fact_name: 'is_dijual_kembali', expected_value: 'yes' },
@@ -337,8 +372,10 @@ async function init() {
         ]
       },
       {
-        code: 'R-009', name: 'Pembelian Persediaan Tunai', business_type: 'dagang',
-        debit: accMap['1-1300'], credit: accMap['1-1000'], description: 'Pembelian barang dagang secara tunai.',
+        code: 'G-10', name: 'Pembelian Persediaan Tunai', business_type: 'dagang',
+        debit: accMap['1-1300'], credit: accMap['1-1000'],
+        description: 'Pembelian barang dagang secara tunai. Trigger: Moving Average.',
+        priority: 165,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
           { fact_name: 'is_dijual_kembali', expected_value: 'yes' },
@@ -346,8 +383,10 @@ async function init() {
         ]
       },
       {
-        code: 'R-010', name: 'Pembelian Peralatan', business_type: 'semua',
-        debit: accMap['1-2100'], credit: accMap['1-1000'], description: 'Pembelian peralatan secara tunai.',
+        code: 'G-11', name: 'Pembelian Aset Tetap', business_type: 'semua',
+        debit: accMap['1-2100'], credit: accMap['1-1000'],
+        description: 'Pembelian peralatan / aset tetap.',
+        priority: 160,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
           { fact_name: 'is_pembelian_aset', expected_value: 'yes' },
@@ -355,79 +394,115 @@ async function init() {
         ]
       },
       {
-        code: 'R-011', name: 'Prive Pemilik', business_type: 'semua',
-        debit: accMap['3-2000'], credit: accMap['1-1000'], description: 'Penarikan dana untuk keperluan pribadi pemilik.',
+        code: 'G-12', name: 'Prive', business_type: 'semua',
+        debit: accMap['3-2000'], credit: accMap['1-1000'],
+        description: 'Penarikan dana untuk keperluan pribadi pemilik.',
+        priority: 150,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
           { fact_name: 'is_prive', expected_value: 'yes' }
         ]
       },
       {
-        code: 'R-012', name: 'Beban Gaji', business_type: 'semua',
-        debit: accMap['5-1000'], credit: accMap['1-1000'], description: 'Pembayaran gaji karyawan.',
+        code: 'G-13', name: 'Pelunasan Hutang Dagang', business_type: 'semua',
+        debit: accMap['2-1000'], credit: accMap['1-1000'],
+        description: 'Pembayaran pelunasan hutang kepada supplier.',
+        priority: 140,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
-          { fact_name: 'is_pelunasan_hutang', expected_value: 'no' },
-          { fact_name: 'is_bayar_beban', expected_value: 'yes' },
-          { fact_name: 'is_beban_gaji', expected_value: 'yes' }
-        ]
-      },
-      {
-        code: 'R-013', name: 'Beban Utilitas', business_type: 'semua',
-        debit: accMap['5-1100'], credit: accMap['1-1000'], description: 'Pembayaran utilitas (listrik, air, telepon).',
-        conditions: [
-          { fact_name: 'is_outbound', expected_value: 'yes' },
-          { fact_name: 'is_pelunasan_hutang', expected_value: 'no' },
-          { fact_name: 'is_bayar_beban', expected_value: 'yes' },
-          { fact_name: 'is_beban_utilitas', expected_value: 'yes' }
-        ]
-      },
-      {
-        code: 'R-014', name: 'Beban Sewa', business_type: 'semua',
-        debit: accMap['5-1200'], credit: accMap['1-1000'], description: 'Pembayaran sewa gedung / tempat usaha.',
-        conditions: [
-          { fact_name: 'is_outbound', expected_value: 'yes' },
-          { fact_name: 'is_pelunasan_hutang', expected_value: 'no' },
-          { fact_name: 'is_bayar_beban', expected_value: 'yes' },
-          { fact_name: 'is_beban_sewa', expected_value: 'yes' }
-        ]
-      },
-      {
-        code: 'R-015', name: 'Beban Pemasaran', business_type: 'semua',
-        debit: accMap['5-1300'], credit: accMap['1-1000'], description: 'Biaya pemasaran, iklan, dan promosi.',
-        conditions: [
-          { fact_name: 'is_outbound', expected_value: 'yes' },
-          { fact_name: 'is_pelunasan_hutang', expected_value: 'no' },
-          { fact_name: 'is_bayar_beban', expected_value: 'yes' },
-          { fact_name: 'is_beban_pemasaran', expected_value: 'yes' }
-        ]
-      },
-      {
-        code: 'R-016', name: 'Pelunasan Hutang Dagang', business_type: 'semua',
-        debit: accMap['2-1000'], credit: accMap['1-1000'], description: 'Pembayaran pelunasan hutang kepada supplier.',
-        conditions: [
-          { fact_name: 'is_outbound', expected_value: 'yes' },
-          { fact_name: 'is_pelunasan_hutang', expected_value: 'yes' },
           { fact_name: 'is_pelunasan_hutang_dagang', expected_value: 'yes' }
         ]
       },
       {
-        code: 'R-017', name: 'Pelunasan Hutang Bank', business_type: 'semua',
-        debit: accMap['2-2000'], credit: accMap['1-1000'], description: 'Pembayaran angsuran atau pelunasan hutang bank.',
+        code: 'G-14', name: 'Pelunasan Hutang Bank', business_type: 'semua',
+        debit: accMap['2-2000'], credit: accMap['1-1000'],
+        description: 'Pembayaran angsuran atau pelunasan hutang bank.',
+        priority: 135,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
-          { fact_name: 'is_pelunasan_hutang', expected_value: 'yes' },
           { fact_name: 'is_pelunasan_hutang_bank', expected_value: 'yes' }
         ]
       },
       {
-        code: 'R-018', name: 'Beban ATK', business_type: 'semua',
-        debit: accMap['5-1500'], credit: accMap['1-1000'], description: 'Pembelian alat tulis kantor (ATK).',
+        code: 'G-15', name: 'Pelunasan Hutang Lainnya', business_type: 'semua',
+        debit: accMap['2-9000'], credit: accMap['1-1000'],
+        description: 'Pelunasan hutang selain hutang dagang dan hutang bank.',
+        priority: 2,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
-          { fact_name: 'is_pelunasan_hutang', expected_value: 'no' },
-          { fact_name: 'is_bayar_beban', expected_value: 'yes' },
-          { fact_name: 'is_beban_atk', expected_value: 'yes' }
+          { fact_name: 'is_pelunasan_hutang_dagang', expected_value: 'no' },
+          { fact_name: 'is_pelunasan_hutang_bank', expected_value: 'no' }
+        ]
+      },
+      {
+        code: 'G-16', name: 'Beban Gaji', business_type: 'semua',
+        debit: accMap['5-1000'], credit: accMap['1-1000'],
+        description: 'Pembayaran gaji karyawan.',
+        priority: 120,
+        conditions: [
+          { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_beban_gaji', expected_value: 'yes' }
+        ]
+      },
+      {
+        code: 'G-17', name: 'Beban Utilitas', business_type: 'semua',
+        debit: accMap['5-1100'], credit: accMap['1-1000'],
+        description: 'Pembayaran utilitas (listrik, air, internet).',
+        priority: 115,
+        conditions: [
+          { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_beban_utilitas', expected_value: 'yes' }
+        ]
+      },
+      {
+        code: 'G-18', name: 'Beban Sewa', business_type: 'semua',
+        debit: accMap['5-1200'], credit: accMap['1-1000'],
+        description: 'Pembayaran sewa gedung / tempat usaha.',
+        priority: 110,
+        conditions: [
+          { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_beban_sewa', expected_value: 'yes' }
+        ]
+      },
+      {
+        code: 'G-19', name: 'Beban Pemasaran', business_type: 'semua',
+        debit: accMap['5-1300'], credit: accMap['1-1000'],
+        description: 'Biaya pemasaran, iklan, dan promosi.',
+        priority: 105,
+        conditions: [
+          { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_beban_pemasaran', expected_value: 'yes' }
+        ]
+      },
+      {
+        code: 'G-20', name: 'Beban ATK', business_type: 'semua',
+        debit: accMap['5-1500'], credit: accMap['1-1000'],
+        description: 'Pembelian ATK dicatat langsung sebagai beban (pendekatan beban).',
+        priority: 100,
+        conditions: [
+          { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_pengeluaran_atk', expected_value: 'yes' },
+          { fact_name: 'is_pendekatan_beban', expected_value: 'yes' }
+        ]
+      },
+      {
+        code: 'G-21', name: 'Perlengkapan', business_type: 'semua',
+        debit: accMap['1-1500'], credit: accMap['1-1000'],
+        description: 'Pembelian ATK dicatat sebagai aset perlengkapan (pendekatan aset).',
+        priority: 95,
+        conditions: [
+          { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_pengeluaran_atk', expected_value: 'yes' },
+          { fact_name: 'is_pendekatan_beban', expected_value: 'no' }
+        ]
+      },
+      {
+        code: 'G-22', name: 'Pengeluaran Kas Lainnya', business_type: 'semua',
+        debit: accMap['5-9000'], credit: accMap['1-1000'],
+        description: 'Pengeluaran kas lain yang tidak terklasifikasi pada goal sebelumnya.',
+        priority: 1,
+        conditions: [
+          { fact_name: 'is_outbound', expected_value: 'yes' }
         ]
       }
     ];
