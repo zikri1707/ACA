@@ -61,6 +61,8 @@ a:hover {
   padding: 2rem;
   background-color: var(--background);
   min-height: 100vh;
+  min-width: 0;
+  overflow-x: hidden;
   transition: margin-left 0.3s ease, background-color 0.3s ease, padding 0.3s ease;
 }
 
@@ -182,6 +184,7 @@ a:hover {
   padding: 1.5rem;
   box-shadow: var(--shadow-md);
   transition: var(--transition);
+  min-width: 0; /* Prevents card from expanding past grid column width */
 }
 
 .card:hover {
@@ -414,12 +417,15 @@ a:hover {
 }
 
 /* Mobile Responsiveness */
+@media (max-width: 1280px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 1024px) {
   .main-content {
     padding: 1.5rem;
-  }
-  .grid-cols-4 {
-    grid-template-columns: repeat(2, 1fr);
   }
   .layout-main-side {
     grid-template-columns: 1fr;

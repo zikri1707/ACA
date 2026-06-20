@@ -97,13 +97,14 @@ export const RuleBaseIndex = () => {
   // Zoom & Pan state for interactive flowchart
   const [scale, setScale] = useState(() => {
     if (typeof window !== 'undefined') {
-      return window.innerWidth < 768 ? 0.45 : 0.85;
+      return window.innerWidth < 768 ? 0.20 : 0.35;
     }
-    return 0.85;
+    return 0.35;
   });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const flowchartContainerRef = useRef(null);
 
   useEffect(() => {
@@ -173,33 +174,82 @@ export const RuleBaseIndex = () => {
   }, [token]);
 
   // Effect for rendering Mermaid diagram dynamically
-  useEffect(() => {
-    if (activeTab === 'rules_diagram') {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js';
-      script.async = true;
-      script.onload = () => {
-        if (window.mermaid) {
-          window.mermaid.initialize({ 
-            startOnLoad: false, 
-            theme: 'default',
-            flowchart: {
-              useMaxWidth: false,
-              htmlLabels: true
-            }
-          });
-          window.mermaid.init(undefined, document.querySelectorAll('.mermaid'));
-        }
-      };
-      document.body.appendChild(script);
-      return () => {
-        if (document.body.contains(script)) {
-          document.body.removeChild(script);
-        }
-      };
-    }
-  }, [activeTab]);
+useEffect(() => {
+  if (activeTab === 'rules_diagram') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js';
+    script.async = true;
+    script.onload = () => {
+      if (window.mermaid) {
+        window.mermaid.initialize({
+          startOnLoad: false,
+          theme: 'default',
+          flowchart: {
+            useMaxWidth: false,
+            htmlLabels: true,
+            padding: 20,
+            nodeSpacing: 120, // lebih lega
+            rankSpacing: 120  // lebih lega
+          }
+        });
 
+        window.mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+
+        const fixMermaidClipping = () => {
+          const svg = document.querySelector('.mermaid svg');
+          if (!svg) { setTimeout(fixMermaidClipping, 300); return; }
+
+          // ✅ Step 1: Hapus constraint clipPath
+          svg.querySelectorAll('defs clipPath rect').forEach(r => {
+            r.setAttribute('width', '5000');
+            r.setAttribute('height', '3000');
+            r.setAttribute('x', '-2500');
+            r.setAttribute('y', '-1500');
+          });
+
+          // ✅ Step 2: Resize foreignObject SAJA — rect & polygon TIDAK disentuh
+          // Sehingga layout Mermaid tetap utuh, tidak ada node yang overlap
+          svg.querySelectorAll('g.node').forEach(node => {
+            const fo = node.querySelector('foreignObject');
+            if (!fo) return;
+            fo.style.overflow = 'visible';
+
+            const div = fo.querySelector('div');
+            if (!div) return;
+
+            // Ukur lebar alami teks (sementara lepas constraint width)
+            div.style.width = 'max-content';
+            div.style.maxWidth = '240px'; // batas wrap teks
+            div.style.textAlign = 'center';
+            div.style.boxSizing = 'border-box';
+
+            const w = Math.min(div.scrollWidth + 16, 260);
+            const h = div.scrollHeight + 10;
+            if (!w || !h) return;
+
+            fo.setAttribute('width', String(w));
+            fo.setAttribute('height', String(h));
+            fo.setAttribute('x', String(-w / 2));
+            fo.setAttribute('y', String(-h / 2));
+
+            // Background agar teks tetap terbaca meski sedikit melebihi shape
+            div.style.background = 'rgba(237, 233, 254, 0.93)';
+            div.style.padding = '4px 8px';
+            div.style.borderRadius = '4px';
+            div.style.width = String(w - 16) + 'px';
+          });
+        };
+
+        setTimeout(fixMermaidClipping, 800);
+      }
+    };
+
+    document.body.appendChild(script);
+    return () => {
+      if (document.body.contains(script)) document.body.removeChild(script);
+    };
+  }
+}, [activeTab]);
   const handleToggleActive = async (rule) => {
     if (!isAdmin) return;
     try {
@@ -732,11 +782,19 @@ export const RuleBaseIndex = () => {
         /* Reset Mermaid SVG default sizing constraints for sharp zoom and pan */
         .mermaid svg {
           max-width: none !important;
-          width: auto !important;
-          height: auto !important;
           display: block;
           margin: 0 auto;
         }
+      .mermaid svg foreignObject {
+        overflow: visible !important;
+      }
+      .mermaid svg g.node {
+        overflow: visible !important;
+      }
+      .mermaid svg defs {
+        overflow: visible !important;
+      }
+      
 
         /* Mermaid flowchart node interactive hover styling */
         .mermaid svg g.node:hover rect,
@@ -1002,7 +1060,7 @@ export const RuleBaseIndex = () => {
             className={`rule-tab-btn ${activeTab === 'rules_diagram' ? 'active' : ''}`}
             style={{ whiteSpace: 'nowrap' }}
           >
-            📊 Flowchart & Matriks
+            📊 Flowchart
           </button>
           <button
             onClick={() => setActiveTab('visualizer')}
@@ -1551,10 +1609,10 @@ export const RuleBaseIndex = () => {
         </div>
       )}
 
-      {/* Tab 5: Flowchart & Matriks */}
+      {/* Tab 5: Flowchart */}
       {activeTab === 'rules_diagram' && (
         <div className="anim-fade-in">
-          <div className="card" style={{ padding: '2rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
+          <div className="card" style={{ padding: '2rem', borderRadius: '12px' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Flowchart (Diagram Alir Logika)</h3>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
               Representasi diagram alir memetakan percabangan sistem secara eksak sesuai pertanyaan yang muncul kepada pengguna.
@@ -1586,12 +1644,16 @@ export const RuleBaseIndex = () => {
               onTouchEnd={() => setIsDragging(false)}
               style={{
                 backgroundColor: '#f8fafc',
-                borderRadius: '12px',
-                border: '1px solid var(--border)',
-                height: 'calc(100vh - 280px)',
+                borderRadius: isFullscreen ? '0' : '12px',
+                border: isFullscreen ? 'none' : '1px solid var(--border)',
+                height: isFullscreen ? '100vh' : 'calc(100vh - 280px)',
                 minHeight: '500px',
                 overflow: 'hidden',
-                position: 'relative',
+                position: isFullscreen ? 'fixed' : 'relative',
+                top: isFullscreen ? 0 : 'auto',
+                left: isFullscreen ? 0 : 'auto',
+                width: isFullscreen ? '100vw' : 'auto',
+                zIndex: isFullscreen ? 9999 : 1,
                 cursor: isDragging ? 'grabbing' : 'grab',
                 userSelect: 'none',
                 touchAction: 'none'
@@ -1600,220 +1662,159 @@ export const RuleBaseIndex = () => {
               {/* Floating Zoom Controls */}
               <div style={{
                 position: 'absolute',
-                top: '1rem',
-                right: '1rem',
+                bottom: '1.5rem',
+                right: '1.5rem',
                 display: 'flex',
-                gap: '0.5rem',
+                alignItems: 'center',
+                gap: '0.25rem',
                 zIndex: 10,
-                backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                backdropFilter: 'blur(4px)',
-                padding: '0.35rem',
-                borderRadius: '8px',
-                border: '1px solid var(--border)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                backgroundColor: '#ffffff',
+                padding: '0.5rem 0.75rem',
+                borderRadius: '999px',
+                border: '1px solid rgba(0,0,0,0.08)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
               }}>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setScale(prev => Math.min(prev + 0.1, 3)); }}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'white',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1rem',
-                    color: 'var(--text-primary)'
-                  }}
-                  title="Zoom In"
-                >
-                  ＋
-                </button>
-                <button
-                  type="button"
                   onClick={(e) => { e.stopPropagation(); setScale(prev => Math.max(prev - 0.1, 0.1)); }}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'white',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1rem',
-                    color: 'var(--text-primary)'
-                  }}
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', transition: 'background-color 0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   title="Zoom Out"
                 >
-                  －
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    const defaultScale = window.innerWidth < 768 ? 0.45 : 0.85;
-                    setScale(defaultScale); 
-                    setPan({ x: 0, y: 0 }); 
-                  }}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'white',
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--text-primary)'
-                  }}
-                  title="Reset Zoom & Position"
+                  onClick={(e) => { e.stopPropagation(); setScale(prev => Math.min(prev + 0.1, 3)); }}
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', transition: 'background-color 0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  title="Zoom In"
                 >
-                  ⟲
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); const defaultScale = window.innerWidth < 768 ? 0.45 : 0.85; setScale(defaultScale); setPan({ x: 0, y: 0 }); }}
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', transition: 'background-color 0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  title="Reset Zoom & Focus"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <line x1="14.5" y1="14.5" x2="17" y2="17"></line>
+                    <path d="M4 8V4h4"></path>
+                    <path d="M4 16v4h4"></path>
+                    <path d="M20 8V4h-4"></path>
+                    <path d="M20 16v4h-4"></path>
+                  </svg>
+                </button>
+                <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border)', margin: '0 0.5rem' }}></div>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setIsFullscreen(!isFullscreen); setPan({ x: 0, y: 0 }); }}
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', transition: 'background-color 0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                >
+                  {isFullscreen ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                  )}
                 </button>
               </div>
 
               {/* Zoom & Pan Wrapper */}
+{/* Zoom & Pan Wrapper */}
               <div style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-                transformOrigin: 'top center',
+                transformOrigin: 'center center',
                 transition: isDragging ? 'none' : 'transform 0.1s ease-out',
                 display: 'flex',
-                alignItems: 'flex-start',
+                alignItems: 'center',
                 justifyContent: 'center',
                 width: '100%',
                 height: '100%',
-                paddingTop: '2rem'
               }}>
-                <div className="mermaid" style={{ display: 'inline-block' }}>
-{`graph TD
-    Start(["Mulai Transaksi"]) --> Q001{"Arah Transaksi?<br/>(is_inbound)"}
-    
-    %% CABANG INBOUND (PENERIMAAN)
-    Q001 -- TERIMA --> Q009{"Setoran Modal?<br/>(is_setoran_modal)"}
-    Q009 -- Ya --> R001["Kas Utama & Modal Pemilik (R-001)"]
-    
-    Q009 -- Tidak --> Q015{"Pinjaman Bank?<br/>(is_pinjaman_bank)"}
-    Q015 -- Ya --> R002["Kas Utama & Hutang Bank (R-002)"]
-    
-    Q015 -- Tidak --> Q112{"Terima Piutang?<br/>(is_penerimaan_piutang)"}
-    Q112 -- Ya --> R003["Kas Utama & Piutang Usaha (R-003)"]
-    
-    Q112 -- Tidak --> Q003{"Penjualan Barang?<br/>(is_penjualan_barang)"}
-    
-    %% Penjualan Barang
-    Q003 -- Ya --> Q005B{"Pembayaran Kredit?<br/>(is_kredit)"}
-    Q005B -- Ya --> R004["Piutang & Pend. Penjualan (R-004)"]
-    Q005B -- Tidak --> R005["Kas Utama & Pend. Penjualan (R-005)"]
-    
-    %% Penjualan Jasa
-    Q003 -- Tidak --> Q004{"Penjualan Jasa?<br/>(is_penjualan_jasa)"}
-    Q004 -- Ya --> Q005J{"Pembayaran Kredit?<br/>(is_kredit)"}
-    Q005J -- Ya --> R006["Piutang & Pendapatan Jasa (R-006)"]
-    Q005J -- Tidak --> R007["Kas Utama & Pendapatan Jasa (R-007)"]
-    Q004 -- Tidak --> UnprovenIn["Tidak Teridentifikasi"]
-    
-    %% CABANG OUTBOUND (PENGELUARAN)
-    Q001 -- KELUAR --> Q006{"Beli utk Dijual Kembali?<br/>(is_dijual_kembali)"}
-    
-    %% Pembelian Persediaan
-    Q006 -- Ya --> Q005P{"Pembayaran Kredit?<br/>(is_kredit)"}
-    Q005P -- Ya --> R008["Persediaan & Hutang Dagang (R-008)"]
-    Q005P -- Tidak --> R009["Persediaan & Kas Utama (R-009)"]
-    
-    %% Pembelian Aset Tetap
-    Q006 -- Tidak --> Q007{"Beli Aset?<br/>(is_pembelian_aset)"}
-    Q007 -- Ya --> Q008{"Manfaat > 1 Tahun?<br/>(is_manfaat_lebih_1_tahun)"}
-    Q008 -- Ya --> R010["Peralatan & Kas Utama (R-010)"]
-    Q008 -- Tidak --> UnprovenAsset["Tidak Teridentifikasi"]
-    
-    %% Prive & Beban-Beban
-    Q007 -- Tidak --> Q010{"Ambil Prive?<br/>(is_prive)"}
-    Q010 -- Ya --> R011["Prive & Kas Utama (R-011)"]
-    
-    Q010 -- Tidak --> Q016{"Bayar Hutang/Kewajiban?<br/>(is_pelunasan_hutang)"}
-    
-    %% CABANG BEBAN OPERASIONAL
-    Q016 -- Tidak --> Q017{"Bayar Beban?<br/>(is_bayar_beban)"}
-    Q017 -- Ya --> Q011{"Bayar Gaji?<br/>(is_beban_gaji)"}
-    Q017 -- Tidak --> UnprovenBeban["Tidak Teridentifikasi"]
-    Q011 -- Ya --> R012["Beban Gaji & Kas Utama (R-012)"]
-    
-    Q011 -- Tidak --> Q012{"Bayar Utilitas?<br/>(is_beban_utilitas)"}
-    Q012 -- Ya --> R013["Beban Utilitas & Kas Utama (R-013)"]
-    
-    Q012 -- Tidak --> Q013{"Bayar Sewa?<br/>(is_beban_sewa)"}
-    Q013 -- Ya --> R014["Beban Sewa & Kas Utama (R-014)"]
-    
-    Q013 -- Tidak --> Q014{"Beli ATK?<br/>(is_beban_atk)"}
-    Q014 -- Ya --> R018["Beban ATK & Kas Utama (R-018)"]
-    
-    Q014 -- Tidak --> Q110{"Bayar Pemasaran?<br/>(is_beban_pemasaran)"}
-    Q110 -- Ya --> R015["Beban Pemasaran & Kas Utama (R-015)"]
-    Q110 -- Tidak --> UnprovenBeban["Tidak Teridentifikasi"]
-    
-    %% CABANG PELUNASAN HUTANG
-    Q016 -- Ya --> Q111{"Pelunasan Hutang?<br/>(is_pelunasan_hutang_dagang)"}
-    Q111 -- Ya --> R016["Hutang Dagang & Kas Utama (R-016)"]
-    
-    Q111 -- Tidak --> Q113{"Cicilan Bank?<br/>(is_pelunasan_hutang_bank)"}
-    Q113 -- Ya --> R017["Hutang Bank & Kas Utama (R-017)"]
-    Q113 -- Tidak --> UnprovenPelunasan["Tidak Teridentifikasi"]`}
+                <div className="mermaid" style={{ display: 'inline-block' }}>{`graph TD
+    Start([Mulai]) --> C1{"Q-001 — is_inbound?<br/>Apakah transaksi merupakan<br/>penerimaan uang?"}
+    Start --> C2{"Q-002 — is_outbound?<br/>Apakah transaksi merupakan<br/>pengeluaran uang?"}
+    %% ==========================================
+    %% BLOK 1: INBOUND
+    %% ==========================================
+    C1 -- TRUE --> IB1{"Q-009 — is_setoran_modal?<br/>Apakah penerimaan berasal<br/>dari setoran modal pemilik?"}
+
+    IB1 -- TRUE --> A1[" Modal Pemilik <br/>Db: Kas Utama<br/>Cr: Modal Pemilik"]
+    IB1 -- FALSE --> IB2{"Q-015 — is_pinjaman_bank?<br/>Apakah penerimaan berasal<br/>dari pinjaman bank?"}
+
+    IB2 -- TRUE --> A2[" Hutang Bank (Pinjaman) <br/>Db: Kas Utama<br/>Cr: Hutang Bank"]
+    IB2 -- FALSE --> IB3{"Q-112 — is_penerimaan_piutang?<br/>Apakah transaksi merupakan penerimaan<br/>pembayaran piutang dari pelanggan?"}
+
+    IB3 -- TRUE --> A3[" Penerimaan Piutang <br/>Db: Kas Utama<br/>Cr: Piutang Usaha"]
+    IB3 -- FALSE --> IB4{"Q-003 — is_penjualan_barang?<br/>Apakah transaksi berasal<br/>dari penjualan barang?"}
+
+    IB4 -- TRUE --> IB4_K{"Q-005 — is_kredit?<br/>Apakah transaksi dilakukan<br/>secara kredit?"}
+    IB4_K -- TRUE --> A4[" Piutang Usaha (Penjualan Kredit) <br/>Db: Piutang Usaha<br/>Cr: Pendapatan Penjualan<br/><i>Trigger(Hitung HPP)</i>"]
+    IB4_K -- FALSE --> A5[" Pendapatan Penjualan <br/>Db: Kas Utama<br/>Cr: Pendapatan Penjualan<br/><i>Trigger(Hitung HPP)</i>"]
+
+    IB4 -- FALSE --> IB5{"Q-004 — is_penjualan_jasa?<br/>Apakah transaksi berasal<br/>dari penjualan jasa?"}
+    IB5 -- TRUE --> IB5_K{"Q-005 — is_kredit?<br/>Apakah transaksi dilakukan<br/>secara kredit?"}
+    IB5_K -- TRUE --> A6[" Piutang Usaha (Penjualan Kredit) <br/>Db: Piutang Usaha<br/>Cr: Pendapatan Jasa"]
+    IB5_K -- FALSE --> A7[" Pendapatan Jasa <br/>Db: Kas Utama<br/>Cr: Pendapatan Jasa"]
+    IB5 -- FALSE --> A8[" Kas Utama (Penerimaan Tunai) <br/>Db: Kas Utama<br/>Cr: Pendapatan Lain-lain<br/><i>Default/Fallback</i>"]
+    %% ==========================================
+    %% BLOK 2: OUTBOUND
+    %% ==========================================
+    C2 -- TRUE --> OB1{"Q-006 — is_dijual_kembali?<br/>Apakah barang yang dibeli<br/>akan dijual kembali?"}
+    OB1 -- TRUE --> OB1_K{"Q-005 — is_kredit?<br/>Apakah transaksi dilakukan<br/>secara kredit?"}
+    OB1_K -- TRUE --> B1[" Persediaan Barang Dagang<br/>(Pembelian Kredit) <br/>Db: Persediaan<br/>Cr: Hutang Dagang<br/><i>Trigger(Hitung Harga Pokok<br/>Moving Average)</i>"]
+    OB1_K -- FALSE --> B2[" Persediaan Barang Dagang<br/>(Pembelian Tunai) <br/>Db: Persediaan<br/>Cr: Kas Utama<br/><i>Trigger(Hitung Harga Pokok<br/>Moving Average)</i>"]
+    OB1 -- FALSE --> OB2{"Q-007 — is_pembelian_aset?<br/>Apakah transaksi merupakan<br/>pembelian aset?"}
+    OB2 -- TRUE --> OB2_M{"Q-008 — is_manfaat_lebih_1_tahun?<br/>Apakah aset memiliki masa manfaat<br/>lebih dari satu tahun?"}
+    OB2_M -- TRUE --> B3[" Peralatan Kantor (Aset Tetap) <br/>Db: Peralatan<br/>Cr: Kas Utama"]
+    OB2_M -- FALSE --> OB_PRLK
+    OB2 -- FALSE --> OB3{"Q-010 — is_prive?<br/>Apakah pengeluaran digunakan untuk<br/>kepentingan pribadi pemilik (prive)?"}
+    OB3 -- TRUE --> B4[" Prive Pemilik <br/>Db: Prive<br/>Cr: Kas Utama"]
+    %% SUB-BLOK: PELUNASAN HUTANG
+    OB3 -- FALSE --> OB4{"is_pelunasan_hutang?"}
+    OB4 -- TRUE --> OB4_D{"Q-111 — is_pelunasan_hutang_dagang?<br/>Apakah transaksi merupakan<br/>pelunasan hutang dagang?"}
+    OB4_D -- TRUE --> B5[" Pelunasan Hutang Dagang <br/>Db: Hutang Dagang<br/>Cr: Kas Utama"]
+
+    OB4_D -- FALSE --> OB4_B{"Q-113 — is_pelunasan_hutang_bank?<br/>Apakah transaksi merupakan<br/>pelunasan hutang bank?"}
+    OB4_B -- TRUE --> B6[" Pelunasan Hutang Bank <br/>Db: Hutang Bank<br/>Cr: Kas Utama"]
+    OB4_B -- FALSE --> B6X["Pelunasan Hutang Lainnya <br/>Db: Hutang Bank<br/>Cr: Kas Utama"]
+    %% SUB-BLOK: PEMBAYARAN BEBAN
+    OB4 -- FALSE --> OB5{"is_beban?"}
+    OB5 -- FALSE --> B13
+    OB5 -- TRUE --> OB5_G{"Q-011 — is_beban_gaji?<br/>Apakah pengeluaran merupakan<br/>pembayaran gaji?"}
+
+    OB5_G -- TRUE --> B7[" Beban Gaji <br/>Db: Beban Gaji<br/>Cr: Kas Utama"]
+    OB5_G -- FALSE --> OB5_U{"Q-012 — is_beban_utilitas?<br/>Apakah pengeluaran merupakan<br/>pembayaran utilitas (listrik, air, internet)?"}
+
+    OB5_U -- TRUE --> B8[" Beban Utilitas <br/>Db: Beban Utilitas<br/>Cr: Kas Utama"]
+    OB5_U -- FALSE --> OB5_S{"Q-013 — is_beban_sewa?<br/>Apakah pengeluaran merupakan<br/>pembayaran sewa?"}
+
+    OB5_S -- TRUE --> B9[" Beban Sewa <br/>Db: Beban Sewa<br/>Cr: Kas Utama"]
+    OB5_S -- FALSE --> OB5_P{"Q-110 — is_beban_pemasaran?<br/>Apakah pengeluaran merupakan<br/>biaya pemasaran atau promosi?"}
+
+    OB5_P -- TRUE --> B10[" Beban Pemasaran <br/>Db: Beban Pemasaran<br/>Cr: Kas Utama"]
+    OB5_P -- FALSE --> OB_PRLK{"Q-016 — is_pembelian_perlengkapan_atk?<br/>Apakah transaksi ini pembelian perlengkapan/ATK kantor<br/>untuk operasional, bukan untuk dijual kembali?"}
+
+    OB_PRLK -- TRUE --> OB5_A{"Q-014 — is_beban_atk?<br/>Apakah pencatatannya menggunakan<br/>pendekatan beban?"}
+    OB5_A -- TRUE --> B11[" Beban ATK <br/>Db: Beban ATK<br/>Cr: Kas Utama"]
+    OB5_A -- FALSE --> B12[" Pembelian Perlengkapan<br/>(Aset &lt;1 Tahun) <br/>Db: Perlengkapan<br/>Cr: Kas Utama / Hutang Dagang"]
+    OB_PRLK -- FALSE --> B13[" Pengeluaran Kas Lainnya <br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback</i>"]
+`}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="card" style={{ padding: '2rem', borderRadius: '12px' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Decision Table (Tabel Keputusan)</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem', lineHeight: 1.6 }}>
-              Tabel ini sangat cocok dicetak dan ditunjukkan kepada pakar akuntansi untuk <em>Face Validity</em>. Pakar dapat dengan mudah membaca kombinasi dari kiri ke kanan untuk memvalidasi apakah kode akun di kolom paling kanan sudah tepat. Tanda strip (" - ") mengindikasikan <em>Don't Care</em>.
-            </p>
-            <div className="table-container" style={{ border: 'none', margin: 0 }}>
-              <table className="table" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                <thead style={{ background: 'var(--primary-light)' }}>
-                  <tr>
-                    <th style={{ padding: '1rem', borderRight: '1px solid var(--border)' }}>Rule ID</th>
-                    <th style={{ padding: '1rem' }}>Kategori Akun</th>
-                    <th style={{ padding: '1rem' }}>Jenis Usaha</th>
-                    <th style={{ padding: '1rem' }}>Arah Transaksi</th>
-                    <th style={{ padding: '1rem' }}>Kondisi Spesifik</th>
-                    <th style={{ padding: '1rem' }}>Kredit?</th>
-                    <th style={{ padding: '1rem', backgroundColor: 'var(--primary)', color: 'white' }}>Hasil Jurnal (Debit / Kredit)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRules.map((rule) => {
-                    const kreditVal = getKredit(rule.conditions);
-                    return (
-                      <tr key={rule.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                        <td style={{ fontWeight: 800, borderRight: '1px solid var(--border)' }}>{rule.code}</td>
-                        <td>{getTransactionCategory(rule)}</td>
-                        <td>{rule.business_type === 'semua' ? 'SEMUA' : rule.business_type.toUpperCase()}</td>
-                        <td>{getArah(rule.conditions)}</td>
-                        <td style={{ fontFamily: 'monospace', color: 'var(--primary)', fontWeight: 600 }}>{getKondisiSpesifik(rule.conditions)}</td>
-                        <td style={{ color: kreditVal === 'YES' ? 'var(--success)' : kreditVal === 'NO' ? 'var(--danger)' : 'inherit', fontWeight: 800 }}>{kreditVal}</td>
-                        <td style={{ fontWeight: 800, color: 'var(--primary)' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.75rem' }}>
-                            <div><span style={{ opacity: 0.7, fontWeight: 700 }}>[Dr]</span> {rule.debit_account_code ? `${rule.debit_account_code} - ${rule.debit_account_name}` : 'Dinamis (Pilihan User)'}</div>
-                            <div><span style={{ opacity: 0.7, fontWeight: 700 }}>[Cr]</span> {rule.credit_account_code ? `${rule.credit_account_code} - ${rule.credit_account_name}` : 'Dinamis (Kas/Hutang)'}</div>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+
         </div>
       )}
 
