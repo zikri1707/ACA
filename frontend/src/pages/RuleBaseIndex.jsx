@@ -458,11 +458,25 @@ export const RuleBaseIndex = () => {
       });
 
       const FACT_ORDER = [
-        'is_inbound', 'is_outbound', 'is_kredit', 'is_dijual_kembali',
-        'is_setoran_modal', 'is_pinjaman_bank', 'is_penjualan_barang', 'is_penjualan_jasa',
-        'is_penerimaan_piutang', 'is_pembelian_aset', 'is_manfaat_lebih_1_tahun',
-        'is_prive', 'is_beban_gaji', 'is_beban_utilitas', 'is_beban_sewa',
-        'is_beban_atk', 'is_beban_pemasaran', 'is_pelunasan_hutang_dagang', 'is_pelunasan_hutang_bank'
+        'is_inbound',
+        'is_outbound',
+        'is_setoran_modal',
+        'is_pinjaman_bank',
+        'is_penerimaan_piutang',
+        'is_penjualan_barang',
+        'is_penjualan_jasa',
+        'is_dijual_kembali',
+        'is_kredit',
+        'is_pembelian_aset',
+        'is_manfaat_lebih_1_tahun',
+        'is_prive',
+        'is_beban_gaji',
+        'is_beban_utilitas',
+        'is_beban_sewa',
+        'is_beban_atk',
+        'is_beban_pemasaran',
+        'is_pelunasan_hutang_dagang',
+        'is_pelunasan_hutang_bank'
       ];
 
       const businessType = targetRule.business_type === 'jasa' ? 'jasa' : 'dagang';
@@ -670,7 +684,6 @@ export const RuleBaseIndex = () => {
   };
 
   const getTransactionCategory = (rule) => {
-    if (rule.code === 'R-098') return 'Beban';
     if (rule.debit_account_code !== '1-1000' && rule.debit_account_category) {
       return rule.debit_account_category;
     }
@@ -1683,86 +1696,68 @@ export const RuleBaseIndex = () => {
     Start(["Mulai Transaksi"]) --> Q001{"Arah Transaksi?<br/>(is_inbound)"}
     
     %% CABANG INBOUND (PENERIMAAN)
-    Q001 -- TERIMA --> Q005In{"Pembayaran Kredit?<br/>(is_kredit)"}
-    
-    %% Inbound Kredit (Piutang)
-    Q005In -- Ya --> R002["1-1200 Piutang Usaha"]
-    
-    %% Inbound Tunai
-    Q005In -- Tidak --> Q009{"Setoran Modal?<br/>(is_setoran_modal)"}
-    Q009 -- Ya --> R007["3-1000 Modal Pemilik"]
+    Q001 -- TERIMA --> Q009{"Setoran Modal?<br/>(is_setoran_modal)"}
+    Q009 -- Ya --> R001["Kas Utama & Modal Pemilik (R-001)"]
     
     Q009 -- Tidak --> Q015{"Pinjaman Bank?<br/>(is_pinjaman_bank)"}
-    Q015 -- Ya --> R015["2-2000 Hutang Bank"]
+    Q015 -- Ya --> R002["Kas Utama & Hutang Bank (R-002)"]
     
-    Q015 -- Tidak --> Q000In{"Jenis Usaha?"}
+    Q015 -- Tidak --> Q112{"Terima Piutang?<br/>(is_penerimaan_piutang)"}
+    Q112 -- Ya --> R003["Kas Utama & Piutang Usaha (R-003)"]
     
-    %% Dagang - Penjualan Barang
-    Q000In -- Dagang --> Q003{"Penjualan Barang?<br/>(is_penjualan_barang)"}
-    Q003 -- Ya --> R009["4-1000 Pendapatan Penjualan"]
-    Q003 -- Tidak --> Q112D{"Terima Piutang?<br/>(is_penerimaan_piutang)"}
+    Q112 -- Tidak --> Q003{"Penjualan Barang?<br/>(is_penjualan_barang)"}
     
-    %% Jasa - Penjualan Jasa
-    Q000In -- Jasa --> Q004{"Penjualan Jasa?<br/>(is_penjualan_jasa)"}
-    Q004 -- Ya --> R010["4-1100 Pendapatan Jasa"]
-    Q004 -- Tidak --> Q112J{"Terima Piutang?<br/>(is_penerimaan_piutang)"}
+    %% Penjualan Barang
+    Q003 -- Ya --> Q005B{"Pembayaran Kredit?<br/>(is_kredit)"}
+    Q005B -- Ya --> R004["Piutang & Pend. Penjualan (R-004)"]
+    Q005B -- Tidak --> R005["Kas Utama & Pend. Penjualan (R-005)"]
     
-    Q112D -- Ya --> R019["1-1000 Kas Utama"]
-    Q112D -- Tidak --> R001["1-1000 Kas Utama"]
-    Q112J -- Ya --> R019
-    Q112J -- Tidak --> R001
+    %% Penjualan Jasa
+    Q003 -- Tidak --> Q004{"Penjualan Jasa?<br/>(is_penjualan_jasa)"}
+    Q004 -- Ya --> Q005J{"Pembayaran Kredit?<br/>(is_kredit)"}
+    Q005J -- Ya --> R006["Piutang & Pendapatan Jasa (R-006)"]
+    Q005J -- Tidak --> R007["Kas Utama & Pendapatan Jasa (R-007)"]
+    Q004 -- Tidak --> UnprovenIn["Tidak Teridentifikasi"]
     
     %% CABANG OUTBOUND (PENGELUARAN)
-    Q001 -- KELUAR --> Q005Out{"Pembayaran Kredit?<br/>(is_kredit)"}
+    Q001 -- KELUAR --> Q006{"Beli utk Dijual Kembali?<br/>(is_dijual_kembali)"}
     
-    Q005Out -- Ya --> Q000OutK{"Jenis Usaha?"}
-    Q005Out -- Tidak --> Q000OutT{"Jenis Usaha?"}
+    %% Pembelian Persediaan
+    Q006 -- Ya --> Q005P{"Pembayaran Kredit?<br/>(is_kredit)"}
+    Q005P -- Ya --> R008["Persediaan & Hutang Dagang (R-008)"]
+    Q005P -- Tidak --> R009["Persediaan & Kas Utama (R-009)"]
     
-    %% Outbound Kredit
-    Q000OutK -- Dagang --> Q006K{"Beli utk Dijual Kembali?<br/>(is_dijual_kembali)"}
-    Q006K -- Ya --> R004["1-1300 Persediaan & Hutang"]
-    Q006K -- Tidak --> Q007K{"Beli Aset Tetap?<br/>(is_pembelian_aset)"}
-    Q000OutK -- Jasa --> Q007K
+    %% Pembelian Aset Tetap
+    Q006 -- Tidak --> Q007{"Beli Aset?<br/>(is_pembelian_aset)"}
+    Q007 -- Ya --> Q008{"Manfaat > 1 Tahun?<br/>(is_manfaat_lebih_1_tahun)"}
+    Q008 -- Ya --> R010["Peralatan & Kas Utama (R-010)"]
+    Q008 -- Tidak --> UnprovenAsset["Tidak Teridentifikasi"]
     
-    Q007K -- Ya --> Q008K{"Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)"}
-    Q008K -- Ya --> R006K["1-2100 Aset Tetap"]
-    Q008K -- Tidak --> R017K["1-1500 Perlengkapan"]
-    Q007K -- Tidak --> R099["2-1000 Hutang Dagang"]
-    
-    %% Outbound Tunai
-    Q000OutT -- Dagang --> Q006T{"Beli utk Dijual Kembali?<br/>(is_dijual_kembali)"}
-    Q006T -- Ya --> R003["1-1300 Persediaan Tunai"]
-    Q006T -- Tidak --> Q007T{"Beli Aset Tetap?<br/>(is_pembelian_aset)"}
-    Q000OutT -- Jasa --> Q007T
-    
-    Q007T -- Ya --> Q008T{"Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)"}
-    Q008T -- Ya --> R006["1-2100 Aset Tetap"]
-    Q008T -- Tidak --> R017["1-1500 Perlengkapan"]
-    
-    Q007T -- Tidak --> Q010{"Ambil Prive?<br/>(is_prive)"}
-    Q010 -- Ya --> R008["3-2000 Prive Pemilik"]
+    %% Prive & Beban-Beban
+    Q007 -- Tidak --> Q010{"Ambil Prive?<br/>(is_prive)"}
+    Q010 -- Ya --> R011["Prive & Kas Utama (R-011)"]
     
     Q010 -- Tidak --> Q011{"Bayar Gaji?<br/>(is_beban_gaji)"}
-    Q011 -- Ya --> R011["5-1000 Beban Gaji"]
+    Q011 -- Ya --> R012["Beban Gaji & Kas Utama (R-012)"]
     
     Q011 -- Tidak --> Q012{"Bayar Utilitas?<br/>(is_beban_utilitas)"}
-    Q012 -- Ya --> R012["5-1100 Beban Utilitas"]
+    Q012 -- Ya --> R013["Beban Utilitas & Kas Utama (R-013)"]
     
     Q012 -- Tidak --> Q013{"Bayar Sewa?<br/>(is_beban_sewa)"}
-    Q013 -- Ya --> R013["5-1200 Beban Sewa"]
+    Q013 -- Ya --> R014["Beban Sewa & Kas Utama (R-014)"]
     
     Q013 -- Tidak --> Q014{"Beli ATK?<br/>(is_beban_atk)"}
-    Q014 -- Ya --> R014["5-1500 Beban ATK"]
+    Q014 -- Ya --> R018["Beban ATK & Kas Utama (R-018)"]
     
     Q014 -- Tidak --> Q110{"Bayar Pemasaran?<br/>(is_beban_pemasaran)"}
-    Q110 -- Ya --> R016["5-1300 Beban Pemasaran"]
+    Q110 -- Ya --> R015["Beban Pemasaran & Kas Utama (R-015)"]
     
     Q110 -- Tidak --> Q111{"Pelunasan Hutang?<br/>(is_pelunasan_hutang_dagang)"}
-    Q111 -- Ya --> R018A["2-1000 Hutang Dagang"]
+    Q111 -- Ya --> R016["Hutang Dagang & Kas Utama (R-016)"]
     
     Q111 -- Tidak --> Q113{"Cicilan Bank?<br/>(is_pelunasan_hutang_bank)"}
-    Q113 -- Ya --> R018B["2-2000 Hutang Bank"]
-    Q113 -- Tidak --> R098["1-1000 Kas Utama"]`}
+    Q113 -- Ya --> R017["Hutang Bank & Kas Utama (R-017)"]
+    Q113 -- Tidak --> UnprovenOut["Tidak Teridentifikasi"]`}
                 </div>
               </div>
             </div>

@@ -84,9 +84,9 @@ router.post('/save', authenticateToken, async (req, res) => {
       
       // Integritas Moving Average & HPP
       if (items && items.length > 0 && rule_code) {
-        if (rule_code === 'R-003' || rule_code === 'R-004') {
+        if (rule_code === 'R-008' || rule_code === 'R-009') {
           await InventoryEngine.calculateAndSaveMovingAverage(items, consultationId);
-        } else if (rule_code === 'R-002' || rule_code === 'R-009') {
+        } else if (rule_code === 'R-004' || rule_code === 'R-005') {
           await InventoryEngine.generateHppJournal(items, consultationId);
         }
       }

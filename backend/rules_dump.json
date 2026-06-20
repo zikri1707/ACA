@@ -1,136 +1,7 @@
 [
   {
     "code": "R-001",
-    "name": "Kas Utama (Penerimaan Tunai)",
-    "business_type": "semua",
-    "debit": "1-1000 - Kas Utama",
-    "credit": "4-9000 - Pendapatan Lain-lain",
-    "conditions": [
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_penjualan_barang",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_penjualan_jasa",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_pinjaman_bank",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_setoran_modal",
-        "expected_value": "no"
-      }
-    ]
-  },
-  {
-    "code": "R-002",
-    "name": "Piutang Usaha (Penjualan Kredit)",
-    "business_type": "semua",
-    "debit": "1-1200 - Piutang Usaha",
-    "credit": null,
-    "conditions": [
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "yes"
-      }
-    ]
-  },
-  {
-    "code": "R-003",
-    "name": "Persediaan Barang Dagang (Pembelian Tunai)",
-    "business_type": "dagang",
-    "debit": "1-1300 - Persediaan Barang Dagang",
-    "credit": "1-1000 - Kas Utama",
-    "conditions": [
-      {
-        "fact_name": "is_dijual_kembali",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_outbound",
-        "expected_value": "yes"
-      }
-    ]
-  },
-  {
-    "code": "R-004",
-    "name": "Persediaan Barang Dagang (Pembelian Kredit)",
-    "business_type": "dagang",
-    "debit": "1-1300 - Persediaan Barang Dagang",
-    "credit": "2-1000 - Hutang Dagang",
-    "conditions": [
-      {
-        "fact_name": "is_dijual_kembali",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_outbound",
-        "expected_value": "yes"
-      }
-    ]
-  },
-  {
-    "code": "R-006",
-    "name": "Peralatan Kantor (Aset Tetap)",
-    "business_type": "semua",
-    "debit": "1-2100 - Peralatan Kantor (Aset Tetap)",
-    "credit": null,
-    "conditions": [
-      {
-        "fact_name": "is_dijual_kembali",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_manfaat_lebih_1_tahun",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_outbound",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_pembelian_aset",
-        "expected_value": "yes"
-      }
-    ]
-  },
-  {
-    "code": "R-007",
-    "name": "Modal Pemilik",
+    "name": "Setoran Modal",
     "business_type": "semua",
     "debit": "1-1000 - Kas Utama",
     "credit": "3-1000 - Modal Pemilik",
@@ -140,43 +11,69 @@
         "expected_value": "yes"
       },
       {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
         "fact_name": "is_setoran_modal",
         "expected_value": "yes"
       }
     ]
   },
   {
-    "code": "R-008",
-    "name": "Prive Pemilik",
+    "code": "R-002",
+    "name": "Pinjaman Bank",
     "business_type": "semua",
-    "debit": "3-2000 - Prive Pemilik",
-    "credit": "1-1000 - Kas Utama",
+    "debit": "1-1000 - Kas Utama",
+    "credit": "2-2000 - Hutang Bank",
     "conditions": [
       {
         "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_outbound",
         "expected_value": "yes"
       },
       {
-        "fact_name": "is_prive",
+        "fact_name": "is_pinjaman_bank",
         "expected_value": "yes"
       }
     ]
   },
   {
-    "code": "R-009",
-    "name": "Pendapatan Penjualan",
+    "code": "R-003",
+    "name": "Penerimaan Piutang",
+    "business_type": "semua",
+    "debit": "1-1000 - Kas Utama",
+    "credit": "1-1200 - Piutang Usaha",
+    "conditions": [
+      {
+        "fact_name": "is_inbound",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_penerimaan_piutang",
+        "expected_value": "yes"
+      }
+    ]
+  },
+  {
+    "code": "R-004",
+    "name": "Penjualan Barang Kredit",
+    "business_type": "dagang",
+    "debit": "1-1200 - Piutang Usaha",
+    "credit": "4-1000 - Pendapatan Penjualan",
+    "conditions": [
+      {
+        "fact_name": "is_inbound",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_kredit",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_penjualan_barang",
+        "expected_value": "yes"
+      }
+    ]
+  },
+  {
+    "code": "R-005",
+    "name": "Penjualan Barang Tunai",
     "business_type": "dagang",
     "debit": "1-1000 - Kas Utama",
     "credit": "4-1000 - Pendapatan Penjualan",
@@ -192,20 +89,33 @@
       {
         "fact_name": "is_penjualan_barang",
         "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_pinjaman_bank",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_setoran_modal",
-        "expected_value": "no"
       }
     ]
   },
   {
-    "code": "R-010",
-    "name": "Pendapatan Jasa",
+    "code": "R-006",
+    "name": "Penjualan Jasa Kredit",
+    "business_type": "jasa",
+    "debit": "1-1200 - Piutang Usaha",
+    "credit": "4-1100 - Pendapatan Jasa",
+    "conditions": [
+      {
+        "fact_name": "is_inbound",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_kredit",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_penjualan_jasa",
+        "expected_value": "yes"
+      }
+    ]
+  },
+  {
+    "code": "R-007",
+    "name": "Penjualan Jasa Tunai",
     "business_type": "jasa",
     "debit": "1-1000 - Kas Utama",
     "credit": "4-1100 - Pendapatan Jasa",
@@ -221,35 +131,23 @@
       {
         "fact_name": "is_penjualan_jasa",
         "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_pinjaman_bank",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_setoran_modal",
-        "expected_value": "no"
       }
     ]
   },
   {
-    "code": "R-011",
-    "name": "Beban Gaji",
-    "business_type": "semua",
-    "debit": "5-1000 - Beban Gaji",
-    "credit": "1-1000 - Kas Utama",
+    "code": "R-008",
+    "name": "Pembelian Persediaan Kredit",
+    "business_type": "dagang",
+    "debit": "1-1300 - Persediaan",
+    "credit": "2-1000 - Hutang Dagang",
     "conditions": [
       {
-        "fact_name": "is_beban_gaji",
+        "fact_name": "is_dijual_kembali",
         "expected_value": "yes"
       },
       {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
         "fact_name": "is_kredit",
-        "expected_value": "no"
+        "expected_value": "yes"
       },
       {
         "fact_name": "is_outbound",
@@ -258,144 +156,36 @@
     ]
   },
   {
-    "code": "R-012",
-    "name": "Beban Utilitas",
-    "business_type": "semua",
-    "debit": "5-1100 - Beban Utilitas",
-    "credit": "1-1000 - Kas Utama",
-    "conditions": [
-      {
-        "fact_name": "is_beban_utilitas",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_outbound",
-        "expected_value": "yes"
-      }
-    ]
-  },
-  {
-    "code": "R-013",
-    "name": "Beban Sewa",
-    "business_type": "semua",
-    "debit": "5-1200 - Beban Sewa",
-    "credit": "1-1000 - Kas Utama",
-    "conditions": [
-      {
-        "fact_name": "is_beban_sewa",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_outbound",
-        "expected_value": "yes"
-      }
-    ]
-  },
-  {
-    "code": "R-014",
-    "name": "Beban ATK",
-    "business_type": "semua",
-    "debit": "5-1500 - Beban ATK",
-    "credit": "1-1000 - Kas Utama",
-    "conditions": [
-      {
-        "fact_name": "is_beban_atk",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_outbound",
-        "expected_value": "yes"
-      }
-    ]
-  },
-  {
-    "code": "R-015",
-    "name": "Hutang Bank (Pinjaman)",
-    "business_type": "semua",
-    "debit": "1-1000 - Kas Utama",
-    "credit": "2-2000 - Hutang Bank",
-    "conditions": [
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_pinjaman_bank",
-        "expected_value": "yes"
-      }
-    ]
-  },
-  {
-    "code": "R-016",
-    "name": "Beban Pemasaran",
-    "business_type": "semua",
-    "debit": "5-1300 - Beban Pemasaran",
-    "credit": "1-1000 - Kas Utama",
-    "conditions": [
-      {
-        "fact_name": "is_beban_pemasaran",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_outbound",
-        "expected_value": "yes"
-      }
-    ]
-  },
-  {
-    "code": "R-017",
-    "name": "Pembelian Perlengkapan (Aset < 1 Tahun)",
-    "business_type": "semua",
-    "debit": "1-1500 - Perlengkapan",
+    "code": "R-009",
+    "name": "Pembelian Persediaan Tunai",
+    "business_type": "dagang",
+    "debit": "1-1300 - Persediaan",
     "credit": "1-1000 - Kas Utama",
     "conditions": [
       {
         "fact_name": "is_dijual_kembali",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_kredit",
         "expected_value": "no"
       },
       {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
+        "fact_name": "is_outbound",
+        "expected_value": "yes"
+      }
+    ]
+  },
+  {
+    "code": "R-010",
+    "name": "Pembelian Peralatan",
+    "business_type": "semua",
+    "debit": "1-2100 - Peralatan",
+    "credit": "1-1000 - Kas Utama",
+    "conditions": [
       {
         "fact_name": "is_manfaat_lebih_1_tahun",
-        "expected_value": "no"
+        "expected_value": "yes"
       },
       {
         "fact_name": "is_outbound",
@@ -408,20 +198,97 @@
     ]
   },
   {
-    "code": "R-018A",
+    "code": "R-011",
+    "name": "Prive Pemilik",
+    "business_type": "semua",
+    "debit": "3-2000 - Prive",
+    "credit": "1-1000 - Kas Utama",
+    "conditions": [
+      {
+        "fact_name": "is_outbound",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_prive",
+        "expected_value": "yes"
+      }
+    ]
+  },
+  {
+    "code": "R-012",
+    "name": "Beban Gaji",
+    "business_type": "semua",
+    "debit": "5-1000 - Beban Gaji",
+    "credit": "1-1000 - Kas Utama",
+    "conditions": [
+      {
+        "fact_name": "is_beban_gaji",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_outbound",
+        "expected_value": "yes"
+      }
+    ]
+  },
+  {
+    "code": "R-013",
+    "name": "Beban Utilitas",
+    "business_type": "semua",
+    "debit": "5-1100 - Beban Utilitas",
+    "credit": "1-1000 - Kas Utama",
+    "conditions": [
+      {
+        "fact_name": "is_beban_utilitas",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_outbound",
+        "expected_value": "yes"
+      }
+    ]
+  },
+  {
+    "code": "R-014",
+    "name": "Beban Sewa",
+    "business_type": "semua",
+    "debit": "5-1200 - Beban Sewa",
+    "credit": "1-1000 - Kas Utama",
+    "conditions": [
+      {
+        "fact_name": "is_beban_sewa",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_outbound",
+        "expected_value": "yes"
+      }
+    ]
+  },
+  {
+    "code": "R-015",
+    "name": "Beban Pemasaran",
+    "business_type": "semua",
+    "debit": "5-1300 - Beban Pemasaran",
+    "credit": "1-1000 - Kas Utama",
+    "conditions": [
+      {
+        "fact_name": "is_beban_pemasaran",
+        "expected_value": "yes"
+      },
+      {
+        "fact_name": "is_outbound",
+        "expected_value": "yes"
+      }
+    ]
+  },
+  {
+    "code": "R-016",
     "name": "Pelunasan Hutang Dagang",
     "business_type": "semua",
     "debit": "2-1000 - Hutang Dagang",
     "credit": "1-1000 - Kas Utama",
     "conditions": [
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
       {
         "fact_name": "is_outbound",
         "expected_value": "yes"
@@ -433,20 +300,12 @@
     ]
   },
   {
-    "code": "R-018B",
+    "code": "R-017",
     "name": "Pelunasan Hutang Bank",
     "business_type": "semua",
     "debit": "2-2000 - Hutang Bank",
     "credit": "1-1000 - Kas Utama",
     "conditions": [
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
       {
         "fact_name": "is_outbound",
         "expected_value": "yes"
@@ -454,109 +313,6 @@
       {
         "fact_name": "is_pelunasan_hutang_bank",
         "expected_value": "yes"
-      }
-    ]
-  },
-  {
-    "code": "R-019",
-    "name": "Penerimaan Piutang",
-    "business_type": "semua",
-    "debit": "1-1000 - Kas Utama",
-    "credit": "1-1200 - Piutang Usaha",
-    "conditions": [
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_penerimaan_piutang",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_penjualan_barang",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_penjualan_jasa",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_pinjaman_bank",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_setoran_modal",
-        "expected_value": "no"
-      }
-    ]
-  },
-  {
-    "code": "R-020",
-    "name": "Pencatatan HPP (Otomatis)",
-    "business_type": "dagang",
-    "debit": "5-3000 - Harga Pokok Penjualan",
-    "credit": "1-1300 - Persediaan Barang Dagang",
-    "conditions": []
-  },
-  {
-    "code": "R-098",
-    "name": "Pengeluaran Kas Lainnya",
-    "business_type": "semua",
-    "debit": null,
-    "credit": "1-1000 - Kas Utama",
-    "conditions": [
-      {
-        "fact_name": "is_dijual_kembali",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_outbound",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_pembelian_aset",
-        "expected_value": "no"
-      }
-    ]
-  },
-  {
-    "code": "R-099",
-    "name": "Hutang Dagang",
-    "business_type": "semua",
-    "debit": null,
-    "credit": "2-1000 - Hutang Dagang",
-    "conditions": [
-      {
-        "fact_name": "is_dijual_kembali",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_inbound",
-        "expected_value": "no"
-      },
-      {
-        "fact_name": "is_kredit",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_outbound",
-        "expected_value": "yes"
-      },
-      {
-        "fact_name": "is_pembelian_aset",
-        "expected_value": "no"
       }
     ]
   }
