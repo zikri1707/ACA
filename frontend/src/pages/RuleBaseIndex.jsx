@@ -470,6 +470,8 @@ export const RuleBaseIndex = () => {
         'is_pembelian_aset',
         'is_manfaat_lebih_1_tahun',
         'is_prive',
+        'is_pelunasan_hutang',
+        'is_bayar_beban',
         'is_beban_gaji',
         'is_beban_utilitas',
         'is_beban_sewa',
@@ -1737,7 +1739,12 @@ export const RuleBaseIndex = () => {
     Q007 -- Tidak --> Q010{"Ambil Prive?<br/>(is_prive)"}
     Q010 -- Ya --> R011["Prive & Kas Utama (R-011)"]
     
-    Q010 -- Tidak --> Q011{"Bayar Gaji?<br/>(is_beban_gaji)"}
+    Q010 -- Tidak --> Q016{"Bayar Hutang/Kewajiban?<br/>(is_pelunasan_hutang)"}
+    
+    %% CABANG BEBAN OPERASIONAL
+    Q016 -- Tidak --> Q017{"Bayar Beban?<br/>(is_bayar_beban)"}
+    Q017 -- Ya --> Q011{"Bayar Gaji?<br/>(is_beban_gaji)"}
+    Q017 -- Tidak --> UnprovenBeban["Tidak Teridentifikasi"]
     Q011 -- Ya --> R012["Beban Gaji & Kas Utama (R-012)"]
     
     Q011 -- Tidak --> Q012{"Bayar Utilitas?<br/>(is_beban_utilitas)"}
@@ -1751,13 +1758,15 @@ export const RuleBaseIndex = () => {
     
     Q014 -- Tidak --> Q110{"Bayar Pemasaran?<br/>(is_beban_pemasaran)"}
     Q110 -- Ya --> R015["Beban Pemasaran & Kas Utama (R-015)"]
+    Q110 -- Tidak --> UnprovenBeban["Tidak Teridentifikasi"]
     
-    Q110 -- Tidak --> Q111{"Pelunasan Hutang?<br/>(is_pelunasan_hutang_dagang)"}
+    %% CABANG PELUNASAN HUTANG
+    Q016 -- Ya --> Q111{"Pelunasan Hutang?<br/>(is_pelunasan_hutang_dagang)"}
     Q111 -- Ya --> R016["Hutang Dagang & Kas Utama (R-016)"]
     
     Q111 -- Tidak --> Q113{"Cicilan Bank?<br/>(is_pelunasan_hutang_bank)"}
     Q113 -- Ya --> R017["Hutang Bank & Kas Utama (R-017)"]
-    Q113 -- Tidak --> UnprovenOut["Tidak Teridentifikasi"]`}
+    Q113 -- Tidak --> UnprovenPelunasan["Tidak Teridentifikasi"]`}
                 </div>
               </div>
             </div>

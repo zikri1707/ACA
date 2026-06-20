@@ -37,18 +37,39 @@ async function run() {
     { is_outbound: 'yes', is_dijual_kembali: 'yes', is_kredit: 'yes' }
   );
 
-  // 4. Beban Pemasaran (R-015)
+  // 4. Beban Pemasaran (R-015) - Step 1: without any intermediate question
   await verify(
-    'Pembayaran Beban Pemasaran / Promosi',
+    'Pembayaran Beban Pemasaran (Tanpa info pelunasan)',
     'jasa',
     { is_outbound: 'yes', is_beban_pemasaran: 'yes' }
+  );
+
+  // 4b. Beban Pemasaran (R-015) - Step 2: not pelunasan, but without bayar_beban info
+  await verify(
+    'Pembayaran Beban Pemasaran (Ditentukan bukan pelunasan, tanpa info bayar beban)',
+    'jasa',
+    { is_outbound: 'yes', is_pelunasan_hutang: 'no', is_beban_pemasaran: 'yes' }
+  );
+
+  // 4c. Beban Pemasaran (R-015) - Step 3: not pelunasan, and confirmed bayar_beban
+  await verify(
+    'Pembayaran Beban Pemasaran (Bukan pelunasan & untuk bayar beban)',
+    'jasa',
+    { is_outbound: 'yes', is_pelunasan_hutang: 'no', is_bayar_beban: 'yes', is_beban_pemasaran: 'yes' }
   );
 
   // 5. Beban ATK (R-018)
   await verify(
     'Pembelian Alat Tulis Kantor (ATK)',
     'semua',
-    { is_outbound: 'yes', is_beban_atk: 'yes' }
+    { is_outbound: 'yes', is_pelunasan_hutang: 'no', is_bayar_beban: 'yes', is_beban_atk: 'yes' }
+  );
+
+  // 6. Pelunasan Hutang Dagang (R-016)
+  await verify(
+    'Pelunasan Hutang Dagang kepada Supplier',
+    'semua',
+    { is_outbound: 'yes', is_pelunasan_hutang: 'yes', is_pelunasan_hutang_dagang: 'yes' }
   );
 
   process.exit(0);

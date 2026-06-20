@@ -248,6 +248,8 @@ async function init() {
       { code: 'Q-013', question_text: 'Apakah pengeluaran merupakan pembayaran sewa?', fact_name: 'is_beban_sewa' },
       { code: 'Q-014', question_text: 'Apakah pengeluaran merupakan pembelian alat tulis kantor (ATK)?', fact_name: 'is_beban_atk' },
       { code: 'Q-015', question_text: 'Apakah penerimaan berasal dari pinjaman bank?', fact_name: 'is_pinjaman_bank' },
+      { code: 'Q-016', question_text: 'Apakah pengeluaran ditujukan untuk pelunasan kewajiban/hutang?', fact_name: 'is_pelunasan_hutang' },
+      { code: 'Q-017', question_text: 'Apakah pengeluaran ditujukan untuk pembayaran beban?', fact_name: 'is_bayar_beban' },
       { code: 'Q-110', question_text: 'Apakah pengeluaran merupakan biaya pemasaran atau promosi?', fact_name: 'is_beban_pemasaran' },
       { code: 'Q-111', question_text: 'Apakah transaksi merupakan pelunasan hutang dagang?', fact_name: 'is_pelunasan_hutang_dagang' },
       { code: 'Q-112', question_text: 'Apakah transaksi merupakan penerimaan pembayaran piutang dari pelanggan?', fact_name: 'is_penerimaan_piutang' },
@@ -365,6 +367,8 @@ async function init() {
         debit: accMap['5-1000'], credit: accMap['1-1000'], description: 'Pembayaran gaji karyawan.',
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_pelunasan_hutang', expected_value: 'no' },
+          { fact_name: 'is_bayar_beban', expected_value: 'yes' },
           { fact_name: 'is_beban_gaji', expected_value: 'yes' }
         ]
       },
@@ -373,6 +377,8 @@ async function init() {
         debit: accMap['5-1100'], credit: accMap['1-1000'], description: 'Pembayaran utilitas (listrik, air, telepon).',
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_pelunasan_hutang', expected_value: 'no' },
+          { fact_name: 'is_bayar_beban', expected_value: 'yes' },
           { fact_name: 'is_beban_utilitas', expected_value: 'yes' }
         ]
       },
@@ -381,6 +387,8 @@ async function init() {
         debit: accMap['5-1200'], credit: accMap['1-1000'], description: 'Pembayaran sewa gedung / tempat usaha.',
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_pelunasan_hutang', expected_value: 'no' },
+          { fact_name: 'is_bayar_beban', expected_value: 'yes' },
           { fact_name: 'is_beban_sewa', expected_value: 'yes' }
         ]
       },
@@ -389,6 +397,8 @@ async function init() {
         debit: accMap['5-1300'], credit: accMap['1-1000'], description: 'Biaya pemasaran, iklan, dan promosi.',
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_pelunasan_hutang', expected_value: 'no' },
+          { fact_name: 'is_bayar_beban', expected_value: 'yes' },
           { fact_name: 'is_beban_pemasaran', expected_value: 'yes' }
         ]
       },
@@ -397,6 +407,7 @@ async function init() {
         debit: accMap['2-1000'], credit: accMap['1-1000'], description: 'Pembayaran pelunasan hutang kepada supplier.',
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_pelunasan_hutang', expected_value: 'yes' },
           { fact_name: 'is_pelunasan_hutang_dagang', expected_value: 'yes' }
         ]
       },
@@ -405,6 +416,7 @@ async function init() {
         debit: accMap['2-2000'], credit: accMap['1-1000'], description: 'Pembayaran angsuran atau pelunasan hutang bank.',
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_pelunasan_hutang', expected_value: 'yes' },
           { fact_name: 'is_pelunasan_hutang_bank', expected_value: 'yes' }
         ]
       },
@@ -413,6 +425,8 @@ async function init() {
         debit: accMap['5-1500'], credit: accMap['1-1000'], description: 'Pembelian alat tulis kantor (ATK).',
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_pelunasan_hutang', expected_value: 'no' },
+          { fact_name: 'is_bayar_beban', expected_value: 'yes' },
           { fact_name: 'is_beban_atk', expected_value: 'yes' }
         ]
       }

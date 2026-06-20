@@ -102,6 +102,8 @@ export class BackwardChainingEngine {
       'is_pembelian_aset',
       'is_manfaat_lebih_1_tahun',
       'is_prive',
+      'is_pelunasan_hutang',
+      'is_bayar_beban',
       'is_beban_gaji',
       'is_beban_utilitas',
       'is_beban_sewa',

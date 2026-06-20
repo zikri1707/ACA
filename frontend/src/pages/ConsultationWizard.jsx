@@ -214,11 +214,14 @@ export const ConsultationWizard = () => {
     }
   };
 
-  const debitDisplay = provenGoal?.debit?.name || '-';
+  const debitDisplay = provenGoal?.requiresUserInput === 'debit' 
+    ? (selectedDynamicAccountId ? expenseAccounts.find(a => a.id == selectedDynamicAccountId)?.name : 'Pilih Jenis Beban')
+    : provenGoal?.debit?.name || '-';
+
   const creditDisplay = provenGoal?.credit?.name || '-';
 
-  const specificAccount = provenGoal ? provenGoal.rule_name : '';
-  const category = provenGoal ? (provenGoal.debit?.category === 'Beban' ? 'Beban' : (provenGoal.credit?.category || 'Akuntansi')) : '';
+  const specificAccount = provenGoal ? provenGoal.rule_name.split(' (')[0] : '';
+  const category = provenGoal ? ((provenGoal.debit?.name?.includes(specificAccount) ? provenGoal.debit?.category : provenGoal.credit?.category) || 'Akuntansi') : '';
 
   return (
     <div className="printable-consultation">
@@ -395,16 +398,16 @@ export const ConsultationWizard = () => {
                 {provenGoal ? (
                   <>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.5rem', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>
-                      {provenGoal.rule_name}
+                      {provenGoal.rule_name.split(' (')[0]}
                     </h1>
                     <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', backgroundColor: '#e0f2fe', padding: '0.35rem 0.75rem', borderRadius: '12px', display: 'inline-block', marginBottom: '1.5rem', textTransform: 'uppercase' }}>
-                      KATEGORI: {category.toUpperCase()}
+                      KATEGORI: {(provenGoal.debit?.name.includes(provenGoal.rule_name.split(' (')[0]) ? provenGoal.debit?.category : provenGoal.credit?.category) || 'AKUNTANSI'} ({provenGoal.rule_name.split(' (')[0]})
                     </span>
                     
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
                       <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Kesimpulan</h4>
                       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                        Berdasarkan analisis, transaksi ini terklasifikasi sebagai <strong>{specificAccount}</strong>.
+                        Berdasarkan analisis, transaksi ini terklasifikasi ke dalam kelompok <strong>{category}</strong> dengan akun spesifik <strong>{specificAccount}</strong>.
                       </p>
 
                       <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Rekomendasi Pencatatan (Standar SAK EMKM)</h4>
