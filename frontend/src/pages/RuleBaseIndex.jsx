@@ -522,16 +522,38 @@ export const RuleBaseIndex = () => {
   const getRuleNarrative = (code) => {
     const q = (id) => questions.find(x => x.fact_name === id)?.question_text || id;
     
-    const rule = rules.find(r => r.code === code);
+    let rule = rules.find(r => r.code === code);
     if (!rule || !rule.conditions || rule.conditions.length === 0) {
       return [];
     }
+
+    // Inject gateway conditions dynamically for visualizer (sync with backend)
+    const injectedConds = [...rule.conditions];
+    if (['G-13', 'G-14', 'G-15'].includes(rule.code)) {
+      if (!injectedConds.find(c => c.fact_name === 'is_pelunasan_hutang')) {
+        injectedConds.push({ fact_name: 'is_pelunasan_hutang', expected_value: 'yes' });
+      }
+    } else if (['G-16', 'G-17', 'G-18', 'G-19', 'G-20', 'G-24'].includes(rule.code)) {
+      if (!injectedConds.find(c => c.fact_name === 'is_beban')) {
+        injectedConds.push({ fact_name: 'is_beban', expected_value: 'yes' });
+      }
+    }
+    rule = { ...rule, conditions: injectedConds };
 
     const generateQuestionSequence = (targetRule) => {
       if (!targetRule || !targetRule.conditions) return [];
       
       const activeRules = [...rules]
         .filter(r => r.is_active === 1)
+        .map(r => {
+          const newConds = [...(r.conditions || [])];
+          if (['G-13', 'G-14', 'G-15'].includes(r.code)) {
+            if (!newConds.find(c => c.fact_name === 'is_pelunasan_hutang')) newConds.push({ fact_name: 'is_pelunasan_hutang', expected_value: 'yes' });
+          } else if (['G-16', 'G-17', 'G-18', 'G-19', 'G-20', 'G-24'].includes(r.code)) {
+            if (!newConds.find(c => c.fact_name === 'is_beban')) newConds.push({ fact_name: 'is_beban', expected_value: 'yes' });
+          }
+          return { ...r, conditions: newConds };
+        })
         .sort((a, b) => b.priority - a.priority);
       
       const targetAnswers = {};
@@ -548,19 +570,22 @@ export const RuleBaseIndex = () => {
         'is_penjualan_barang',
         'is_penjualan_jasa',
         'is_dijual_kembali',
-        'is_kredit',
         'is_pembelian_aset',
         'is_manfaat_lebih_1_tahun',
+        'is_pembelian_perlengkapan',
+        'is_pembelian_aset_lainnya',
+        'is_kredit',
         'is_prive',
         'is_pelunasan_hutang',
-        'is_bayar_beban',
+        'is_pelunasan_hutang_dagang',
+        'is_pelunasan_hutang_bank',
+        'is_beban',
         'is_beban_gaji',
         'is_beban_utilitas',
         'is_beban_sewa',
-        'is_beban_atk',
         'is_beban_pemasaran',
-        'is_pelunasan_hutang_dagang',
-        'is_pelunasan_hutang_bank'
+        'is_beban_atk',
+        'is_beban_lainnya'
       ];
 
       const businessType = targetRule.business_type === 'jasa' ? 'jasa' : 'dagang';
