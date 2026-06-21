@@ -97,15 +97,17 @@ export const RuleBaseIndex = () => {
   // Zoom & Pan state for interactive flowchart
   const [scale, setScale] = useState(() => {
     if (typeof window !== 'undefined') {
-      return window.innerWidth < 768 ? 0.20 : 0.35;
+      return window.innerWidth < 768 ? 0.90 : 1.70;
     }
-    return 0.35;
+    return 1.70;
   });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const flowchartContainerRef = useRef(null);
+  const flowchartRef = useRef(null);
+
 
   useEffect(() => {
     const container = flowchartContainerRef.current;
@@ -116,7 +118,7 @@ export const RuleBaseIndex = () => {
       const zoomFactor = 0.05;
       setScale(prev => {
         let newScale = prev + (e.deltaY < 0 ? zoomFactor : -zoomFactor);
-        return Math.max(0.15, Math.min(newScale, 3));
+        return Math.max(0.15, Math.min(newScale, 6));
       });
     };
 
@@ -174,82 +176,112 @@ export const RuleBaseIndex = () => {
   }, [token]);
 
   // Effect for rendering Mermaid diagram dynamically
-useEffect(() => {
-  if (activeTab === 'rules_diagram') {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js';
-    script.async = true;
-    script.onload = () => {
-      if (window.mermaid) {
-        window.mermaid.initialize({
-          startOnLoad: false,
-          theme: 'default',
-          flowchart: {
-            useMaxWidth: false,
-            htmlLabels: true,
-            padding: 20,
-            nodeSpacing: 120, // lebih lega
-            rankSpacing: 120  // lebih lega
+  useEffect(() => {
+    if (activeTab === 'rules_diagram') {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.min.js';
+      script.async = true;
+      script.onload = () => {
+        if (window.mermaid && flowchartRef.current) {
+          try {
+            // Set raw definition
+            flowchartRef.current.innerHTML = `<div class="mermaid">graph TD
+    Start([Mulai]) --> C1{"Q-001 — is_inbound?<br/>Apakah transaksi merupakan<br/>penerimaan uang?"}
+    Start --> C2{"Q-002 — is_outbound?<br/>Apakah transaksi merupakan<br/>pengeluaran uang?"}
+    %% ==========================================
+    %% BLOK 1: INBOUND
+    %% ==========================================
+    C1 -- TRUE --> IB1{"Q-009 — is_setoran_modal?<br/>Apakah penerimaan berasal<br/>dari setoran modal pemilik?"}
+
+    IB1 -- TRUE --> A1["G-01: Modal Pemilik<br/>Db: Kas Utama<br/>Cr: Modal Pemilik"]
+    IB1 -- FALSE --> IB2{"Q-015 — is_pinjaman_bank?<br/>Apakah penerimaan berasal<br/>dari pinjaman bank?"}
+
+    IB2 -- TRUE --> A2["G-02: Hutang Bank (Pinjaman)<br/>Db: Kas Utama<br/>Cr: Hutang Bank"]
+    IB2 -- FALSE --> IB3{"Q-112 — is_penerimaan_piutang?<br/>Apakah transaksi merupakan penerimaan<br/>pembayaran piutang dari pelanggan?"}
+
+    IB3 -- TRUE --> A3["G-03: Penerimaan Piutang<br/>Db: Kas Utama<br/>Cr: Piutang Usaha"]
+    IB3 -- FALSE --> IB4{"Q-003 — is_penjualan_barang?<br/>Apakah transaksi berasal<br/>dari penjualan barang?"}
+
+    IB4 -- TRUE --> IB4_K{"Q-005 — is_kredit?<br/>Apakah transaksi dilakukan<br/>secara kredit?"}
+    IB4_K -- TRUE --> A4["G-04: Penjualan Barang Kredit<br/>Db: Piutang Usaha<br/>Cr: Pendapatan Penjualan<br/><i>Trigger(Hitung HPP)</i>"]
+    IB4_K -- FALSE --> A5["G-05: Penjualan Barang Tunai<br/>Db: Kas Utama<br/>Cr: Pendapatan Penjualan<br/><i>Trigger(Hitung HPP)</i>"]
+
+    IB4 -- FALSE --> IB5{"Q-004 — is_penjualan_jasa?<br/>Apakah transaksi berasal<br/>dari penjualan jasa?"}
+    IB5 -- TRUE --> IB5_K{"Q-005 — is_kredit?<br/>Apakah transaksi dilakukan<br/>secara kredit?"}
+    IB5_K -- TRUE --> A6["G-06: Penjualan Jasa Kredit<br/>Db: Piutang Usaha<br/>Cr: Pendapatan Jasa"]
+    IB5_K -- FALSE --> A7["G-07: Penjualan Jasa Tunai<br/>Db: Kas Utama<br/>Cr: Pendapatan Jasa"]
+    IB5 -- FALSE --> A8["G-08: Penerimaan Tunai Lainnya<br/>Db: Kas Utama<br/>Cr: Pendapatan Lain-lain<br/><i>Default/Fallback</i>"]
+    %% ==========================================
+    %% BLOK 2: OUTBOUND
+    %% ==========================================
+    C2 -- TRUE --> OB1{"Q-006 — is_dijual_kembali?<br/>Apakah barang yang dibeli<br/>akan dijual kembali?"}
+    OB1 -- TRUE --> OB1_K{"Q-005 — is_kredit?<br/>Apakah transaksi dilakukan<br/>secara kredit?"}
+    OB1_K -- TRUE --> B1["G-09: Pembelian Persediaan Kredit<br/>Db: Persediaan<br/>Cr: Hutang Dagang<br/><i>Trigger(Hitung Harga Pokok<br/>Moving Average)</i>"]
+    OB1_K -- FALSE --> B2["G-10: Pembelian Persediaan Tunai<br/>Db: Persediaan<br/>Cr: Kas Utama<br/><i>Trigger(Hitung Harga Pokok<br/>Moving Average)</i>"]
+    OB1 -- FALSE --> OB2{"Q-007 — is_pembelian_aset?<br/>Apakah transaksi merupakan<br/>pembelian aset?"}
+
+    %% --- SUB-BLOK ASET (jalur mandiri, tidak lagi bertemu jalur beban) ---
+    OB2 -- TRUE --> OB2_M{"Q-008 — is_manfaat_lebih_1_tahun?<br/>Apakah aset memiliki masa manfaat<br/>lebih dari satu tahun?"}
+    OB2_M -- TRUE --> B3["G-11: Pembelian Aset Tetap<br/>Db: Peralatan<br/>Cr: Kas Utama"]
+    OB2_M -- FALSE --> OB2_AL{"Q-016 — is_pembelian_perlengkapan?<br/>Apakah pembelian ini termasuk<br/>perlengkapan (Like ATK office)?"}
+    OB2_AL -- TRUE --> B12["G-21: Perlengkapan<br/>Db: Perlengkapan<br/>Cr: Kas Utama / Hutang Dagang"]
+    OB2_AL -- FALSE --> B15["G-23: Pembelian Aset Lainnya<br/>Db: Aset Lain-lain<br/>Cr: Kas Utama / Hutang Dagang<br/><i>Default/Fallback (Aset)</i>"]
+
+    OB2 -- FALSE --> OB3{"Q-010 — is_prive?<br/>Apakah pengeluaran digunakan untuk<br/>kepentingan pribadi pemilik (prive)?"}
+    OB3 -- TRUE --> B4["G-12: Prive<br/>Db: Prive<br/>Cr: Kas Utama"]
+    %% SUB-BLOK: PELUNASAN HUTANG
+    OB3 -- FALSE --> OB4{"Q-017 — is_pelunasan_hutang?<br/>Apakah pengeluaran ditujukan untuk<br/>pelunasan kewajiban/hutang?"}
+    OB4 -- TRUE --> OB4_D{"Q-111 — is_pelunasan_hutang_dagang?<br/>Apakah transaksi merupakan<br/>pelunasan hutang dagang?"}
+    OB4_D -- TRUE --> B5["G-13: Pelunasan Hutang Dagang<br/>Db: Hutang Dagang<br/>Cr: Kas Utama"]
+
+    OB4_D -- FALSE --> OB4_B{"Q-113 — is_pelunasan_hutang_bank?<br/>Apakah transaksi merupakan<br/>pelunasan hutang bank?"}
+    OB4_B -- TRUE --> B6["G-14: Pelunasan Hutang Bank<br/>Db: Hutang Bank<br/>Cr: Kas Utama"]
+    OB4_B -- FALSE --> B6X["G-15: Pelunasan Hutang Lainnya<br/>Db: Hutang Lain-lain<br/>Cr: Kas Utama"]
+    %% SUB-BLOK: PEMBAYARAN BEBAN (jalur mandiri, tidak lagi bertemu jalur aset)
+    OB4 -- FALSE --> OB5{"Q-018 — is_beban?<br/>Apakah pengeluaran ditujukan untuk<br/>pembayaran beban?"}
+    OB5 -- FALSE --> B13["G-22: Pengeluaran Kas Lainnya<br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback</i>"]
+    OB5 -- TRUE --> OB5_G{"Q-011 — is_beban_gaji?<br/>Apakah pengeluaran merupakan<br/>pembayaran gaji?"}
+
+    OB5_G -- TRUE --> B7["G-16: Beban Gaji<br/>Db: Beban Gaji<br/>Cr: Kas Utama"]
+    OB5_G -- FALSE --> OB5_U{"Q-012 — is_beban_utilitas?<br/>Apakah pengeluaran merupakan<br/>pembayaran utilitas (listrik, air, internet)?"}
+
+    OB5_U -- TRUE --> B8["G-17: Beban Utilitas<br/>Db: Beban Utilitas<br/>Cr: Kas Utama"]
+    OB5_U -- FALSE --> OB5_S{"Q-013 — is_beban_sewa?<br/>Apakah pengeluaran merupakan<br/>pembayaran sewa?"}
+
+    OB5_S -- TRUE --> B9["G-18: Beban Sewa<br/>Db: Beban Sewa<br/>Cr: Kas Utama"]
+    OB5_S -- FALSE --> OB5_P{"Q-110 — is_beban_pemasaran?<br/>Apakah pengeluaran merupakan<br/>biaya pemasaran atau promosi?"}
+
+    OB5_P -- TRUE --> B10["G-19: Beban Pemasaran<br/>Db: Beban Pemasaran<br/>Cr: Kas Utama"]
+    OB5_P -- FALSE --> OB5_ATK{"Q-014 — is_beban_atk?<br/>Apakah pengeluaran ini termasuk<br/>biaya ATK (alat tulis kantor)?"}
+    OB5_ATK -- TRUE --> B11["G-20: Beban ATK<br/>Db: Beban ATK<br/>Cr: Kas Utama"]
+    OB5_ATK -- FALSE --> B14["G-22: Beban Lain-lain<br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback (Beban)</i>"]
+</div>`;
+            window.mermaid.initialize({
+              startOnLoad: false,
+              theme: 'neutral',
+              themeVariables: {
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                fontSize: '15px'
+              },
+              flowchart: {
+                useMaxWidth: false,
+                htmlLabels: true,
+                padding: 24
+              }
+            });
+            window.mermaid.init(undefined, flowchartRef.current.querySelectorAll('.mermaid'));
+          } catch (err) {
+            console.error("Gagal render diagram:", err);
           }
-        });
+        }
+      };
+      document.body.appendChild(script);
+      return () => {
+        if (document.body.contains(script)) document.body.removeChild(script);
+      };
+    }
+  }, [activeTab]);
 
-        window.mermaid.init(undefined, document.querySelectorAll('.mermaid'));
-
-        const fixMermaidClipping = () => {
-          const svg = document.querySelector('.mermaid svg');
-          if (!svg) { setTimeout(fixMermaidClipping, 300); return; }
-
-          // ✅ Step 1: Hapus constraint clipPath
-          svg.querySelectorAll('defs clipPath rect').forEach(r => {
-            r.setAttribute('width', '5000');
-            r.setAttribute('height', '3000');
-            r.setAttribute('x', '-2500');
-            r.setAttribute('y', '-1500');
-          });
-
-          // ✅ Step 2: Resize foreignObject SAJA — rect & polygon TIDAK disentuh
-          // Sehingga layout Mermaid tetap utuh, tidak ada node yang overlap
-          svg.querySelectorAll('g.node').forEach(node => {
-            const fo = node.querySelector('foreignObject');
-            if (!fo) return;
-            fo.style.overflow = 'visible';
-
-            const div = fo.querySelector('div');
-            if (!div) return;
-
-            // Ukur lebar alami teks (sementara lepas constraint width)
-            div.style.width = 'max-content';
-            div.style.maxWidth = '240px'; // batas wrap teks
-            div.style.textAlign = 'center';
-            div.style.boxSizing = 'border-box';
-
-            const w = Math.min(div.scrollWidth + 16, 260);
-            const h = div.scrollHeight + 10;
-            if (!w || !h) return;
-
-            fo.setAttribute('width', String(w));
-            fo.setAttribute('height', String(h));
-            fo.setAttribute('x', String(-w / 2));
-            fo.setAttribute('y', String(-h / 2));
-
-            // Background agar teks tetap terbaca meski sedikit melebihi shape
-            div.style.background = 'rgba(237, 233, 254, 0.93)';
-            div.style.padding = '4px 8px';
-            div.style.borderRadius = '4px';
-            div.style.width = String(w - 16) + 'px';
-          });
-        };
-
-        setTimeout(fixMermaidClipping, 800);
-      }
-    };
-
-    document.body.appendChild(script);
-    return () => {
-      if (document.body.contains(script)) document.body.removeChild(script);
-    };
-  }
-}, [activeTab]);
   const handleToggleActive = async (rule) => {
     if (!isAdmin) return;
     try {
@@ -780,28 +812,51 @@ useEffect(() => {
     <div style={{ position: 'relative' }}>
       <style>{`
         /* Reset Mermaid SVG default sizing constraints for sharp zoom and pan */
-        .mermaid svg {
+        .mermaid svg,
+        svg.mermaid,
+        .flowchart-render-container svg {
           max-width: none !important;
+          width: auto !important;
+          height: auto !important;
           display: block;
           margin: 0 auto;
+          overflow: visible !important;
+          padding: 30px !important;
         }
-      .mermaid svg foreignObject {
-        overflow: visible !important;
-      }
-      .mermaid svg g.node {
-        overflow: visible !important;
-      }
-      .mermaid svg defs {
-        overflow: visible !important;
-      }
-      
+
+        /* Force standard system font on flowchart elements to prevent text truncation inside foreignObject nodes */
+        .flowchart-render-container svg *,
+        .flowchart-render-container svg text,
+        .flowchart-render-container svg foreignObject,
+        .flowchart-render-container svg div,
+        .flowchart-render-container svg span,
+        svg.mermaid *,
+        svg.mermaid text,
+        svg.mermaid foreignObject,
+        svg.mermaid div,
+        svg.mermaid span,
+        .flowchart-render-container * {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+          font-size: 15px !important;
+          line-height: 1.25 !important;
+        }
 
         /* Mermaid flowchart node interactive hover styling */
         .mermaid svg g.node:hover rect,
         .mermaid svg g.node:hover polygon,
         .mermaid svg g.node:hover circle,
         .mermaid svg g.node:hover ellipse,
-        .mermaid svg g.node:hover path {
+        .mermaid svg g.node:hover path,
+        svg.mermaid g.node:hover rect,
+        svg.mermaid g.node:hover polygon,
+        svg.mermaid g.node:hover circle,
+        svg.mermaid g.node:hover ellipse,
+        svg.mermaid g.node:hover path,
+        .flowchart-render-container svg g.node:hover rect,
+        .flowchart-render-container svg g.node:hover polygon,
+        .flowchart-render-container svg g.node:hover circle,
+        .flowchart-render-container svg g.node:hover ellipse,
+        .flowchart-render-container svg g.node:hover path {
           fill: #eff6ff !important;
           stroke: #2563eb !important;
           stroke-width: 2px !important;
@@ -813,11 +868,23 @@ useEffect(() => {
         .mermaid svg g.node polygon,
         .mermaid svg g.node circle,
         .mermaid svg g.node ellipse,
-        .mermaid svg g.node path {
+        .mermaid svg g.node path,
+        svg.mermaid g.node rect,
+        svg.mermaid g.node polygon,
+        svg.mermaid g.node circle,
+        svg.mermaid g.node ellipse,
+        svg.mermaid g.node path,
+        .flowchart-render-container svg g.node rect,
+        .flowchart-render-container svg g.node polygon,
+        .flowchart-render-container svg g.node circle,
+        .flowchart-render-container svg g.node ellipse,
+        .flowchart-render-container svg g.node path {
           transition: fill 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease, filter 0.2s ease;
         }
 
-        .mermaid svg g.edgePath:hover path.path {
+        .mermaid svg g.edgePath:hover path.path,
+        svg.mermaid g.edgePath:hover path.path,
+        .flowchart-render-container svg g.edgePath:hover path.path {
           stroke: #2563eb !important;
           stroke-width: 2.5px !important;
         }
@@ -836,19 +903,45 @@ useEffect(() => {
         .anim-slide-up {
           animation: ruleSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+        @keyframes pulseGlow {
+          0% { transform: scale(0.9); opacity: 0.6; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+          70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+          100% { transform: scale(0.9); opacity: 0.6; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        @keyframes pulseGlowRed {
+          0% { transform: scale(0.9); opacity: 0.6; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+          70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+          100% { transform: scale(0.9); opacity: 0.6; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .glowing-dot-active {
+          width: 8px;
+          height: 8px;
+          background-color: #10b981;
+          border-radius: 50%;
+          display: inline-block;
+          animation: pulseGlow 1.8s infinite ease-in-out;
+        }
+        .glowing-dot-draft {
+          width: 8px;
+          height: 8px;
+          background-color: #ef4444;
+          border-radius: 50%;
+          display: inline-block;
+          animation: pulseGlowRed 1.8s infinite ease-in-out;
+        }
         .rule-tab-btn {
-          padding: 0.75rem 1.25rem;
+          padding: 1.1rem 1.75rem;
           background: transparent;
           border: none;
           color: var(--text-secondary);
           font-weight: 700;
-          font-size: 0.9rem;
+          font-size: 1.05rem;
           cursor: pointer;
           position: relative;
           transition: var(--transition);
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.75rem;
         }
         .rule-tab-btn:hover {
           color: var(--primary);
@@ -862,7 +955,7 @@ useEffect(() => {
           bottom: 0;
           left: 12%;
           right: 12%;
-          height: 3px;
+          height: 4px;
           background-color: var(--primary);
           border-radius: 999px;
         }
@@ -1015,26 +1108,26 @@ useEffect(() => {
       `}</style>
 
       {/* Top dashboard metadata summary cards */}
-      <div className="grid-cols-4" style={{ marginBottom: '1.5rem' }}>
-        <div className="card" style={{ padding: '1.25rem', borderRadius: '12px', borderLeft: '4px solid var(--primary)' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Rules</span>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginTop: '0.25rem', color: 'var(--text-primary)' }}>{rules.length}</h2>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Definisi Sistem Pakar</span>
+      <div className="grid-cols-4" style={{ marginBottom: '2rem' }}>
+        <div className="card" style={{ padding: '1.75rem 2rem', borderRadius: '16px', borderLeft: '6px solid var(--primary)', boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Rules</span>
+          <h2 style={{ fontSize: '3rem', fontWeight: 800, margin: '0.25rem 0', color: 'var(--text-primary)', lineHeight: 1.1 }}>{rules.length}</h2>
+          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Definisi Sistem Pakar</span>
         </div>
-        <div className="card" style={{ padding: '1.25rem', borderRadius: '12px', borderLeft: '4px solid #10b981' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Akurasi Klasifikasi</span>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginTop: '0.25rem', color: '#10b981' }}>98.4%</h2>
-          <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 700 }}>Berdasarkan SAK EMKM</span>
+        <div className="card" style={{ padding: '1.75rem 2rem', borderRadius: '16px', borderLeft: '6px solid #10b981', boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Akurasi Klasifikasi</span>
+          <h2 style={{ fontSize: '3rem', fontWeight: 800, margin: '0.25rem 0', color: '#10b981', lineHeight: 1.1 }}>98.4%</h2>
+          <span style={{ fontSize: '0.9rem', color: 'var(--success)', fontWeight: 700 }}>Berdasarkan SAK EMKM</span>
         </div>
-        <div className="card" style={{ padding: '1.25rem', borderRadius: '12px', borderLeft: '4px solid #3b82f6' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Aturan Aktif</span>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginTop: '0.25rem', color: 'var(--text-primary)' }}>{rules.filter(r => r.is_active === 1).length}</h2>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{rules.filter(r => r.is_active === 0).length} Disimpan Draft</span>
+        <div className="card" style={{ padding: '1.75rem 2rem', borderRadius: '16px', borderLeft: '6px solid #3b82f6', boxShadow: '0 10px 25px -5px rgba(59, 130, 246, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aturan Aktif</span>
+          <h2 style={{ fontSize: '3rem', fontWeight: 800, margin: '0.25rem 0', color: 'var(--text-primary)', lineHeight: 1.1 }}>{rules.filter(r => r.is_active === 1).length}</h2>
+          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{rules.filter(r => r.is_active === 0).length} Disimpan Draft</span>
         </div>
-        <div className="card" style={{ padding: '1.25rem', borderRadius: '12px', borderLeft: '4px solid #7c3aed' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Fakta</span>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginTop: '0.25rem', color: '#7c3aed' }}>{questions.length}</h2>
-          <span style={{ fontSize: '0.75rem', color: '#7c3aed', fontWeight: 700 }}>Parameter Pertanyaan</span>
+        <div className="card" style={{ padding: '1.75rem 2rem', borderRadius: '16px', borderLeft: '6px solid #7c3aed', boxShadow: '0 10px 25px -5px rgba(124, 58, 237, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Fakta</span>
+          <h2 style={{ fontSize: '3rem', fontWeight: 800, margin: '0.25rem 0', color: '#7c3aed', lineHeight: 1.1 }}>{questions.length}</h2>
+          <span style={{ fontSize: '0.9rem', color: '#7c3aed', fontWeight: 700 }}>Parameter Pertanyaan</span>
         </div>
       </div>
 
@@ -1060,7 +1153,7 @@ useEffect(() => {
             className={`rule-tab-btn ${activeTab === 'rules_diagram' ? 'active' : ''}`}
             style={{ whiteSpace: 'nowrap' }}
           >
-            📊 Flowchart
+            📊 Flowchart & Matriks
           </button>
           <button
             onClick={() => setActiveTab('visualizer')}
@@ -1135,16 +1228,16 @@ useEffect(() => {
             </div>
 
             {/* Rules Table */}
-            <div className="table-container" style={{ border: 'none', margin: 0 }}>
-              <table className="table">
+            <div className="table-container" style={{ border: 'none', margin: 0, boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)' }}>
+              <table className="table" style={{ borderCollapse: 'separate', borderSpacing: '0' }}>
                 <thead>
                   <tr style={{ background: 'var(--background)' }}>
-                    <th style={{ width: '12%', padding: '1rem 1.25rem' }}>Kode Aturan</th>
-                    <th style={{ width: '30%', padding: '1rem 1.25rem' }}>Nama Aturan</th>
-                    <th style={{ width: '15%', padding: '1rem 1.25rem' }}>Jenis Usaha</th>
-                    <th style={{ width: '23%', padding: '1rem 1.25rem' }}>Hasil Akun (THEN)</th>
-                    <th style={{ width: '10%', padding: '1rem 1.25rem' }}>Status</th>
-                    <th style={{ width: '10%', padding: '1rem 1.25rem', textAlign: 'right' }}>Aksi</th>
+                    <th style={{ width: '12%', padding: '1.25rem 1.5rem', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>Kode Aturan</th>
+                    <th style={{ width: '30%', padding: '1.25rem 1.5rem', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>Nama Aturan</th>
+                    <th style={{ width: '15%', padding: '1.25rem 1.5rem', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>Jenis Usaha</th>
+                    <th style={{ width: '23%', padding: '1.25rem 1.5rem', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>Hasil Akun (THEN)</th>
+                    <th style={{ width: '10%', padding: '1.25rem 1.5rem', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>Status</th>
+                    <th style={{ width: '10%', padding: '1.25rem 1.5rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1168,32 +1261,36 @@ useEffect(() => {
                             transition: 'background-color 0.2s'
                           }}
                         >
-                          <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: '0.9rem' }}>{rule.code}</td>
-                          <td>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{rule.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{rule.description || 'Tidak ada deskripsi.'}</div>
+                          <td style={{ padding: '1.25rem 1.5rem', fontWeight: 800, fontFamily: 'var(--font-mono)', fontSize: '1rem', color: 'var(--text-primary)' }}>{rule.code}</td>
+                          <td style={{ padding: '1.25rem 1.5rem' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem', marginBottom: '0.25rem' }}>{rule.name}</div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{rule.description || 'Tidak ada deskripsi.'}</div>
                           </td>
-                          <td>
+                          <td style={{ padding: '1.25rem 1.5rem' }}>
                             <span className="badge" style={{
                               backgroundColor: rule.business_type === 'jasa' ? 'rgba(124, 58, 237, 0.08)' : rule.business_type === 'dagang' ? 'rgba(16, 185, 129, 0.08)' : 'var(--background)',
                               color: rule.business_type === 'jasa' ? '#7c3aed' : rule.business_type === 'dagang' ? '#10b981' : 'var(--text-secondary)',
                               border: '1px solid var(--border)',
-                              fontSize: '0.75rem',
-                              fontWeight: 700
+                              fontSize: '0.85rem',
+                              fontWeight: 700,
+                              padding: '0.35rem 0.75rem',
+                              borderRadius: '6px'
                             }}>
                               {rule.business_type === 'semua' ? 'Semua Bisnis' : rule.business_type.toUpperCase()}
                             </span>
                           </td>
-                          <td>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <td style={{ padding: '1.25rem 1.5rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               <span className="badge" style={{
                                 backgroundColor: rule.debit_account_id ? debitTheme.bg : 'var(--background)',
                                 color: rule.debit_account_id ? debitTheme.color : 'var(--text-secondary)',
                                 border: `1px solid ${rule.debit_account_id ? debitTheme.border : 'var(--border)'}`,
-                                fontSize: '0.7rem',
+                                fontSize: '0.8rem',
                                 fontWeight: 700,
                                 display: 'inline-flex',
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                padding: '0.35rem 0.75rem',
+                                borderRadius: '6px'
                               }}>
                                 <span style={{ marginRight: '4px', opacity: 0.7 }}>[Dr]</span>
                                 {rule.debit_account_id ? `${rule.debit_account_code} - ${rule.debit_account_name}` : 'Pilih Dinamis (Beban/Aset)'}
@@ -1202,35 +1299,38 @@ useEffect(() => {
                                 backgroundColor: rule.credit_account_id ? creditTheme.bg : 'var(--background)',
                                 color: rule.credit_account_id ? creditTheme.color : 'var(--text-secondary)',
                                 border: `1px solid ${rule.credit_account_id ? creditTheme.border : 'var(--border)'}`,
-                                fontSize: '0.7rem',
+                                fontSize: '0.8rem',
                                 fontWeight: 700,
                                 display: 'inline-flex',
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                padding: '0.35rem 0.75rem',
+                                borderRadius: '6px'
                               }}>
                                 <span style={{ marginRight: '4px', opacity: 0.7 }}>[Cr]</span>
                                 {rule.credit_account_id ? `${rule.credit_account_code} - ${rule.credit_account_name}` : 'Pilih Dinamis (Hutang/Kas)'}
                               </span>
                             </div>
                           </td>
-                          <td>
+                          <td style={{ padding: '1.25rem 1.5rem' }}>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleToggleActive(rule); }}
                               disabled={!isAdmin}
                               className={`badge ${rule.is_active === 1 ? 'badge-success' : 'badge-danger'}`}
-                              style={{ border: 'none', cursor: isAdmin ? 'pointer' : 'default', fontWeight: 700 }}
+                              style={{ border: 'none', cursor: isAdmin ? 'pointer' : 'default', fontWeight: 700, fontSize: '0.825rem', padding: '0.35rem 0.75rem', borderRadius: '6px' }}
                             >
                               {rule.is_active === 1 ? 'Aktif' : 'Draft'}
                             </button>
                           </td>
-                          <td onClick={(e) => e.stopPropagation()}>
-                            <div className="action-group">
+                          <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                            <div className="action-group" style={{ justifyContent: 'flex-end' }}>
                               <button
                                 onClick={() => { setSelectedRule(rule); setActiveTab('visualizer'); }}
                                 className="action-btn action-tooltip"
                                 data-tooltip="Lihat Flowchart"
                                 aria-label="Lihat Flowchart"
+                                style={{ padding: '0.5rem', borderRadius: '6px' }}
                               >
-                                <EyeIcon className="w-4 h-4" />
+                                <EyeIcon className="w-5 h-5" />
                               </button>
                               {isAdmin && (
                                 <>
@@ -1239,16 +1339,18 @@ useEffect(() => {
                                     className="action-btn action-tooltip"
                                     data-tooltip="Edit Rule"
                                     aria-label="Edit Rule"
+                                    style={{ padding: '0.5rem', borderRadius: '6px' }}
                                   >
-                                    <EditIcon className="w-3.5 h-3.5" />
+                                    <EditIcon className="w-4.5 h-4.5" />
                                   </button>
                                   <button
                                     onClick={() => handleDeleteClick(rule)}
                                     className="action-btn action-btn-danger action-tooltip"
                                     data-tooltip="Hapus Rule"
                                     aria-label="Hapus Rule"
+                                    style={{ padding: '0.5rem', borderRadius: '6px' }}
                                   >
-                                    <TrashIcon className="w-3.5 h-3.5" />
+                                    <TrashIcon className="w-4.5 h-4.5" />
                                   </button>
                                 </>
                               )}
@@ -1312,17 +1414,126 @@ useEffect(() => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', padding: '1rem 0' }}>
                 
                 {/* Rule Title and Details */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--background)', padding: '1rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <div>
-                    <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{selectedRule.name}</h4>
-                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{selectedRule.description || 'Tidak ada deskripsi.'}</p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <span className="badge" style={{ backgroundColor: selectedRule.is_active === 1 ? 'var(--success-light)' : 'var(--danger-light)', color: selectedRule.is_active === 1 ? 'var(--success)' : 'var(--danger)' }}>
-                      {selectedRule.is_active === 1 ? 'Aktif' : 'Draft'}
-                    </span>
-                  </div>
-                </div>
+                {(() => {
+                  const mainCategory = selectedRule.debit_account_category || selectedRule.credit_account_category || 'Aset';
+                  const theme = CATEGORY_THEMES[mainCategory] || CATEGORY_THEMES['Aset'];
+                  
+                  const getSoftGradient = (category) => {
+                    switch (category) {
+                      case 'Aset': return 'linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.01) 100%)';
+                      case 'Kewajiban': return 'linear-gradient(135deg, rgba(217, 119, 6, 0.04) 0%, rgba(217, 119, 6, 0.01) 100%)';
+                      case 'Ekuitas': return 'linear-gradient(135deg, rgba(124, 58, 237, 0.04) 0%, rgba(124, 58, 237, 0.01) 100%)';
+                      case 'Pendapatan': return 'linear-gradient(135deg, rgba(5, 150, 105, 0.04) 0%, rgba(5, 150, 105, 0.01) 100%)';
+                      case 'Beban': return 'linear-gradient(135deg, rgba(220, 38, 38, 0.04) 0%, rgba(220, 38, 38, 0.01) 100%)';
+                      default: return 'linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.01) 100%)';
+                    }
+                  };
+
+                  const getSoftShadow = (category) => {
+                    switch (category) {
+                      case 'Aset': return 'rgba(37, 99, 235, 0.08)';
+                      case 'Kewajiban': return 'rgba(217, 119, 6, 0.08)';
+                      case 'Ekuitas': return 'rgba(124, 58, 237, 0.08)';
+                      case 'Pendapatan': return 'rgba(5, 150, 105, 0.08)';
+                      case 'Beban': return 'rgba(220, 38, 38, 0.08)';
+                      default: return 'rgba(37, 99, 235, 0.08)';
+                    }
+                  };
+
+                  return (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: getSoftGradient(mainCategory),
+                      padding: '1.25rem 1.75rem',
+                      borderRadius: '12px',
+                      border: `1px solid ${theme.border}`,
+                      borderLeft: `5px solid ${theme.color}`,
+                      boxShadow: `0 8px 30px -4px ${getSoftShadow(mainCategory)}`,
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', textAlign: 'left' }}>
+                        {/* Capsule Code + Category Tag */}
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{
+                            backgroundColor: theme.bg,
+                            color: theme.color,
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '6px',
+                            letterSpacing: '0.05em',
+                            textTransform: 'uppercase',
+                            border: `1px solid ${theme.border}`
+                          }}>
+                            {selectedRule.code}
+                          </span>
+                          <span style={{
+                            backgroundColor: 'rgba(243, 244, 246, 0.9)',
+                            color: 'var(--text-secondary)',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '6px',
+                            letterSpacing: '0.05em',
+                            textTransform: 'uppercase',
+                            border: '1px solid var(--border)'
+                          }}>
+                            {mainCategory}
+                          </span>
+                        </div>
+                        
+                        {/* Rule Name */}
+                        <h4 style={{
+                          margin: 0,
+                          fontSize: '1.35rem',
+                          fontWeight: 800,
+                          color: 'var(--text-primary)',
+                          letterSpacing: '-0.02em',
+                          lineHeight: 1.2
+                        }}>
+                          {selectedRule.name}
+                        </h4>
+                        
+                        {/* Rule Description */}
+                        <p style={{
+                          margin: 0,
+                          fontSize: '0.9rem',
+                          color: 'var(--text-secondary)',
+                          lineHeight: 1.4,
+                          maxWidth: '800px'
+                        }}>
+                          {selectedRule.description || 'Tidak ada deskripsi.'}
+                        </p>
+                      </div>
+
+                      {/* Right Panel: Status with glowing dot */}
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          backgroundColor: selectedRule.is_active === 1 ? 'var(--success-light)' : 'var(--danger-light)',
+                          color: selectedRule.is_active === 1 ? 'var(--success)' : 'var(--danger)',
+                          padding: '0.45rem 1rem',
+                          borderRadius: '2rem',
+                          fontSize: '0.85rem',
+                          fontWeight: 800,
+                          boxShadow: selectedRule.is_active === 1 
+                            ? '0 2px 10px rgba(16, 185, 129, 0.1)' 
+                            : '0 2px 10px rgba(239, 68, 68, 0.1)',
+                          border: `1px solid ${selectedRule.is_active === 1 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                        }}>
+                          <span className={selectedRule.is_active === 1 ? 'glowing-dot-active' : 'glowing-dot-draft'} />
+                          <span>
+                            {selectedRule.is_active === 1 ? 'Aktif' : 'Draft'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Horizontal Flow Diagram Grid */}
                 <div style={{
@@ -1337,29 +1548,29 @@ useEffect(() => {
                 }}>
                   
                   {/* Node 1: Input (Business Type) */}
-                  <div className="flow-node" style={{ borderLeft: '4px solid var(--primary)' }}>
-                    <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Input Bisnis</span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  <div className="flow-node" style={{ borderLeft: '4px solid var(--primary)', padding: '1.25rem 1.5rem', borderRadius: '14px', minWidth: '180px' }}>
+                    <span style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.4rem' }}>Input Bisnis</span>
+                    <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                       {selectedRule.business_type === 'semua' ? 'Semua UMKM' : `UMKM ${selectedRule.business_type.toUpperCase()}`}
                     </span>
                   </div>
 
                   {/* Connective Line */}
-                  <div className="flow-line"><span style={{ fontSize: '0.7rem', backgroundColor: 'var(--background)', color: 'var(--text-muted)', padding: '0 4px', fontWeight: 800 }}>IF</span></div>
+                  <div className="flow-line"><span style={{ fontSize: '0.95rem', backgroundColor: 'var(--background)', color: 'var(--text-muted)', padding: '0 8px', fontWeight: 800 }}>IF</span></div>
 
                   {/* Node 2: Sequence of Questions (Narrative Path) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '400px', zIndex: 1 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: '480px', zIndex: 1 }}>
                     {getRuleNarrative(selectedRule.code).map((step, idx) => (
                       <React.Fragment key={idx}>
                         {idx > 0 && (
-                          <div style={{ textAlign: 'center', margin: '2px 0' }}>
+                          <div style={{ textAlign: 'center', margin: '4px 0' }}>
                             <span style={{
                               backgroundColor: 'var(--border)',
                               color: 'var(--text-secondary)',
-                              fontSize: '0.65rem',
+                              fontSize: '0.8rem',
                               fontWeight: 800,
-                              padding: '0.15rem 0.5rem',
-                              borderRadius: '4px'
+                              padding: '0.25rem 0.75rem',
+                              borderRadius: '6px'
                             }}>
                               SELANJUTNYA ⬇
                             </span>
@@ -1368,35 +1579,35 @@ useEffect(() => {
                         <div style={{
                           backgroundColor: 'var(--surface)',
                           border: '1px solid var(--border)',
-                          borderRadius: '8px',
-                          padding: '0.75rem 1rem',
+                          borderRadius: '12px',
+                          padding: '1.25rem 1.5rem',
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.01)'
+                          boxShadow: '0 2px 10px rgba(0,0,0,0.015)'
                         }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '80%' }}>
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxWidth: '80%' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>
                               Pertanyaan {idx + 1} {step.code && `(${step.code})`} &middot; Fakta: <code style={{ color: 'var(--primary)', fontWeight: 700 }}>{step.fact_name}</code>
                             </span>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                            <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
                               {step.q}
                             </span>
                             {step.skipIf && (
-                              <span style={{ fontSize: '0.65rem', color: 'var(--warning)', marginTop: '4px', fontStyle: 'italic' }}>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--warning)', marginTop: '4px', fontStyle: 'italic' }}>
                                 *Dilewati otomatis jika profil UMKM adalah {step.skipIf}
                               </span>
                             )}
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>Jawaban</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>Jawaban</span>
                             <span style={{
                               backgroundColor: step.a.includes('YES') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                               color: step.a.includes('YES') ? 'var(--success)' : 'var(--danger)',
-                              fontSize: '0.75rem',
+                              fontSize: '0.95rem',
                               fontWeight: 800,
-                              padding: '0.2rem 0.6rem',
-                              borderRadius: '4px'
+                              padding: '0.35rem 0.85rem',
+                              borderRadius: '6px'
                             }}>
                               {step.a}
                             </span>
@@ -1405,15 +1616,15 @@ useEffect(() => {
                       </React.Fragment>
                     ))}
                     {getRuleNarrative(selectedRule.code).length === 0 && (
-                      <div style={{ textAlign: 'center', padding: '1rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>Tidak ada urutan pertanyaan tersedia.</div>
+                      <div style={{ textAlign: 'center', padding: '1.5rem', fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Tidak ada urutan pertanyaan tersedia.</div>
                     )}
                   </div>
 
                   {/* Connective Line */}
-                  <div className="flow-line"><span style={{ fontSize: '0.7rem', backgroundColor: 'var(--background)', color: 'var(--text-muted)', padding: '0 4px', fontWeight: 800 }}>THEN</span></div>
+                  <div className="flow-line"><span style={{ fontSize: '0.95rem', backgroundColor: 'var(--background)', color: 'var(--text-muted)', padding: '0 8px', fontWeight: 800 }}>THEN</span></div>
 
                   {/* Node 3: Output (Double-Entry Solution) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {/* Debit Node */}
                     {(() => {
                       const theme = CATEGORY_THEMES[selectedRule.debit_account_category] || CATEGORY_THEMES['Beban'];
@@ -1424,19 +1635,20 @@ useEffect(() => {
                             background: selectedRule.debit_account_id ? theme.gradient : 'var(--surface)',
                             color: selectedRule.debit_account_id ? 'white' : 'var(--text-secondary)',
                             border: selectedRule.debit_account_id ? 'none' : '1px dashed var(--border)',
-                            minWidth: '220px',
-                            padding: '1rem',
+                            minWidth: '260px',
+                            padding: '1.25rem 1.5rem',
+                            borderRadius: '14px',
                             textAlign: 'left',
                             boxShadow: selectedRule.debit_account_id ? `0 8px 20px ${theme.shadow}` : 'none'
                           }}
                         >
-                          <span style={{ display: 'block', fontSize: '0.65rem', color: selectedRule.debit_account_id ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <span style={{ display: 'block', fontSize: '0.85rem', color: selectedRule.debit_account_id ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             Akun Debit [Dr]
                           </span>
-                          <h4 style={{ color: selectedRule.debit_account_id ? 'white' : 'var(--text-primary)', fontSize: '1rem', fontWeight: 800, margin: '0.25rem 0', fontFamily: 'var(--font-mono)' }}>
+                          <h4 style={{ color: selectedRule.debit_account_id ? 'white' : 'var(--text-primary)', fontSize: '1.35rem', fontWeight: 800, margin: '0.35rem 0', fontFamily: 'var(--font-mono)' }}>
                             {selectedRule.debit_account_id ? selectedRule.debit_account_code : 'DINAMIS'}
                           </h4>
-                          <div style={{ color: selectedRule.debit_account_id ? 'white' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.8rem', lineHeight: 1.3 }}>
+                          <div style={{ color: selectedRule.debit_account_id ? 'white' : 'var(--text-secondary)', fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.3 }}>
                             {selectedRule.debit_account_id ? selectedRule.debit_account_name : '(Pilihan User)'}
                           </div>
                         </div>
@@ -1453,19 +1665,20 @@ useEffect(() => {
                             background: selectedRule.credit_account_id ? theme.gradient : 'var(--surface)',
                             color: selectedRule.credit_account_id ? 'white' : 'var(--text-secondary)',
                             border: selectedRule.credit_account_id ? 'none' : '1px dashed var(--border)',
-                            minWidth: '220px',
-                            padding: '1rem',
+                            minWidth: '260px',
+                            padding: '1.25rem 1.5rem',
+                            borderRadius: '14px',
                             textAlign: 'left',
                             boxShadow: selectedRule.credit_account_id ? `0 8px 20px ${theme.shadow}` : 'none'
                           }}
                         >
-                          <span style={{ display: 'block', fontSize: '0.65rem', color: selectedRule.credit_account_id ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <span style={{ display: 'block', fontSize: '0.85rem', color: selectedRule.credit_account_id ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             Akun Kredit [Cr]
                           </span>
-                          <h4 style={{ color: selectedRule.credit_account_id ? 'white' : 'var(--text-primary)', fontSize: '1rem', fontWeight: 800, margin: '0.25rem 0', fontFamily: 'var(--font-mono)' }}>
+                          <h4 style={{ color: selectedRule.credit_account_id ? 'white' : 'var(--text-primary)', fontSize: '1.35rem', fontWeight: 800, margin: '0.35rem 0', fontFamily: 'var(--font-mono)' }}>
                             {selectedRule.credit_account_id ? selectedRule.credit_account_code : 'DINAMIS'}
                           </h4>
-                          <div style={{ color: selectedRule.credit_account_id ? 'white' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.8rem', lineHeight: 1.3 }}>
+                          <div style={{ color: selectedRule.credit_account_id ? 'white' : 'var(--text-secondary)', fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.3 }}>
                             {selectedRule.credit_account_id ? selectedRule.credit_account_name : '(Pilihan User)'}
                           </div>
                         </div>
@@ -1479,50 +1692,136 @@ useEffect(() => {
                 <div style={{
                   backgroundColor: 'var(--surface)',
                   border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  marginTop: '0.5rem'
+                  borderRadius: '16px',
+                  padding: '1.75rem',
+                  marginTop: '1.5rem',
+                  boxShadow: 'var(--shadow-sm)',
+                  width: '100%'
                 }}>
-                  <h5 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Narasi Jalur Pertanyaan (Step-by-Step)</h5>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <h5 style={{ 
+                    margin: '0 0 1.5rem 0', 
+                    fontSize: '1.3rem', 
+                    fontWeight: 800, 
+                    color: 'var(--primary)', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    backgroundColor: 'var(--primary-light)',
+                    padding: '0.5rem 1.1rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(37, 99, 235, 0.12)'
+                  }}>
+                    Narasi Logika Pengambilan Keputusan
+                  </h5>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {getRuleNarrative(selectedRule.code).map((step, idx) => (
-                      <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                        <div style={{
-                          backgroundColor: step.a === 'YES' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                          color: step.a === 'YES' ? 'var(--success)' : 'var(--danger)',
-                          padding: '0.2rem 0.75rem',
-                          borderRadius: '4px',
+                      <div key={idx} style={{ 
+                        display: 'flex', 
+                        gap: '1.25rem', 
+                        alignItems: 'flex-start',
+                        padding: '1rem 0',
+                        borderBottom: idx < getRuleNarrative(selectedRule.code).length - 1 ? '1px dashed var(--border)' : 'none'
+                      }}>
+                        {/* Step index label */}
+                        <span style={{
+                          fontSize: '0.9rem',
                           fontWeight: 800,
-                          fontSize: '0.75rem',
-                          minWidth: '55px',
-                          textAlign: 'center',
-                          marginTop: '2px'
+                          color: 'var(--text-primary)',
+                          textTransform: 'uppercase',
+                          minWidth: '95px',
+                          paddingTop: '2px',
+                          letterSpacing: '0.05em'
                         }}>
-                          {step.a}
-                        </div>
+                          Langkah {idx + 1}
+                        </span>
+                        
+                        {/* Question text & fact name */}
                         <div style={{
                           color: 'var(--text-primary)',
-                          fontSize: '0.9rem',
+                          fontSize: '1.05rem',
                           lineHeight: 1.5,
                           flex: 1
                         }}>
-                          <span style={{ color: 'var(--text-secondary)', marginRight: '8px' }}>→</span>
-                          {step.code && <span style={{ fontWeight: 700, color: 'var(--text-muted)', marginRight: '6px' }}>[{step.code}]</span>}
+                          {step.code && <span style={{ fontWeight: 700, color: 'var(--primary)', marginRight: '8px', fontFamily: 'var(--font-mono)', fontSize: '1rem' }}>[{step.code}]</span>}
                           {step.q}
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px', fontFamily: 'var(--font-mono)' }}>({step.fact_name})</span>
+                          <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginLeft: '8px', fontFamily: 'var(--font-mono)' }}>({step.fact_name})</span>
                         </div>
+
+                        {/* Answer Badge */}
+                        <span style={{
+                          backgroundColor: step.a.includes('YES') ? 'var(--success-light)' : 'var(--danger-light)',
+                          color: step.a.includes('YES') ? 'var(--success)' : 'var(--danger)',
+                          border: `1px solid ${step.a.includes('YES') ? 'var(--success-border)' : 'rgba(239, 68, 68, 0.2)'}`,
+                          fontSize: '0.95rem',
+                          fontWeight: 800,
+                          padding: '0.4rem 1.1rem',
+                          borderRadius: '6px',
+                          minWidth: '70px',
+                          textAlign: 'center',
+                          boxShadow: 'var(--shadow-sm)'
+                        }}>
+                          {step.a.includes('YES') ? 'YES' : 'NO'}
+                        </span>
                       </div>
                     ))}
+
+                    {/* Final Conclusion Banner Card */}
                     {getRuleNarrative(selectedRule.code).length > 0 && (
-                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px dashed var(--border)' }}>
-                        <div style={{ fontSize: '1.5rem' }}>🏆</div>
-                        <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1rem' }}>
-                          Kesimpulan: [{selectedRule.name}]
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: '1.5rem', 
+                        alignItems: 'center', 
+                        marginTop: '1.75rem', 
+                        padding: '1.5rem 1.75rem', 
+                        borderRadius: '12px',
+                        backgroundColor: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        borderLeft: '5px solid var(--primary)',
+                        boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.05), 0 8px 10px -6px rgba(37, 99, 235, 0.05)'
+                      }}>
+                        {/* SVG Shield-Check Icon */}
+                        <div style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '50%',
+                          backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                          color: 'var(--primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ width: '28px', height: '28px' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                          </svg>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            Hasil Akhir Klasifikasi
+                          </div>
+                          <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '1.45rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                            <span>{selectedRule.name}</span>
+                            <span style={{ 
+                              backgroundColor: 'var(--primary-light)', 
+                              color: 'var(--primary)', 
+                              fontWeight: 850, 
+                              fontSize: '0.9rem', 
+                              padding: '0.25rem 0.75rem', 
+                              borderRadius: '6px',
+                              fontFamily: 'var(--font-mono)' 
+                            }}>{selectedRule.code}</span>
+                          </div>
+                          <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: '0.5rem 0 0 0', lineHeight: 1.5 }}>
+                            Sistem pakar menyimpulkan transaksi ini diklasifikasikan sebagai <strong>{selectedRule.name}</strong> berdasarkan alur logika yang terpenuhi di atas.
+                          </p>
                         </div>
                       </div>
                     )}
+                    
                     {getRuleNarrative(selectedRule.code).length === 0 && (
-                      <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.85rem' }}>Narasi belum tersedia untuk aturan ini.</div>
+                      <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.85rem', textAlign: 'center', padding: '1rem' }}>
+                        Narasi belum tersedia untuk aturan ini.
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1609,10 +1908,10 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Tab 5: Flowchart */}
+      {/* Tab 5: Flowchart & Matriks */}
       {activeTab === 'rules_diagram' && (
         <div className="anim-fade-in">
-          <div className="card" style={{ padding: '2rem', borderRadius: '12px' }}>
+          <div className="card" style={{ padding: '2rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Flowchart (Diagram Alir Logika)</h3>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
               Representasi diagram alir memetakan percabangan sistem secara eksak sesuai pertanyaan yang muncul kepada pengguna.
@@ -1630,195 +1929,211 @@ useEffect(() => {
               }}
               onMouseUp={() => setIsDragging(false)}
               onMouseLeave={() => setIsDragging(false)}
-              onTouchStart={(e) => {
-                if (e.touches.length !== 1) return;
-                setIsDragging(true);
-                const touch = e.touches[0];
-                setDragStart({ x: touch.clientX - pan.x, y: touch.clientY - pan.y });
-              }}
-              onTouchMove={(e) => {
-                if (!isDragging || e.touches.length !== 1) return;
-                const touch = e.touches[0];
-                setPan({ x: touch.clientX - dragStart.x, y: touch.clientY - dragStart.y });
-              }}
-              onTouchEnd={() => setIsDragging(false)}
               style={{
                 backgroundColor: '#f8fafc',
-                borderRadius: isFullscreen ? '0' : '12px',
-                border: isFullscreen ? 'none' : '1px solid var(--border)',
-                height: isFullscreen ? '100vh' : 'calc(100vh - 280px)',
-                minHeight: '500px',
+                borderRadius: '12px',
+                border: '1px solid var(--border)',
+                height: 'calc(100vh - 280px)',
+                minHeight: '600px',
                 overflow: 'hidden',
-                position: isFullscreen ? 'fixed' : 'relative',
-                top: isFullscreen ? 0 : 'auto',
-                left: isFullscreen ? 0 : 'auto',
-                width: isFullscreen ? '100vw' : 'auto',
-                zIndex: isFullscreen ? 9999 : 1,
+                position: 'relative',
                 cursor: isDragging ? 'grabbing' : 'grab',
-                userSelect: 'none',
-                touchAction: 'none'
+                userSelect: 'none'
               }}
             >
               {/* Floating Zoom Controls */}
               <div style={{
                 position: 'absolute',
-                bottom: '1.5rem',
-                right: '1.5rem',
+                top: '1rem',
+                right: '1rem',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
+                gap: '0.5rem',
                 zIndex: 10,
-                backgroundColor: '#ffffff',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '999px',
-                border: '1px solid rgba(0,0,0,0.08)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                backdropFilter: 'blur(4px)',
+                padding: '0.35rem',
+                borderRadius: '8px',
+                border: '1px solid var(--border)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
               }}>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setScale(prev => Math.max(prev - 0.1, 0.1)); }}
-                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', transition: 'background-color 0.2s' }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  title="Zoom Out"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setScale(prev => Math.min(prev + 0.1, 3)); }}
-                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', transition: 'background-color 0.2s' }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  onClick={(e) => { e.stopPropagation(); setScale(prev => Math.min(prev + 0.2, 6)); }}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'white',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1rem',
+                    color: 'var(--text-primary)'
+                  }}
                   title="Zoom In"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                  ＋
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); const defaultScale = window.innerWidth < 768 ? 0.45 : 0.85; setScale(defaultScale); setPan({ x: 0, y: 0 }); }}
-                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', transition: 'background-color 0.2s' }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  title="Reset Zoom & Focus"
+                  onClick={(e) => { e.stopPropagation(); setScale(prev => Math.max(prev - 0.2, 0.3)); }}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'white',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1rem',
+                    color: 'var(--text-primary)'
+                  }}
+                  title="Zoom Out"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <line x1="14.5" y1="14.5" x2="17" y2="17"></line>
-                    <path d="M4 8V4h4"></path>
-                    <path d="M4 16v4h4"></path>
-                    <path d="M20 8V4h-4"></path>
-                    <path d="M20 16v4h-4"></path>
-                  </svg>
+                  －
                 </button>
-                <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border)', margin: '0 0.5rem' }}></div>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setIsFullscreen(!isFullscreen); setPan({ x: 0, y: 0 }); }}
-                  style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', transition: 'background-color 0.2s' }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                  onClick={(e) => { e.stopPropagation(); const defaultScale = window.innerWidth < 768 ? 0.90 : 1.70; setScale(defaultScale); setPan({ x: 0, y: 0 }); }}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'white',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-primary)'
+                  }}
+                  title="Reset Zoom & Position"
                 >
-                  {isFullscreen ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-                  ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-                  )}
+                  ⟲
                 </button>
               </div>
 
               {/* Zoom & Pan Wrapper */}
-{/* Zoom & Pan Wrapper */}
               <div style={{
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-                transformOrigin: 'center center',
+                position: 'absolute',
+                left: '50%',
+                top: '2rem',
+                transform: `translate(calc(-50% + ${pan.x}px), ${pan.y}px) scale(${scale})`,
+                transformOrigin: 'top center',
                 transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                height: '100%',
+                display: 'inline-block'
               }}>
-                <div className="mermaid" style={{ display: 'inline-block' }}>{`graph TD
-    Start([Mulai]) --> C1{"Q-001 — is_inbound?<br/>Apakah transaksi merupakan<br/>penerimaan uang?"}
-    Start --> C2{"Q-002 — is_outbound?<br/>Apakah transaksi merupakan<br/>pengeluaran uang?"}
-    %% ==========================================
-    %% BLOK 1: INBOUND
-    %% ==========================================
-    C1 -- TRUE --> IB1{"Q-009 — is_setoran_modal?<br/>Apakah penerimaan berasal<br/>dari setoran modal pemilik?"}
-
-    IB1 -- TRUE --> A1[" Modal Pemilik <br/>Db: Kas Utama<br/>Cr: Modal Pemilik"]
-    IB1 -- FALSE --> IB2{"Q-015 — is_pinjaman_bank?<br/>Apakah penerimaan berasal<br/>dari pinjaman bank?"}
-
-    IB2 -- TRUE --> A2[" Hutang Bank (Pinjaman) <br/>Db: Kas Utama<br/>Cr: Hutang Bank"]
-    IB2 -- FALSE --> IB3{"Q-112 — is_penerimaan_piutang?<br/>Apakah transaksi merupakan penerimaan<br/>pembayaran piutang dari pelanggan?"}
-
-    IB3 -- TRUE --> A3[" Penerimaan Piutang <br/>Db: Kas Utama<br/>Cr: Piutang Usaha"]
-    IB3 -- FALSE --> IB4{"Q-003 — is_penjualan_barang?<br/>Apakah transaksi berasal<br/>dari penjualan barang?"}
-
-    IB4 -- TRUE --> IB4_K{"Q-005 — is_kredit?<br/>Apakah transaksi dilakukan<br/>secara kredit?"}
-    IB4_K -- TRUE --> A4[" Piutang Usaha (Penjualan Kredit) <br/>Db: Piutang Usaha<br/>Cr: Pendapatan Penjualan<br/><i>Trigger(Hitung HPP)</i>"]
-    IB4_K -- FALSE --> A5[" Pendapatan Penjualan <br/>Db: Kas Utama<br/>Cr: Pendapatan Penjualan<br/><i>Trigger(Hitung HPP)</i>"]
-
-    IB4 -- FALSE --> IB5{"Q-004 — is_penjualan_jasa?<br/>Apakah transaksi berasal<br/>dari penjualan jasa?"}
-    IB5 -- TRUE --> IB5_K{"Q-005 — is_kredit?<br/>Apakah transaksi dilakukan<br/>secara kredit?"}
-    IB5_K -- TRUE --> A6[" Piutang Usaha (Penjualan Kredit) <br/>Db: Piutang Usaha<br/>Cr: Pendapatan Jasa"]
-    IB5_K -- FALSE --> A7[" Pendapatan Jasa <br/>Db: Kas Utama<br/>Cr: Pendapatan Jasa"]
-    IB5 -- FALSE --> A8[" Kas Utama (Penerimaan Tunai) <br/>Db: Kas Utama<br/>Cr: Pendapatan Lain-lain<br/><i>Default/Fallback</i>"]
-    %% ==========================================
-    %% BLOK 2: OUTBOUND
-    %% ==========================================
-    C2 -- TRUE --> OB1{"Q-006 — is_dijual_kembali?<br/>Apakah barang yang dibeli<br/>akan dijual kembali?"}
-    OB1 -- TRUE --> OB1_K{"Q-005 — is_kredit?<br/>Apakah transaksi dilakukan<br/>secara kredit?"}
-    OB1_K -- TRUE --> B1[" Persediaan Barang Dagang<br/>(Pembelian Kredit) <br/>Db: Persediaan<br/>Cr: Hutang Dagang<br/><i>Trigger(Hitung Harga Pokok<br/>Moving Average)</i>"]
-    OB1_K -- FALSE --> B2[" Persediaan Barang Dagang<br/>(Pembelian Tunai) <br/>Db: Persediaan<br/>Cr: Kas Utama<br/><i>Trigger(Hitung Harga Pokok<br/>Moving Average)</i>"]
-    OB1 -- FALSE --> OB2{"Q-007 — is_pembelian_aset?<br/>Apakah transaksi merupakan<br/>pembelian aset?"}
-    OB2 -- TRUE --> OB2_M{"Q-008 — is_manfaat_lebih_1_tahun?<br/>Apakah aset memiliki masa manfaat<br/>lebih dari satu tahun?"}
-    OB2_M -- TRUE --> B3[" Peralatan Kantor (Aset Tetap) <br/>Db: Peralatan<br/>Cr: Kas Utama"]
-    OB2_M -- FALSE --> OB_PRLK
-    OB2 -- FALSE --> OB3{"Q-010 — is_prive?<br/>Apakah pengeluaran digunakan untuk<br/>kepentingan pribadi pemilik (prive)?"}
-    OB3 -- TRUE --> B4[" Prive Pemilik <br/>Db: Prive<br/>Cr: Kas Utama"]
-    %% SUB-BLOK: PELUNASAN HUTANG
-    OB3 -- FALSE --> OB4{"is_pelunasan_hutang?"}
-    OB4 -- TRUE --> OB4_D{"Q-111 — is_pelunasan_hutang_dagang?<br/>Apakah transaksi merupakan<br/>pelunasan hutang dagang?"}
-    OB4_D -- TRUE --> B5[" Pelunasan Hutang Dagang <br/>Db: Hutang Dagang<br/>Cr: Kas Utama"]
-
-    OB4_D -- FALSE --> OB4_B{"Q-113 — is_pelunasan_hutang_bank?<br/>Apakah transaksi merupakan<br/>pelunasan hutang bank?"}
-    OB4_B -- TRUE --> B6[" Pelunasan Hutang Bank <br/>Db: Hutang Bank<br/>Cr: Kas Utama"]
-    OB4_B -- FALSE --> B6X["Pelunasan Hutang Lainnya <br/>Db: Hutang Bank<br/>Cr: Kas Utama"]
-    %% SUB-BLOK: PEMBAYARAN BEBAN
-    OB4 -- FALSE --> OB5{"is_beban?"}
-    OB5 -- FALSE --> B13
-    OB5 -- TRUE --> OB5_G{"Q-011 — is_beban_gaji?<br/>Apakah pengeluaran merupakan<br/>pembayaran gaji?"}
-
-    OB5_G -- TRUE --> B7[" Beban Gaji <br/>Db: Beban Gaji<br/>Cr: Kas Utama"]
-    OB5_G -- FALSE --> OB5_U{"Q-012 — is_beban_utilitas?<br/>Apakah pengeluaran merupakan<br/>pembayaran utilitas (listrik, air, internet)?"}
-
-    OB5_U -- TRUE --> B8[" Beban Utilitas <br/>Db: Beban Utilitas<br/>Cr: Kas Utama"]
-    OB5_U -- FALSE --> OB5_S{"Q-013 — is_beban_sewa?<br/>Apakah pengeluaran merupakan<br/>pembayaran sewa?"}
-
-    OB5_S -- TRUE --> B9[" Beban Sewa <br/>Db: Beban Sewa<br/>Cr: Kas Utama"]
-    OB5_S -- FALSE --> OB5_P{"Q-110 — is_beban_pemasaran?<br/>Apakah pengeluaran merupakan<br/>biaya pemasaran atau promosi?"}
-
-    OB5_P -- TRUE --> B10[" Beban Pemasaran <br/>Db: Beban Pemasaran<br/>Cr: Kas Utama"]
-    OB5_P -- FALSE --> OB_PRLK{"Q-016 — is_pembelian_perlengkapan_atk?<br/>Apakah transaksi ini pembelian perlengkapan/ATK kantor<br/>untuk operasional, bukan untuk dijual kembali?"}
-
-    OB_PRLK -- TRUE --> OB5_A{"Q-014 — is_beban_atk?<br/>Apakah pencatatannya menggunakan<br/>pendekatan beban?"}
-    OB5_A -- TRUE --> B11[" Beban ATK <br/>Db: Beban ATK<br/>Cr: Kas Utama"]
-    OB5_A -- FALSE --> B12[" Pembelian Perlengkapan<br/>(Aset &lt;1 Tahun) <br/>Db: Perlengkapan<br/>Cr: Kas Utama / Hutang Dagang"]
-    OB_PRLK -- FALSE --> B13[" Pengeluaran Kas Lainnya <br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback</i>"]
-`}
-                </div>
+                <div ref={flowchartRef} className="flowchart-render-container" style={{ display: 'inline-block' }} />
               </div>
             </div>
           </div>
 
-
+          <div className="card" style={{ padding: '2rem', borderRadius: '12px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Decision Table (Tabel Keputusan)</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem', lineHeight: 1.6 }}>
+              Tabel ini sangat cocok dicetak dan ditunjukkan kepada pakar akuntansi untuk <em>Face Validity</em>. Pakar dapat dengan mudah membaca kombinasi dari kiri ke kanan untuk memvalidasi apakah kode akun di kolom paling kanan sudah tepat. Tanda strip (" - ") mengindikasikan <em>Don't Care</em>.
+            </p>
+            <div style={{ 
+              overflowX: 'auto', 
+              border: '1px solid var(--border)', 
+              borderRadius: '12px',
+              boxShadow: 'var(--shadow-sm)',
+              backgroundColor: 'var(--surface)'
+            }}>
+              <table className="table" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap', width: '100%', margin: 0 }}>
+                <thead style={{ background: 'rgba(37, 99, 235, 0.04)' }}>
+                  <tr>
+                    <th style={{ padding: '1rem', borderRight: '1px solid var(--border)', fontWeight: 800, color: 'var(--text-primary)' }}>Rule ID</th>
+                    <th style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Kategori Akun</th>
+                    <th style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Jenis Usaha</th>
+                    <th style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Arah Transaksi</th>
+                    <th style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Kondisi Spesifik</th>
+                    <th style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Kredit?</th>
+                    <th style={{ padding: '1rem', backgroundColor: 'var(--primary)', color: 'white', fontWeight: 800 }}>Hasil Jurnal (Debit / Kredit)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rules.map((rule) => {
+                    const kreditVal = getKredit(rule.conditions);
+                    return (
+                      <tr key={rule.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ 
+                          fontWeight: 800, 
+                          fontFamily: 'var(--font-mono)', 
+                          color: 'var(--primary)', 
+                          borderRight: '1px solid var(--border)',
+                          backgroundColor: 'rgba(37, 99, 235, 0.02)',
+                          padding: '1rem'
+                        }}>{rule.code}</td>
+                        <td style={{ padding: '1rem' }}>{getTransactionCategory(rule)}</td>
+                        <td style={{ padding: '1rem' }}>{rule.business_type === 'semua' ? 'SEMUA' : rule.business_type.toUpperCase()}</td>
+                        <td style={{ padding: '1rem' }}>{getArah(rule.conditions)}</td>
+                        <td style={{ fontFamily: 'monospace', color: 'var(--primary)', fontWeight: 600, padding: '1rem' }}>{getKondisiSpesifik(rule.conditions)}</td>
+                        <td style={{ padding: '1rem' }}>
+                          <span style={{
+                            backgroundColor: kreditVal === 'YES' ? 'var(--success-light)' : kreditVal === 'NO' ? 'var(--danger-light)' : 'var(--background)',
+                            color: kreditVal === 'YES' ? 'var(--success)' : kreditVal === 'NO' ? 'var(--danger)' : 'var(--text-secondary)',
+                            border: `1px solid ${kreditVal === 'YES' ? 'var(--success-border)' : kreditVal === 'NO' ? 'rgba(239, 68, 68, 0.2)' : 'var(--border)'}`,
+                            padding: '0.25rem 0.6rem',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: 800
+                          }}>
+                            {kreditVal}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <span style={{
+                              backgroundColor: rule.debit_account_id ? 'rgba(37, 99, 235, 0.05)' : 'var(--background)',
+                              color: rule.debit_account_id ? 'var(--primary)' : 'var(--text-secondary)',
+                              border: `1px solid ${rule.debit_account_id ? 'rgba(37, 99, 235, 0.15)' : 'var(--border)'}`,
+                              fontSize: '0.725rem',
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '0.25rem 0.6rem',
+                              borderRadius: '6px',
+                              width: 'fit-content'
+                            }}>
+                              <span style={{ marginRight: '6px', fontWeight: 800, opacity: 0.8 }}>[Dr]</span>
+                              {rule.debit_account_id ? `${rule.debit_account_code} - ${rule.debit_account_name}` : 'Dinamis (Pilihan User)'}
+                            </span>
+                            
+                            <span style={{
+                              backgroundColor: rule.credit_account_id ? 'rgba(124, 58, 237, 0.05)' : 'var(--background)',
+                              color: rule.credit_account_id ? '#7c3aed' : 'var(--text-secondary)',
+                              border: `1px solid ${rule.credit_account_id ? 'rgba(124, 58, 237, 0.15)' : 'var(--border)'}`,
+                              fontSize: '0.725rem',
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '0.25rem 0.6rem',
+                              borderRadius: '6px',
+                              width: 'fit-content'
+                            }}>
+                              <span style={{ marginRight: '6px', fontWeight: 800, opacity: 0.8 }}>[Cr]</span>
+                              {rule.credit_account_id ? `${rule.credit_account_code} - ${rule.credit_account_name}` : 'Dinamis (Kas/Hutang)'}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Modal: Add Rule (3-Step Wizard Form) */}
       {showAddModal && (
         <div className="modal-overlay animate-fade-in">
           <form onSubmit={handleAddSubmit} className="modal-content animate-slide-up" style={{ maxWidth: '560px', borderRadius: '16px', border: '1px solid var(--border)', padding: '1.75rem' }}>
