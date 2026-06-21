@@ -223,9 +223,9 @@ export const RuleBaseIndex = () => {
     %% --- SUB-BLOK ASET (jalur mandiri, tidak lagi bertemu jalur beban) ---
     OB2 -- TRUE --> OB2_M{"Q-008 — is_manfaat_lebih_1_tahun?<br/>Apakah aset memiliki masa manfaat<br/>lebih dari satu tahun?"}
     OB2_M -- TRUE --> B3["G-11: Pembelian Aset Tetap<br/>Db: Peralatan<br/>Cr: Kas Utama"]
-    OB2_M -- FALSE --> OB2_AL{"Q-016 — is_pembelian_perlengkapan?<br/>Apakah pembelian ini termasuk<br/>perlengkapan (Like ATK office)?"}
-    OB2_AL -- TRUE --> B12["G-21: Perlengkapan<br/>Db: Perlengkapan<br/>Cr: Kas Utama / Hutang Dagang"]
-    OB2_AL -- FALSE --> B15["G-23: Pembelian Aset Lainnya<br/>Db: Aset Lain-lain<br/>Cr: Kas Utama / Hutang Dagang<br/><i>Default/Fallback (Aset)</i>"]
+    OB2_M -- FALSE --> OB2_AL{"Q-016 — is_pembelian_perlengkapan?<br/>Apakah pembelian ini termasuk<br/>perlengkapan (seperti ATK kantor)?"}
+    OB2_AL -- TRUE --> B12["G-21: Pembelian Aset Lancar<br/>Db: Perlengkapan<br/>Cr: Kas Utama"]
+    OB2_AL -- FALSE --> B15["G-23: Pembelian Aset Lain-lain<br/>Db: Perlengkapan<br/>Cr: Kas Utama<br/><i>Default/Fallback (Aset)</i>"]
 
     OB2 -- FALSE --> OB3{"Q-010 — is_prive?<br/>Apakah pengeluaran digunakan untuk<br/>kepentingan pribadi pemilik (prive)?"}
     OB3 -- TRUE --> B4["G-12: Prive<br/>Db: Prive<br/>Cr: Kas Utama"]
@@ -239,7 +239,7 @@ export const RuleBaseIndex = () => {
     OB4_B -- FALSE --> B6X["G-15: Pelunasan Hutang Lainnya<br/>Db: Hutang Lain-lain<br/>Cr: Kas Utama"]
     %% SUB-BLOK: PEMBAYARAN BEBAN (jalur mandiri, tidak lagi bertemu jalur aset)
     OB4 -- FALSE --> OB5{"Q-018 — is_beban?<br/>Apakah pengeluaran ditujukan untuk<br/>pembayaran beban?"}
-    OB5 -- FALSE --> B13["G-22: Pengeluaran Kas Lainnya<br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback</i>"]
+    OB5 -- FALSE --> B13["G-24: Beban Lain-lain<br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback</i>"]
     OB5 -- TRUE --> OB5_G{"Q-011 — is_beban_gaji?<br/>Apakah pengeluaran merupakan<br/>pembayaran gaji?"}
 
     OB5_G -- TRUE --> B7["G-16: Beban Gaji<br/>Db: Beban Gaji<br/>Cr: Kas Utama"]
