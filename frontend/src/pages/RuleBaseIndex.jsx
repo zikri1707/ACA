@@ -239,7 +239,7 @@ export const RuleBaseIndex = () => {
     OB4_B -- FALSE --> B6X["G-15: Pelunasan Hutang Lainnya<br/>Db: Hutang Lain-lain<br/>Cr: Kas Utama"]
     %% SUB-BLOK: PEMBAYARAN BEBAN (jalur mandiri, tidak lagi bertemu jalur aset)
     OB4 -- FALSE --> OB5{"Q-018 — is_beban?<br/>Apakah pengeluaran ditujukan untuk<br/>pembayaran beban?"}
-    OB5 -- FALSE --> B13["G-24: Beban Lain-lain<br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback</i>"]
+    OB5 -- FALSE --> B13["Tidak Terklasifikasi"]
     OB5 -- TRUE --> OB5_G{"Q-011 — is_beban_gaji?<br/>Apakah pengeluaran merupakan<br/>pembayaran gaji?"}
 
     OB5_G -- TRUE --> B7["G-16: Beban Gaji<br/>Db: Beban Gaji<br/>Cr: Kas Utama"]
@@ -254,7 +254,7 @@ export const RuleBaseIndex = () => {
     OB5_P -- TRUE --> B10["G-19: Beban Pemasaran<br/>Db: Beban Pemasaran<br/>Cr: Kas Utama"]
     OB5_P -- FALSE --> OB5_ATK{"Q-014 — is_beban_atk?<br/>Apakah pengeluaran ini termasuk<br/>biaya ATK (alat tulis kantor)?"}
     OB5_ATK -- TRUE --> B11["G-20: Beban ATK<br/>Db: Beban ATK<br/>Cr: Kas Utama"]
-    OB5_ATK -- FALSE --> B14["G-22: Beban Lain-lain<br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback (Beban)</i>"]
+    OB5_ATK -- FALSE --> B14["G-24: Beban Lain-lain<br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback (Beban)</i>"]
 </div>`;
             window.mermaid.initialize({
               startOnLoad: false,
