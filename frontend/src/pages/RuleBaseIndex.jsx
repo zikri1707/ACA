@@ -968,12 +968,12 @@ export const RuleBaseIndex = () => {
           align-items: center;
         }
         .action-btn {
-          width: 32px;
-          height: 32px;
+          width: 42px;
+          height: 42px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          border-radius: 8px;
+          border-radius: 10px;
           border: 1px solid var(--border);
           background-color: var(--surface);
           color: var(--text-secondary);
@@ -1328,9 +1328,8 @@ export const RuleBaseIndex = () => {
                                 className="action-btn action-tooltip"
                                 data-tooltip="Lihat Flowchart"
                                 aria-label="Lihat Flowchart"
-                                style={{ padding: '0.5rem', borderRadius: '6px' }}
                               >
-                                <EyeIcon className="w-5 h-5" />
+                                <EyeIcon style={{ width: '22px', height: '22px' }} />
                               </button>
                               {isAdmin && (
                                 <>
@@ -1339,18 +1338,16 @@ export const RuleBaseIndex = () => {
                                     className="action-btn action-tooltip"
                                     data-tooltip="Edit Rule"
                                     aria-label="Edit Rule"
-                                    style={{ padding: '0.5rem', borderRadius: '6px' }}
                                   >
-                                    <EditIcon className="w-4.5 h-4.5" />
+                                    <EditIcon style={{ width: '20px', height: '20px' }} />
                                   </button>
                                   <button
                                     onClick={() => handleDeleteClick(rule)}
                                     className="action-btn action-btn-danger action-tooltip"
                                     data-tooltip="Hapus Rule"
                                     aria-label="Hapus Rule"
-                                    style={{ padding: '0.5rem', borderRadius: '6px' }}
                                   >
-                                    <TrashIcon className="w-4.5 h-4.5" />
+                                    <TrashIcon style={{ width: '20px', height: '20px' }} />
                                   </button>
                                 </>
                               )}
