@@ -1,0 +1,155 @@
+=== MERMAID EFFECT (OLD) ===
+
+=== RULES DIAGRAM TAB RENDER (OLD) ===
+163:   // Effect for rendering Mermaid diagram dynamically
+164:   useEffect(() => {
+165:     if (activeTab === 'rules_diagram') {
+166:       const renderDiagram = () => {
+167:         if (window.mermaid && flowchartRef.current) {
+168:           try {
+169:             // Set raw definition
+170:             flowchartRef.current.innerHTML = `<div class="mermaid">graph TD
+171:     Start(["  Mulai Transaksi  "]) --> Q001{"Arah Transaksi?<br/>(is_inbound)"}
+172:     
+173:     %% CABANG INBOUND (PENERIMAAN)
+174:     Q001 -- TERIMA --> Q005In{"Pembayaran Kredit?<br/>(is_kredit)"}
+175:     
+176:     %% Inbound Kredit (Piutang)
+177:     Q005In -- Ya --> R002["1-1200 Piutang Usaha"]
+178:     
+179:     %% Inbound Tunai
+180:     Q005In -- Tidak --> Q009{"Setoran Modal?<br/>(is_setoran_modal)"}
+181:     Q009 -- Ya --> R007["3-1000 Modal Pemilik"]
+182:     
+183:     Q009 -- Tidak --> Q015{"Pinjaman Bank?<br/>(is_pinjaman_bank)"}
+184:     Q015 -- Ya --> R015["2-2000 Hutang Bank"]
+185:     
+186:     Q015 -- Tidak --> Q000In{"Jenis Usaha?"}
+187:     
+188:     %% Dagang - Penjualan Barang
+189:     Q000In -- Dagang --> Q003{"Penjualan Barang?<br/>(is_penjualan_barang)"}
+190:     Q003 -- Ya --> R009["4-1000 Pendapatan Penjualan"]
+191:     Q003 -- Tidak --> Q112D{"Terima Piutang?<br/>(is_penerimaan_piutang)"}
+192:     
+193:     %% Jasa - Penjualan Jasa
+194:     Q000In -- Jasa --> Q004{"Penjualan Jasa?<br/>(is_penjualan_jasa)"}
+195:     Q004 -- Ya --> R010["4-1100 Pendapatan Jasa"]
+196:     Q004 -- Tidak --> Q112J{"Terima Piutang?<br/>(is_penerimaan_piutang)"}
+197:     
+198:     Q112D -- Ya --> R019["1-1000 Kas Utama"]
+199:     Q112D -- Tidak --> R001["1-1000 Kas Utama"]
+200:     Q112J -- Ya --> R019
+201:     Q112J -- Tidak --> R001
+202:     
+203:     %% CABANG OUTBOUND (PENGELUARAN)
+204:     Q001 -- KELUAR --> Q005Out{"Pembayaran Kredit?<br/>(is_kredit)"}
+205:     
+206:     Q005Out -- Ya --> Q000OutK{"Jenis Usaha?"}
+207:     Q005Out -- Tidak --> Q000OutT{"Jenis Usaha?"}
+208:     
+209:     %% Outbound Kredit
+210:     Q000OutK -- Dagang --> Q006K{"Beli utk Dijual Kembali?<br/>(is_dijual_kembali)"}
+211:     Q006K -- Ya --> R004["1-1300 Persediaan"]
+212:     Q006K -- Tidak --> Q007K{"Beli Aset Tetap?<br/>(is_pembelian_aset)"}
+213:     Q000OutK -- Jasa --> Q007K
+214:     
+215:     Q007K -- Ya --> Q008K{"Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)"}
+216:     Q008K -- Ya --> R006K["1-2100 Peralatan"]
+217:     Q008K -- Tidak --> R017K["1-1500 Perlengkapan"]
+218:     Q007K -- Tidak --> R099["2-1000 Hutang Dagang"]
+219:     
+220:     %% Outbound Tunai
+221:     Q000OutT -- Dagang --> Q006T{"Beli utk Dijual Kembali?<br/>(is_dijual_kembali)"}
+222:     Q006T -- Ya --> R003["1-1300 Persediaan"]
+223:     Q006T -- Tidak --> Q007T{"Beli Aset Tetap?<br/>(is_pembelian_aset)"}
+224:     Q000OutT -- Jasa --> Q007T
+225:     
+226:     Q007T -- Ya --> Q008T{"Manfaat > 1 Thn?<br/>(is_manfaat_lebih_1_tahun)"}
+227:     Q008T -- Ya --> R006["1-2100 Peralatan"]
+228:     Q008T -- Tidak --> R017["1-1500 Perlengkapan"]
+229:     
+230:     Q007T -- Tidak --> Q010{"Ambil Prive?<br/>(is_prive)"}
+231:     Q010 -- Ya --> R008["3-2000 Prive Pemilik"]
+232:     
+233:     Q010 -- Tidak --> Q011{"Bayar Gaji?<br/>(is_beban_gaji)"}
+234:     Q011 -- Ya --> R011["5-1000 Beban Gaji"]
+235:     
+236:     Q011 -- Tidak --> Q012{"Bayar Utilitas?<br/>(is_beban_utilitas)"}
+237:     Q012 -- Ya --> R012["5-1100 Beban Utilitas"]
+238:     
+239:     Q012 -- Tidak --> Q013{"Bayar Sewa?<br/>(is_beban_sewa)"}
+240:     Q013 -- Ya --> R013["5-1200 Beban Sewa"]
+241:     
+242:     Q013 -- Tidak --> Q014{"Beli ATK?<br/>(is_beban_atk)"}
+243:     Q014 -- Ya --> R014["5-1500 Beban ATK"]
+244:     
+245:     Q014 -- Tidak --> Q110{"Bayar Pemasaran?<br/>(is_beban_pemasaran)"}
+246:     Q110 -- Ya --> R016["5-1300 Beban Pemasaran"]
+247:     
+248:     Q110 -- Tidak --> Q111{"Pelunasan Hutang?<br/>(is_pelunasan_hutang_dagang)"}
+249:     Q111 -- Ya --> R018A["2-1000 Hutang Dagang"]
+250:     
+251:     Q111 -- Tidak --> Q113{"Cicilan Bank?<br/>(is_pelunasan_hutang_bank)"}
+252:     Q113 -- Ya --> R018B["2-2000 Hutang Bank"]
+253:     Q113 -- Tidak --> R098["1-1000 Kas Utama"]</div>`;
+254: 
+255:             window.mermaid.initialize({
+256:               startOnLoad: false,
+257:               theme: 'neutral',
+258:               themeVariables: {
+259:                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+260:                 fontSize: '15px'
+261:               },
+262:               flowchart: {
+263:                 useMaxWidth: false,
+264:                 htmlLabels: true,
+265:                 padding: 24
+266:               }
+267:             });
+268:             window.mermaid.init(undefined, flowchartRef.current.querySelectorAll('.mermaid'));
+269:           } catch (err) {
+270:             console.error("Gagal render diagram:", err);
+271:           }
+272:         }
+273:       };
+274: 
+275:       renderDiagram();
+276:     }
+277:   }, [activeTab]);
+278: 
+279:   const handleToggleActive = async (rule) => {
+280:     if (!isAdmin) return;
+281:     try {
+282:       const newActiveState = rule.is_active === 1 ? 0 : 1;
+283:       const response = await fetch(`/api/rules/${rule.id}/toggle`, {
+284:         method: 'PATCH',
+285:         headers: {
+286:           'Content-Type': 'application/json',
+287:           'Authorization': `Bearer ${token}`
+288:         },
+289:         body: JSON.stringify({ is_active: newActiveState })
+290:       });
+291:       const data = await response.json();
+292:       if (response.ok) {
+293:         showToast(data.message, 'success');
+294:         setRules(prev => prev.map(r => r.id === rule.id ? { ...r, is_active: newActiveState } : r));
+295:         if (selectedRule?.id === rule.id) {
+296:           setSelectedRule(prev => ({ ...prev, is_active: newActiveState }));
+297:         }
+298:       } else {
+299:         showToast(data.message, 'danger');
+300:       }
+301:     } catch (err) {
+302:       console.error(err);
+303:     }
+304:   };
+305: 
+306:   const handleConditionChange = (index, field, value) => {
+307:     const newConditions = [...conditions];
+308:     newConditions[index][field] = value;
+309:     setConditions(newConditions);
+310:   };
+311: 
+312:   const handleAddCondition = () => {
+313:     if (questions.length === 0) return;
+314:     setConditions([...conditions, { fact_name: questions[0].fact_name, expected_value: 'yes' }]);
