@@ -202,6 +202,7 @@ async function init() {
       { code: '1-1500', name: 'Perlengkapan', category: 'Aset', subcategory: 'Perlengkapan' },
       { code: '1-2100', name: 'Peralatan', category: 'Aset', subcategory: 'Aset Tetap' },
       { code: '1-2110', name: 'Akumulasi Penyusutan Peralatan', category: 'Aset', subcategory: 'Akumulasi Penyusutan' },
+      { code: '1-9000', name: 'Aset Lain-lain', category: 'Aset', subcategory: 'Aset Lain-lain' },
       
       { code: '2-1000', name: 'Hutang Dagang', category: 'Kewajiban', subcategory: 'Hutang Lancar' },
       { code: '2-2000', name: 'Hutang Bank', category: 'Kewajiban', subcategory: 'Hutang Jangka Panjang' },
@@ -248,15 +249,17 @@ async function init() {
       { code: 'Q-011', question_text: 'Apakah pengeluaran merupakan pembayaran gaji?', fact_name: 'is_beban_gaji' },
       { code: 'Q-012', question_text: 'Apakah pengeluaran merupakan pembayaran utilitas (listrik, air, internet)?', fact_name: 'is_beban_utilitas' },
       { code: 'Q-013', question_text: 'Apakah pengeluaran merupakan pembayaran sewa?', fact_name: 'is_beban_sewa' },
-      { code: 'Q-014', question_text: 'Apakah pembelian perlengkapan dicatat menggunakan pendekatan beban?', fact_name: 'is_pendekatan_beban' },
+      { code: 'Q-014', question_text: 'Apakah pengeluaran ini termasuk biaya ATK (alat tulis kantor)?', fact_name: 'is_beban_atk' },
       { code: 'Q-015', question_text: 'Apakah penerimaan berasal dari pinjaman bank?', fact_name: 'is_pinjaman_bank' },
-      { code: 'Q-016', question_text: 'Apakah transaksi merupakan pembelian ATK atau perlengkapan operasional?', fact_name: 'is_pengeluaran_atk' },
+      { code: 'Q-016', question_text: 'Apakah pembelian ini termasuk perlengkapan (Seperti ATK kantor)?', fact_name: 'is_pembelian_perlengkapan' },
       { code: 'Q-017', question_text: 'Apakah pengeluaran ditujukan untuk pelunasan kewajiban/hutang?', fact_name: 'is_pelunasan_hutang' },
       { code: 'Q-018', question_text: 'Apakah pengeluaran ditujukan untuk pembayaran beban?', fact_name: 'is_beban' },
       { code: 'Q-110', question_text: 'Apakah pengeluaran merupakan biaya pemasaran atau promosi?', fact_name: 'is_beban_pemasaran' },
       { code: 'Q-111', question_text: 'Apakah transaksi merupakan pelunasan hutang dagang?', fact_name: 'is_pelunasan_hutang_dagang' },
       { code: 'Q-112', question_text: 'Apakah transaksi merupakan penerimaan pembayaran piutang dari pelanggan?', fact_name: 'is_penerimaan_piutang' },
-      { code: 'Q-113', question_text: 'Apakah transaksi merupakan pelunasan hutang bank?', fact_name: 'is_pelunasan_hutang_bank' }
+      { code: 'Q-113', question_text: 'Apakah transaksi merupakan pelunasan hutang bank?', fact_name: 'is_pelunasan_hutang_bank' },
+      { code: 'Q-019', question_text: 'Apakah pengeluaran ini termasuk beban lainnya?', fact_name: 'is_beban_lainnya' },
+      { code: 'Q-020', question_text: 'Apakah pembelian ini termasuk aset lainnya?', fact_name: 'is_pembelian_aset_lainnya' }
     ];
 
     for (const q of defaultQuestions) {
@@ -481,8 +484,7 @@ async function init() {
         priority: 100,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
-          { fact_name: 'is_pengeluaran_atk', expected_value: 'yes' },
-          { fact_name: 'is_pendekatan_beban', expected_value: 'yes' }
+          { fact_name: 'is_beban_atk', expected_value: 'yes' }
         ]
       },
       {
@@ -492,8 +494,9 @@ async function init() {
         priority: 95,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
-          { fact_name: 'is_pengeluaran_atk', expected_value: 'yes' },
-          { fact_name: 'is_pendekatan_beban', expected_value: 'no' }
+          { fact_name: 'is_pembelian_aset', expected_value: 'yes' },
+          { fact_name: 'is_manfaat_lebih_1_tahun', expected_value: 'no' },
+          { fact_name: 'is_pembelian_perlengkapan', expected_value: 'yes' }
         ]
       },
       {
@@ -501,6 +504,27 @@ async function init() {
         debit: accMap['5-9000'], credit: accMap['1-1000'],
         description: 'Pengeluaran kas lain yang tidak terklasifikasi pada goal sebelumnya.',
         priority: 1,
+        conditions: [
+          { fact_name: 'is_outbound', expected_value: 'yes' }
+        ]
+      },
+      {
+        code: 'G-23', name: 'Pembelian Aset Lainnya', business_type: 'semua',
+        debit: accMap['1-9000'], credit: accMap['1-1000'],
+        description: 'Pembelian aset lain selain peralatan dan perlengkapan.',
+        priority: 90,
+        conditions: [
+          { fact_name: 'is_outbound', expected_value: 'yes' },
+          { fact_name: 'is_pembelian_aset', expected_value: 'yes' },
+          { fact_name: 'is_manfaat_lebih_1_tahun', expected_value: 'no' },
+          { fact_name: 'is_pembelian_perlengkapan', expected_value: 'no' }
+        ]
+      },
+      {
+        code: 'G-24', name: 'Beban Lain-lain', business_type: 'semua',
+        debit: accMap['5-9000'], credit: accMap['1-1000'],
+        description: 'Pembayaran beban operasional lainnya yang tidak terklasifikasi.',
+        priority: 85,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' }
         ]

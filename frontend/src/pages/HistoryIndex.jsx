@@ -179,18 +179,23 @@ export const HistoryIndex = () => {
       {/* ─── KPI Cards (real data) ─── */}
       <div className="grid-cols-4">
         {[
-          { label: 'Total Konsultasi',      value: stats?.total ?? '—',        sub: 'Semua riwayat tersimpan',         color: '#2563eb', icon: '📋' },
-          { label: 'Berhasil Diklasifikasi',value: stats?.classified ?? '—',   sub: `${stats?.accuracy ?? 0}% tingkat keberhasilan`, color: '#10b981', icon: '✅' },
-          { label: 'Rata-rata Keyakinan',   value: `${stats?.avgConf ?? 0}%`,  sub: 'Confidence score rata-rata',      color: '#7c3aed', icon: '🎯' },
-          { label: 'Akurasi Klasifikasi',   value: `${stats?.accuracy ?? 0}%`, sub: 'Berdasarkan SAK EMKM',            color: '#f59e0b', icon: '📊' },
+          { label: 'Total Konsultasi',       value: stats?.total ?? '—',        sub: 'Semua riwayat tersimpan',         borderColor: '#2563eb' },
+          { label: 'Berhasil Diklasifikasi', value: stats?.classified ?? '—',   sub: `${stats?.accuracy ?? 0}% tingkat keberhasilan`, borderColor: '#10b981', valueColor: '#10b981', subColor: '#10b981' },
+          { label: 'Rata-rata Keyakinan',    value: `${stats?.avgConf ?? 0}%`,  sub: 'Confidence score rata-rata',      borderColor: '#7c3aed', valueColor: '#7c3aed', subColor: '#7c3aed' },
+          { label: 'Akurasi Klasifikasi',    value: `${stats?.accuracy ?? 0}%`, sub: 'Berdasarkan SAK EMKM',            borderColor: '#f59e0b', valueColor: '#f59e0b', subColor: '#f59e0b' },
         ].map((card, i) => (
-          <div key={i} className="card" style={{ padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: '-12px', right: '-12px', width: '70px', height: '70px', borderRadius: '50%', backgroundColor: card.color + '18' }} />
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-              {card.icon} {card.label}
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: card.color, lineHeight: 1 }}>{loading ? '...' : card.value}</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>{card.sub}</div>
+          <div key={i} className="card" style={{
+            padding: '1.75rem 2rem',
+            borderRadius: '16px',
+            borderLeft: `6px solid ${card.borderColor}`,
+            boxShadow: `0 10px 25px -5px ${card.borderColor}22`,
+            display: 'flex', flexDirection: 'column', gap: '0.35rem'
+          }}>
+            <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</span>
+            <h2 style={{ fontSize: '3rem', fontWeight: 800, margin: '0.25rem 0', color: card.valueColor || 'var(--text-primary)', lineHeight: 1.1 }}>
+              {loading ? '…' : card.value}
+            </h2>
+            <span style={{ fontSize: '0.9rem', color: card.subColor || 'var(--text-secondary)', fontWeight: card.subColor ? 700 : 500 }}>{card.sub}</span>
           </div>
         ))}
       </div>
@@ -374,12 +379,12 @@ export const HistoryIndex = () => {
       )}
 
       {/* ─── Filter + Search Bar ─── */}
-      <div className="card" style={{ padding: '1rem 1.25rem' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+      <div className="card" style={{ padding: '1.25rem 1.5rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
           {/* Search */}
-          <div style={{ position: 'relative', flex: 1, minWidth: '200px', maxWidth: '300px' }}>
-            <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-              <SearchIcon className="w-4 h-4" />
+          <div style={{ position: 'relative', flex: 1, minWidth: '220px', maxWidth: '360px' }}>
+            <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', display: 'flex' }}>
+              <SearchIcon className="w-5 h-5" />
             </span>
             <input
               type="text"
@@ -387,7 +392,7 @@ export const HistoryIndex = () => {
               placeholder="Cari nama akun, pengguna..."
               value={search}
               onChange={e => { setSearch(e.target.value); resetPage(); }}
-              style={{ paddingLeft: '32px', fontSize: '0.85rem' }}
+              style={{ paddingLeft: '42px', fontSize: '0.95rem', paddingTop: '0.7rem', paddingBottom: '0.7rem', borderRadius: '10px' }}
             />
           </div>
 
@@ -396,7 +401,7 @@ export const HistoryIndex = () => {
             className="form-control"
             value={businessFilter}
             onChange={e => { setBusinessFilter(e.target.value); resetPage(); }}
-            style={{ width: '160px', fontSize: '0.85rem' }}
+            style={{ width: '180px', fontSize: '0.95rem', paddingTop: '0.7rem', paddingBottom: '0.7rem', borderRadius: '10px', fontWeight: 600 }}
           >
             <option value="">Semua Usaha</option>
             <option value="jasa">Usaha Jasa</option>
@@ -404,42 +409,44 @@ export const HistoryIndex = () => {
           </select>
 
           {/* Category pills */}
-          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             {['Semua', 'Aset', 'Kewajiban', 'Ekuitas', 'Pendapatan', 'Beban'].map(cat => (
               <button
                 key={cat}
                 onClick={() => { setActiveCategory(cat); resetPage(); }}
                 style={{
-                  padding: '0.4rem 0.9rem',
+                  padding: '0.55rem 1.1rem',
                   borderRadius: '999px',
-                  border: '1px solid',
+                  border: '1.5px solid',
                   borderColor: activeCategory === cat ? 'var(--primary)' : 'var(--border)',
                   backgroundColor: activeCategory === cat ? 'var(--primary)' : 'var(--surface)',
                   color: activeCategory === cat ? 'white' : 'var(--text-secondary)',
-                  cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
-                  transition: 'all 0.15s ease'
+                  cursor: 'pointer', fontSize: '0.9rem', fontWeight: 700,
+                  transition: 'all 0.15s ease',
+                  boxShadow: activeCategory === cat ? '0 4px 12px rgba(37,99,235,0.2)' : 'none',
                 }}
               >{cat}</button>
             ))}
           </div>
 
-          <div style={{ marginLeft: 'auto', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            {filtered.length} hasil ditemukan
+          <div style={{ marginLeft: 'auto', fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <span style={{ color: 'var(--primary)', fontWeight: 800 }}>{filtered.length}</span> hasil ditemukan
           </div>
         </div>
       </div>
 
       {/* ─── Card List ─── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '4rem', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '5rem', flexDirection: 'column', gap: '1rem' }}>
             <div className="spinner" />
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Memuat riwayat konsultasi...</p>
+            <p style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>Memuat riwayat konsultasi...</p>
           </div>
         ) : paginated.length > 0 ? (
           paginated.map(con => {
             const catStyle = getCatStyle(con.account_category || '');
             const initials = con.user_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
+            const isPosted = con.journals && con.journals.length > 0;
             return (
               <div
                 key={con.id}
@@ -447,78 +454,123 @@ export const HistoryIndex = () => {
                 style={{
                   backgroundColor: 'var(--surface)',
                   border: '1px solid var(--border)',
+                  borderLeft: `4px solid ${isPosted ? '#10b981' : '#ef4444'}`,
                   borderRadius: '14px',
-                  padding: '1.1rem 1.25rem',
-                  display: 'flex', alignItems: 'center', gap: '1rem',
+                  padding: '1.4rem 1.75rem',
+                  display: 'flex', alignItems: 'center', gap: '1.25rem',
                   cursor: 'pointer',
-                  transition: 'all 0.18s ease'
+                  transition: 'all 0.18s ease',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 }}
                 className="history-card"
               >
                 {/* Avatar */}
                 <div style={{
-                  width: '44px', height: '44px', borderRadius: '12px',
-                  background: (con.journals && con.journals.length > 0)
-                    ? `linear-gradient(135deg, #3b82f6cc, #2563eb)`
-                    : 'linear-gradient(135deg, #ef4444cc, #dc2626)',
-                  color: 'white', fontWeight: 800, fontSize: '0.85rem',
+                  width: '52px', height: '52px', borderRadius: '14px',
+                  background: isPosted
+                    ? 'linear-gradient(135deg, #3b82f6, #2563eb)'
+                    : 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  color: 'white', fontWeight: 800, fontSize: '1rem',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, boxShadow: `0 2px 8px rgba(0,0,0,0.1)`
+                  flexShrink: 0,
+                  boxShadow: isPosted ? '0 4px 12px rgba(37,99,235,0.25)' : '0 4px 12px rgba(239,68,68,0.25)',
+                  letterSpacing: '0.05em',
                 }}>
                   {initials}
                 </div>
 
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
                       {con.user_name}
                     </span>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)', backgroundColor: 'var(--background)', padding: '0.1rem 0.5rem', borderRadius: '999px', border: '1px solid var(--border)', textTransform: 'capitalize' }}>
+                    <span style={{
+                      fontSize: '0.78rem', fontWeight: 700,
+                      color: con.business_type === 'jasa' ? '#2563eb' : '#7c3aed',
+                      backgroundColor: con.business_type === 'jasa' ? '#eff6ff' : '#faf5ff',
+                      padding: '0.2rem 0.65rem', borderRadius: '999px',
+                      border: `1px solid ${con.business_type === 'jasa' ? '#bfdbfe' : '#ddd6fe'}`,
+                      textTransform: 'capitalize',
+                    }}>
                       {con.business_type}
                     </span>
+                    {con.business_name && (
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>· {con.business_name}</span>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {new Date(con.date).toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    {con.business_name && ` · ${con.business_name}`}
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                    {new Date(con.date).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
 
                 {/* Account Result */}
-                <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '160px' }}>
-                  {(con.journals && con.journals.length > 0) ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-                      <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ flexShrink: 0, minWidth: '190px', textAlign: 'right' }}>
+                  {isPosted ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: '0.78rem', color: '#059669',
+                        textTransform: 'uppercase', letterSpacing: '0.08em',
+                        display: 'flex', alignItems: 'center', gap: '0.35rem',
+                      }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#059669', display: 'inline-block' }} />
                         Terposting
                       </div>
-                      <div style={{ display: 'flex', gap: '0.35rem' }}>
-                        <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <span style={{
+                          fontSize: '0.8rem', fontWeight: 700,
+                          padding: '0.3rem 0.75rem', borderRadius: '8px',
+                          backgroundColor: '#e0f2fe', color: '#0284c7',
+                          border: '1px solid #bae6fd',
+                        }}>
                           {con.journals[0].debit_category || 'Debit'}
                         </span>
-                        <span className="badge" style={{ fontSize: '0.65rem', backgroundColor: '#fce7f3', color: '#db2777', border: '1px solid #fbcfe8' }}>
+                        <span style={{
+                          fontSize: '0.8rem', fontWeight: 700,
+                          padding: '0.3rem 0.75rem', borderRadius: '8px',
+                          backgroundColor: '#fce7f3', color: '#db2777',
+                          border: '1px solid #fbcfe8',
+                        }}>
                           {con.journals[0].credit_category || 'Kredit'}
                         </span>
                       </div>
                     </div>
                   ) : (
-                    <span className="badge badge-danger" style={{ fontSize: '0.72rem' }}>Tidak Terklasifikasi</span>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                      fontSize: '0.82rem', fontWeight: 700,
+                      color: '#ef4444', backgroundColor: '#fef2f2',
+                      padding: '0.35rem 0.85rem', borderRadius: '8px',
+                      border: '1px solid #fecaca',
+                    }}>
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block' }} />
+                      Tidak Terklasifikasi
+                    </div>
                   )}
                 </div>
 
                 {/* Confidence */}
-                <div style={{ flexShrink: 0, textAlign: 'center', minWidth: '60px' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: con.confidence_level >= 80 ? '#10b981' : '#f59e0b' }}>
+                <div style={{
+                  flexShrink: 0, textAlign: 'center', minWidth: '80px',
+                  padding: '0.5rem 0.75rem', borderRadius: '12px',
+                  backgroundColor: con.confidence_level >= 80 ? '#ecfdf5' : '#fffbeb',
+                  border: `1px solid ${con.confidence_level >= 80 ? '#a7f3d0' : '#fde68a'}`,
+                }}>
+                  <div style={{
+                    fontSize: '1.4rem', fontWeight: 800, lineHeight: 1,
+                    color: con.confidence_level >= 80 ? '#10b981' : '#f59e0b',
+                  }}>
                     {con.confidence_level}%
                   </div>
-                  <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>confidence</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 700, marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>confidence</div>
                 </div>
 
                 {/* Actions */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                   <button
                     onClick={e => { e.stopPropagation(); handleViewDetail(con); }}
-                    className="btn btn-secondary"
-                    style={{ padding: '0.35rem 0.65rem', borderRadius: '8px', fontSize: '0.72rem', fontWeight: 600 }}
+                    className="btn btn-primary"
+                    style={{ padding: '0.55rem 1.1rem', borderRadius: '10px', fontSize: '0.88rem', fontWeight: 700 }}
                     title="Lihat Detail"
                   >
                     Detail
@@ -526,21 +578,21 @@ export const HistoryIndex = () => {
                   <button
                     onClick={e => handleDelete(e, con.id)}
                     className="btn btn-secondary"
-                    style={{ padding: '0.35rem', borderRadius: '8px', color: 'var(--danger)' }}
+                    style={{ padding: '0.55rem 0.75rem', borderRadius: '10px', color: 'var(--danger)', border: '1px solid var(--border)' }}
                     title="Hapus"
                   >
-                    <TrashIcon className="w-3.5 h-3.5" />
+                    <TrashIcon className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             );
           })
         ) : (
-          <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)', backgroundColor: 'var(--surface)', borderRadius: '16px', border: '1px dashed var(--border)' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📂</div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Tidak ada riwayat ditemukan</h3>
-            <p style={{ fontSize: '0.82rem' }}>Coba ubah filter pencarian atau mulai konsultasi baru.</p>
-            <button onClick={() => navigateTo('consultation')} className="btn btn-primary" style={{ marginTop: '1.25rem', fontSize: '0.82rem' }}>
+          <div style={{ textAlign: 'center', padding: '5rem', color: 'var(--text-muted)', backgroundColor: 'var(--surface)', borderRadius: '16px', border: '1px dashed var(--border)' }}>
+            <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>📂</div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Tidak ada riwayat ditemukan</h3>
+            <p style={{ fontSize: '0.9rem' }}>Coba ubah filter pencarian atau mulai konsultasi baru.</p>
+            <button onClick={() => navigateTo('consultation')} className="btn btn-primary" style={{ marginTop: '1.5rem', fontSize: '0.95rem', padding: '0.65rem 1.5rem' }}>
               Mulai Konsultasi →
             </button>
           </div>

@@ -24,39 +24,22 @@ const IconRules = () => (
   </svg>
 );
 
-const StatCard = ({ icon, iconBg, iconColor, label, value, badge, badgeColor, badgeBg, sub }) => (
-  <div className="card" style={{ position: 'relative', overflow: 'hidden', padding: '1.5rem' }}>
-    {/* Decorative background circle */}
-    <div style={{
-      position: 'absolute', top: '-20px', right: '-20px',
-      width: '90px', height: '90px', borderRadius: '50%',
-      backgroundColor: iconBg, opacity: 0.3
-    }} />
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', position: 'relative' }}>
-      <div style={{
-        width: '44px', height: '44px', borderRadius: '12px',
-        backgroundColor: iconBg, display: 'flex',
-        alignItems: 'center', justifyContent: 'center', color: iconColor,
-        flexShrink: 0
-      }}>
-        {icon}
-      </div>
-      {badge && (
-        <span style={{
-          fontSize: '0.68rem', fontWeight: 700,
-          padding: '0.2rem 0.55rem', borderRadius: '999px',
-          backgroundColor: badgeBg, color: badgeColor,
-          whiteSpace: 'nowrap', marginTop: '0.25rem'
-        }}>{badge}</span>
-      )}
-    </div>
-    <div style={{ position: 'relative' }}>
-      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '0.35rem' }}>{label}</p>
-      <h2 style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1, marginBottom: '0.4rem' }}>{value}</h2>
-      {sub && <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{sub}</p>}
-    </div>
+const StatCard = ({ label, value, sub, subColor, borderColor, valueColor }) => (
+  <div className="card" style={{
+    padding: '1.75rem 2rem',
+    borderRadius: '16px',
+    borderLeft: `6px solid ${borderColor}`,
+    boxShadow: `0 10px 25px -5px ${borderColor}22`,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem'
+  }}>
+    <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+    <h2 style={{ fontSize: '3rem', fontWeight: 800, margin: '0.25rem 0', color: valueColor || 'var(--text-primary)', lineHeight: 1.1 }}>{value}</h2>
+    <span style={{ fontSize: '0.9rem', color: subColor || 'var(--text-secondary)', fontWeight: subColor ? 700 : 500 }}>{sub}</span>
   </div>
 );
+
 
 export const DashboardPage = () => {
   const { token, navigateTo, showToast } = useAuth();
@@ -138,41 +121,32 @@ export const DashboardPage = () => {
       {/* ─── Stats Row ─── */}
       <div className="grid-cols-4">
         <StatCard
-          icon={<IconConsultation />}
-          iconBg="#eff6ff" iconColor="#2563eb"
           label="Total Konsultasi"
           value={stats.totalConsultations.toLocaleString('id-ID')}
-          badge={`${growthPositive ? '▲' : '▼'} ${Math.abs(stats.growthPct)}% bulan ini`}
-          badgeBg={growthPositive ? '#ecfdf5' : '#fef2f2'}
-          badgeColor={growthPositive ? '#16a34a' : '#ef4444'}
           sub={`${stats.thisMonth} konsultasi bulan ini`}
+          borderColor="#2563eb"
         />
         <StatCard
-          icon={<IconAccuracy />}
-          iconBg="#f0fdf4" iconColor="#16a34a"
           label="Akurasi Klasifikasi"
           value={`${stats.accuracyRate}%`}
-          badge="SAK EMKM"
-          badgeBg="#f0fdf4" badgeColor="#16a34a"
-          sub={`${stats.classifiedCount.toLocaleString('id-ID')} dari ${stats.totalConsultations.toLocaleString('id-ID')} terklasifikasi`}
+          sub={`${stats.classifiedCount} dari ${stats.totalConsultations} terklasifikasi`}
+          borderColor="#10b981"
+          valueColor="#10b981"
+          subColor="#10b981"
         />
         <StatCard
-          icon={<IconConfidence />}
-          iconBg="#faf5ff" iconColor="#7c3aed"
           label="Rata-rata Keyakinan"
           value={`${stats.avgConfidence}%`}
-          badge="Confidence Score"
-          badgeBg="#faf5ff" badgeColor="#7c3aed"
-          sub="Per klasifikasi transaksi"
+          sub="Confidence score rata-rata"
+          borderColor="#7c3aed"
+          valueColor="#7c3aed"
+          subColor="#7c3aed"
         />
         <StatCard
-          icon={<IconRules />}
-          iconBg="#fff7ed" iconColor="#ea580c"
           label="Rule Pakar Aktif"
           value={stats.totalRules}
-          badge="Basis Pengetahuan"
-          badgeBg="#fff7ed" badgeColor="#ea580c"
           sub="Siap untuk klasifikasi"
+          borderColor="#ea580c"
         />
       </div>
 
@@ -387,27 +361,28 @@ export const DashboardPage = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
           {/* Quick Access */}
-          <div className="card" style={{ padding: '1.5rem' }}>
-            <h3 style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: '1rem' }}>Akses Cepat</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          <div className="card" style={{ padding: '1.75rem' }}>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>Akses Cepat</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
                 { label: 'Konsultasi Baru', icon: '➕', page: 'consultation', primary: true },
                 { label: 'Riwayat Konsultasi', icon: '🕐', page: 'history' },
                 { label: 'Basis Pengetahuan', icon: '⚙️', page: 'rules' },
               ].map(item => (
                 <button key={item.page} onClick={() => navigateTo(item.page)} style={{
-                  display: 'flex', alignItems: 'center', gap: '0.75rem',
-                  padding: '0.75rem 1rem', borderRadius: '10px',
-                  border: item.primary ? 'none' : '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center', gap: '1rem',
+                  padding: '1rem 1.25rem', borderRadius: '12px',
+                  border: item.primary ? 'none' : '1.5px solid var(--border)',
                   background: item.primary ? 'linear-gradient(135deg, #1d4ed8, #2563eb)' : 'var(--surface)',
                   color: item.primary ? 'white' : 'var(--text-primary)',
-                  fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
-                  textAlign: 'left', transition: 'all 0.15s'
+                  fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+                  textAlign: 'left', transition: 'all 0.18s',
+                  boxShadow: item.primary ? '0 4px 14px rgba(37,99,235,0.3)' : '0 1px 4px rgba(0,0,0,0.04)'
                 }}
-                onMouseEnter={e => { if (!item.primary) e.currentTarget.style.borderColor = 'var(--primary)'; }}
-                onMouseLeave={e => { if (!item.primary) e.currentTarget.style.borderColor = 'var(--border)'; }}
+                onMouseEnter={e => { if (!item.primary) { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; } }}
+                onMouseLeave={e => { if (!item.primary) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
                 >
-                  <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+                  <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{item.icon}</span>
                   <span>{item.label}</span>
                 </button>
               ))}
@@ -417,28 +392,29 @@ export const DashboardPage = () => {
           {/* SAK EMKM Banner */}
           <div style={{
             background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #7c3aed 100%)',
-            borderRadius: '14px', padding: '1.5rem',
-            boxShadow: '0 4px 20px rgba(37,99,235,0.25)',
+            borderRadius: '16px', padding: '2rem',
+            boxShadow: '0 6px 24px rgba(37,99,235,0.3)',
             position: 'relative', overflow: 'hidden'
           }}>
             {/* decorative circles */}
-            <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)' }} />
-            <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.05)' }} />
+            <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '140px', height: '140px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)' }} />
+            <div style={{ position: 'absolute', bottom: '-30px', left: '-30px', width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.05)' }} />
 
             <div style={{ position: 'relative' }}>
-              <span style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#bfdbfe', display: 'block', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#bfdbfe', display: 'block', marginBottom: '0.65rem' }}>
                 ✦ Update Terbaru
               </span>
-              <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', lineHeight: 1.35, marginBottom: '0.65rem' }}>
+              <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'white', lineHeight: 1.3, marginBottom: '0.75rem' }}>
                 Standar SAK EMKM 2024 Aktif
               </h4>
-              <p style={{ fontSize: '0.75rem', color: '#93c5fd', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+              <p style={{ fontSize: '0.875rem', color: '#93c5fd', lineHeight: 1.6, marginBottom: '1.5rem' }}>
                 Sistem telah mendukung regulasi terbaru untuk pencatatan akuntansi UMKM.
               </p>
               <button onClick={() => navigateTo('rules')} style={{
-                width: '100%', padding: '0.6rem', borderRadius: '8px',
+                width: '100%', padding: '0.8rem', borderRadius: '10px',
                 border: 'none', backgroundColor: 'white', color: '#1d4ed8',
-                fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer'
+                fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
               }}>
                 Pelajari Basis Pengetahuan →
               </button>
@@ -446,11 +422,11 @@ export const DashboardPage = () => {
           </div>
 
           {/* System Status */}
-          <div className="card" style={{ padding: '1.5rem' }}>
+          <div className="card" style={{ padding: '1.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Status Sistem</h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>
-                <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#16a34a', boxShadow: '0 0 0 3px #dcfce7' }} />
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Status Sistem</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', color: '#16a34a', fontWeight: 700 }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#16a34a', boxShadow: '0 0 0 3px #dcfce7' }} />
                 Semua Sistem Normal
               </div>
             </div>
@@ -458,9 +434,9 @@ export const DashboardPage = () => {
               { label: 'Basis Pengetahuan', value: `${stats.totalRules} rule`, ok: stats.totalRules > 0 },
               { label: 'Akurasi Klasifikasi', value: `${stats.accuracyRate}%`, ok: stats.accuracyRate >= 80 },
             ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: i < 1 ? '1px solid var(--border)' : 'none' }}>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{item.label}</span>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: item.ok ? '#16a34a' : 'var(--danger)' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.9rem 0', borderBottom: i < 1 ? '1px solid var(--border)' : 'none' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{item.label}</span>
+                <span style={{ fontSize: '0.9rem', fontWeight: 800, color: item.ok ? '#16a34a' : 'var(--danger)' }}>
                   {item.ok ? '✓ ' : '✕ '}{item.value}
                 </span>
               </div>

@@ -279,104 +279,178 @@ export const ConsultationWizard = () => {
       )}
 
       {step === 'questions' && (
-        <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '420px' }}>
+        <div style={{ maxWidth: '850px', margin: '2rem auto' }}>
+          <div className="card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '520px', padding: '2.5rem', borderRadius: '20px', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.04)' }}>
             {loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                <div className="spinner" />
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '400px', gap: '1rem' }}>
+                <div className="spinner" style={{ width: '50px', height: '50px', borderWidth: '4px' }} />
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Memuat data evaluasi...</p>
               </div>
             ) : currentQuestion ? (
               <>
-                <div>
-                  <span style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 800,
-                    backgroundColor: 'var(--primary-light)',
-                    color: 'var(--primary)',
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '4px',
-                    letterSpacing: '0.05em'
-                  }}>
-                    ID PERTANYAAN: {currentQuestion.code}
-                  </span>
-                  
-                  <h2 style={{ fontSize: '1.5rem', marginTop: '1rem', marginBottom: '0.75rem', lineHeight: 1.3 }}>
-                    {currentQuestion.question_text}
-                  </h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '2rem' }}>
-                    Jawab dengan jujur agar sistem dapat memformulasikan Jurnal Umum yang seimbang (balance).
-                  </p>
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
+                  <div>
+                    <span style={{
+                      fontSize: '0.85rem',
+                      fontWeight: 800,
+                      backgroundColor: 'var(--primary-light)',
+                      color: 'var(--primary)',
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '6px',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      display: 'inline-block'
+                    }}>
+                      ID PERTANYAAN: {currentQuestion.code}
+                    </span>
+                    
+                    <h2 style={{ fontSize: '2.25rem', fontWeight: 800, marginTop: '1.25rem', marginBottom: '0.75rem', lineHeight: 1.35, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                      {currentQuestion.question_text}
+                    </h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', marginBottom: '2.5rem', lineHeight: 1.5 }}>
+                      Jawab dengan jujur agar sistem dapat memformulasikan Jurnal Umum yang seimbang (balance).
+                    </p>
+                  </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem', marginBottom: '2rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
                     <button 
                       onClick={() => handleAnswer('yes')}
-                      className="btn" 
+                      className="btn-action-text" 
                       style={{
-                        padding: '1.5rem',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-lg)',
+                        padding: '2.5rem 1.5rem',
+                        border: '2px solid var(--border)',
+                        borderRadius: '16px',
                         backgroundColor: 'var(--surface)',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '0.5rem',
-                        cursor: 'pointer'
+                        gap: '1rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.015)'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--primary)';
+                        e.currentTarget.style.transform = 'translateY(-3px)';
+                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(37, 99, 235, 0.08)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)';
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.015)';
                       }}
                     >
                       <span style={{
-                        width: '28px',
-                        height: '28px',
+                        width: '48px',
+                        height: '48px',
                         borderRadius: '50%',
                         backgroundColor: 'var(--primary-light)',
                         color: 'var(--primary)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontWeight: 700
+                        fontSize: '1.5rem',
+                        fontWeight: 800
                       }}>✓</span>
-                      <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Ya, Benar</span>
+                      <span style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-primary)' }}>Ya, Benar</span>
                     </button>
 
                     <button 
                       onClick={() => handleAnswer('no')}
-                      className="btn" 
+                      className="btn-action-text" 
                       style={{
-                        padding: '1.5rem',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-lg)',
+                        padding: '2.5rem 1.5rem',
+                        border: '2px solid var(--border)',
+                        borderRadius: '16px',
                         backgroundColor: 'var(--surface)',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '0.5rem',
-                        cursor: 'pointer'
+                        gap: '1rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.015)'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--danger)';
+                        e.currentTarget.style.transform = 'translateY(-3px)';
+                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(220, 38, 38, 0.08)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)';
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.015)';
                       }}
                     >
                       <span style={{
-                        width: '28px',
-                        height: '28px',
+                        width: '48px',
+                        height: '48px',
                         borderRadius: '50%',
                         backgroundColor: 'var(--danger-light)',
                         color: 'var(--danger)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontWeight: 700
+                        fontSize: '1.5rem',
+                        fontWeight: 800
                       }}>✕</span>
-                      <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Tidak</span>
+                      <span style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-primary)' }}>Tidak</span>
                     </button>
                   </div>
                 </div>
 
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <button onClick={handleBack} className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>
-                    ← Kembali
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+                  <button 
+                    onClick={handleBack} 
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--primary)';
+                      e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.2)';
+                      e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.04)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.08)';
+                      const arrow = e.currentTarget.querySelector('.back-arrow-svg');
+                      if (arrow) arrow.style.transform = 'translateX(-3px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                      e.currentTarget.style.backgroundColor = 'var(--surface)';
+                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.03)';
+                      const arrow = e.currentTarget.querySelector('.back-arrow-svg');
+                      if (arrow) arrow.style.transform = 'none';
+                    }}
+                    style={{ 
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '0.7rem 1.35rem', 
+                      borderRadius: '10px', 
+                      border: '1.5px solid var(--border)',
+                      backgroundColor: 'var(--surface)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.95rem', 
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+                      transition: 'all 0.25s ease'
+                    }}
+                  >
+                    <svg 
+                      className="back-arrow-svg"
+                      style={{ marginRight: '8px', width: '16px', height: '16px', transition: 'transform 0.2s ease', display: 'flex' }} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor" 
+                      strokeWidth={3}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Kembali</span>
                   </button>
                 </div>
               </>
             ) : (
-              <div style={{ textAlign: 'center', padding: '3rem' }}>
-                <p>Mengevaluasi rule-based engine SIA...</p>
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '400px', gap: '1rem' }}>
+                <div className="spinner" />
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Mengevaluasi rule-based engine SIA...</p>
               </div>
             )}
           </div>
@@ -405,21 +479,21 @@ export const ConsultationWizard = () => {
                     </span>
                     
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
-                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Kesimpulan</h4>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                      <h4 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.65rem' }}>Kesimpulan</h4>
+                      <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.75rem' }}>
                         Berdasarkan analisis, transaksi ini terklasifikasi ke dalam kelompok <strong>{category}</strong> dengan akun spesifik <strong>{specificAccount}</strong>.
                       </p>
 
-                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Rekomendasi Pencatatan (Standar SAK EMKM)</h4>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                      <h4 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.65rem' }}>Rekomendasi Pencatatan Berdasarkan Standar SAK EMKM</h4>
+                      <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.75rem' }}>
                         Jurnal entry yang direkomendasikan adalah mencatat penambahan/pengurangan di sisi <strong>Debit pada {debitDisplay}</strong> dan menyeimbangkannya di sisi <strong>Kredit pada {creditDisplay}</strong>. Perlakuan ini telah sesuai dengan standar akuntansi UMKM yang berlaku.
                       </p>
                       
-                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Ringkasan Jawaban Anda</h4>
-                      <div style={{ backgroundColor: 'var(--surface-alt)', borderLeft: '4px solid var(--primary)', padding: '1rem', borderRadius: '0 8px 8px 0', fontSize: '0.85rem' }}>
+                      <h4 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.65rem' }}>Ringkasan Jawaban Anda</h4>
+                      <div style={{ backgroundColor: 'var(--surface-alt)', borderLeft: '4px solid var(--primary)', padding: '1.25rem 1.5rem', borderRadius: '0 8px 8px 0', fontSize: '1.05rem' }}>
                         <ul style={{ paddingLeft: '1.2rem', color: 'var(--text-secondary)', margin: 0 }}>
                           {answersHistory.map((ans, idx) => (
-                            <li key={idx} style={{ marginBottom: '0.25rem' }}>
+                            <li key={idx} style={{ marginBottom: '0.5rem' }}>
                               {ans.question.question_text} <strong style={{ color: 'var(--text-primary)' }}>{facts[ans.question.fact_name] === 'yes' ? 'Ya' : 'Tidak'}</strong>
                             </li>
                           ))}

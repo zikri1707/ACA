@@ -1,0 +1,210 @@
+1751:                     <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{q.question_text}</td>
+1752:                   </tr>
+1753:                 ))}
+1754:               </tbody>
+1755:             </table>
+1756:           </div>
+1757:         </div>
+1758:       )}
+1759: 
+1760:       {/* Tab 5: Flowchart & Matriks */}
+1761:       {activeTab === 'rules_diagram' && (
+1762:         <div className="anim-fade-in">
+1763:           <div className="card" style={{ padding: '2rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
+1764:             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Flowchart (Diagram Alir Logika)</h3>
+1765:             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+1766:               Representasi diagram alir memetakan percabangan sistem secara eksak sesuai pertanyaan yang muncul kepada pengguna.
+1767:             </p>
+1768:             <div
+1769:               ref={flowchartContainerRef}
+1770:               onMouseDown={(e) => {
+1771:                 if (e.button !== 0) return;
+1772:                 setIsDragging(true);
+1773:                 setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+1774:               }}
+1775:               onMouseMove={(e) => {
+1776:                 if (!isDragging) return;
+1777:                 setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+1778:               }}
+1779:               onMouseUp={() => setIsDragging(false)}
+1780:               onMouseLeave={() => setIsDragging(false)}
+1781:               style={{
+1782:                 backgroundColor: '#f8fafc',
+1783:                 borderRadius: '12px',
+1784:                 border: '1px solid var(--border)',
+1785:                 height: 'calc(100vh - 280px)',
+1786:                 minHeight: '600px',
+1787:                 overflow: 'hidden',
+1788:                 position: 'relative',
+1789:                 cursor: isDragging ? 'grabbing' : 'grab',
+1790:                 userSelect: 'none'
+1791:               }}
+1792:             >
+1793:               {/* Floating Zoom Controls */}
+1794:               <div style={{
+1795:                 position: 'absolute',
+1796:                 top: '1rem',
+1797:                 right: '1rem',
+1798:                 display: 'flex',
+1799:                 gap: '0.5rem',
+1800:                 zIndex: 10,
+1801:                 backgroundColor: 'rgba(255, 255, 255, 0.85)',
+1802:                 backdropFilter: 'blur(4px)',
+1803:                 padding: '0.35rem',
+1804:                 borderRadius: '8px',
+1805:                 border: '1px solid var(--border)',
+1806:                 boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+1807:               }}>
+1808:                 <button
+1809:                   type="button"
+1810:                   onClick={(e) => { e.stopPropagation(); setScale(prev => Math.min(prev + 0.2, 6)); }}
+1811:                   style={{
+1812:                     width: '32px',
+1813:                     height: '32px',
+1814:                     borderRadius: '6px',
+1815:                     border: '1px solid var(--border)',
+1816:                     backgroundColor: 'white',
+1817:                     fontWeight: 'bold',
+1818:                     cursor: 'pointer',
+1819:                     display: 'flex',
+1820:                     alignItems: 'center',
+1821:                     justifyContent: 'center',
+1822:                     fontSize: '1rem',
+1823:                     color: 'var(--text-primary)'
+1824:                   }}
+1825:                   title="Zoom In"
+1826:                 >
+1827:                   ＋
+1828:                 </button>
+1829:                 <button
+1830:                   type="button"
+1831:                   onClick={(e) => { e.stopPropagation(); setScale(prev => Math.max(prev - 0.2, 0.3)); }}
+1832:                   style={{
+1833:                     width: '32px',
+1834:                     height: '32px',
+1835:                     borderRadius: '6px',
+1836:                     border: '1px solid var(--border)',
+1837:                     backgroundColor: 'white',
+1838:                     fontWeight: 'bold',
+1839:                     cursor: 'pointer',
+1840:                     display: 'flex',
+1841:                     alignItems: 'center',
+1842:                     justifyContent: 'center',
+1843:                     fontSize: '1rem',
+1844:                     color: 'var(--text-primary)'
+1845:                   }}
+1846:                   title="Zoom Out"
+1847:                 >
+1848:                   －
+1849:                 </button>
+1850:                 <button
+1851:                   type="button"
+1852:                   onClick={(e) => { e.stopPropagation(); setScale(1.7); setPan({ x: 0, y: 0 }); }}
+1853:                   style={{
+1854:                     width: '32px',
+1855:                     height: '32px',
+1856:                     borderRadius: '6px',
+1857:                     border: '1px solid var(--border)',
+1858:                     backgroundColor: 'white',
+1859:                     fontSize: '0.8rem',
+1860:                     cursor: 'pointer',
+1861:                     display: 'flex',
+1862:                     alignItems: 'center',
+1863:                     justifyContent: 'center',
+1864:                     color: 'var(--text-primary)'
+1865:                   }}
+1866:                   title="Reset Zoom & Position"
+1867:                 >
+1868:                   ⟲
+1869:                 </button>
+1870:               </div>
+1871: 
+1872:               {/* Zoom & Pan Wrapper */}
+1873:               <div style={{
+1874:                 position: 'absolute',
+1875:                 left: '50%',
+1876:                 top: '2rem',
+1877:                 transform: `translate(calc(-50% + ${pan.x}px), ${pan.y}px) scale(${scale})`,
+1878:                 transformOrigin: 'top center',
+1879:                 transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+1880:                 display: 'inline-block'
+1881:               }}>
+1882:                 <div ref={flowchartRef} className="flowchart-render-container" style={{ display: 'inline-block' }} />
+1883:               </div>
+1884:             </div>
+1885:           </div>
+1886: 
+1887:           <div className="card" style={{ padding: '2rem', borderRadius: '12px' }}>
+1888:             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Decision Table (Tabel Keputusan)</h3>
+1889:             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem', lineHeight: 1.6 }}>
+1890:               Tabel ini sangat cocok dicetak dan ditunjukkan kepada pakar akuntansi untuk <em>Face Validity</em>. Pakar dapat dengan mudah membaca kombinasi dari kiri ke kanan untuk memvalidasi apakah kode akun di kolom paling kanan sudah tepat. Tanda strip (" - ") mengindikasikan <em>Don't Care</em>.
+1891:             </p>
+1892:             <div style={{ 
+1893:               overflowX: 'auto', 
+1894:               border: '1px solid var(--border)', 
+1895:               borderRadius: '12px',
+1896:               boxShadow: 'var(--shadow-sm)',
+1897:               backgroundColor: 'var(--surface)'
+1898:             }}>
+1899:               <table className="table" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap', width: '100%', margin: 0 }}>
+1900:                 <thead style={{ background: 'rgba(37, 99, 235, 0.04)' }}>
+1901:                   <tr>
+1902:                     <th style={{ padding: '1rem', borderRight: '1px solid var(--border)', fontWeight: 800, color: 'var(--text-primary)' }}>Rule ID</th>
+1903:                     <th style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Kategori Akun</th>
+1904:                     <th style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Jenis Usaha</th>
+1905:                     <th style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Arah Transaksi</th>
+1906:                     <th style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Kondisi Spesifik</th>
+1907:                     <th style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Kredit?</th>
+1908:                     <th style={{ padding: '1rem', backgroundColor: 'var(--primary)', color: 'white', fontWeight: 800 }}>Hasil Jurnal (Debit / Kredit)</th>
+1909:                   </tr>
+1910:                 </thead>
+1911:                 <tbody>
+1912:                   {rules.map((rule) => {
+1913:                     const kreditVal = getKredit(rule.conditions);
+1914:                     return (
+1915:                       <tr key={rule.id} style={{ borderBottom: '1px solid var(--border)' }}>
+1916:                         <td style={{ 
+1917:                           fontWeight: 800, 
+1918:                           fontFamily: 'var(--font-mono)', 
+1919:                           color: 'var(--primary)', 
+1920:                           borderRight: '1px solid var(--border)',
+1921:                           backgroundColor: 'rgba(37, 99, 235, 0.02)',
+1922:                           padding: '1rem'
+1923:                         }}>{rule.code}</td>
+1924:                         <td style={{ padding: '1rem' }}>{getTransactionCategory(rule)}</td>
+1925:                         <td style={{ padding: '1rem' }}>{rule.business_type === 'semua' ? 'SEMUA' : rule.business_type.toUpperCase()}</td>
+1926:                         <td style={{ padding: '1rem' }}>{getArah(rule.conditions)}</td>
+1927:                         <td style={{ fontFamily: 'monospace', color: 'var(--primary)', fontWeight: 600, padding: '1rem' }}>{getKondisiSpesifik(rule.conditions)}</td>
+1928:                         <td style={{ padding: '1rem' }}>
+1929:                           <span style={{
+1930:                             backgroundColor: kreditVal === 'YES' ? 'var(--success-light)' : kreditVal === 'NO' ? 'var(--danger-light)' : 'var(--background)',
+1931:                             color: kreditVal === 'YES' ? 'var(--success)' : kreditVal === 'NO' ? 'var(--danger)' : 'var(--text-secondary)',
+1932:                             border: `1px solid ${kreditVal === 'YES' ? 'var(--success-border)' : kreditVal === 'NO' ? 'rgba(239, 68, 68, 0.2)' : 'var(--border)'}`,
+1933:                             padding: '0.25rem 0.6rem',
+1934:                             borderRadius: '6px',
+1935:                             fontSize: '0.75rem',
+1936:                             fontWeight: 800
+1937:                           }}>
+1938:                             {kreditVal}
+1939:                           </span>
+1940:                         </td>
+1941:                         <td style={{ padding: '0.75rem 1rem' }}>
+1942:                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+1943:                             <span style={{
+1944:                               backgroundColor: rule.debit_account_id ? 'rgba(37, 99, 235, 0.05)' : 'var(--background)',
+1945:                               color: rule.debit_account_id ? 'var(--primary)' : 'var(--text-secondary)',
+1946:                               border: `1px solid ${rule.debit_account_id ? 'rgba(37, 99, 235, 0.15)' : 'var(--border)'}`,
+1947:                               fontSize: '0.725rem',
+1948:                               fontWeight: 700,
+1949:                               display: 'inline-flex',
+1950:                               alignItems: 'center',
+1951:                               padding: '0.25rem 0.6rem',
+1952:                               borderRadius: '6px',
+1953:                               width: 'fit-content'
+1954:                             }}>
+1955:                               <span style={{ marginRight: '6px', fontWeight: 800, opacity: 0.8 }}>[Dr]</span>
+1956:                               {rule.debit_account_id ? `${rule.debit_account_code} - ${rule.debit_account_name}` : 'Dinamis (Pilihan User)'}
+1957:                             </span>
+1958:                             
+1959:                             <span style={{
+1960:                               backgroundColor: rule.credit_account_id ? 'rgba(124, 58, 237, 0.05)' : 'var(--background)',

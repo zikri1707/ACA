@@ -1,0 +1,105 @@
+1956:                               {rule.debit_account_id ? `${rule.debit_account_code} - ${rule.debit_account_name}` : 'Dinamis (Pilihan User)'}
+1957:                             </span>
+1958:                             
+1959:                             <span style={{
+1960:                               backgroundColor: rule.credit_account_id ? 'rgba(124, 58, 237, 0.05)' : 'var(--background)',
+1961:                               color: rule.credit_account_id ? '#7c3aed' : 'var(--text-secondary)',
+1962:                               border: `1px solid ${rule.credit_account_id ? 'rgba(124, 58, 237, 0.15)' : 'var(--border)'}`,
+1963:                               fontSize: '0.725rem',
+1964:                               fontWeight: 700,
+1965:                               display: 'inline-flex',
+1966:                               alignItems: 'center',
+1967:                               padding: '0.25rem 0.6rem',
+1968:                               borderRadius: '6px',
+1969:                               width: 'fit-content'
+1970:                             }}>
+1971:                               <span style={{ marginRight: '6px', fontWeight: 800, opacity: 0.8 }}>[Cr]</span>
+1972:                               {rule.credit_account_id ? `${rule.credit_account_code} - ${rule.credit_account_name}` : 'Dinamis (Kas/Hutang)'}
+1973:                             </span>
+1974:                           </div>
+1975:                         </td>
+1976:                       </tr>
+1977:                     );
+1978:                   })}
+1979:                 </tbody>
+1980:               </table>
+1981:             </div>
+1982:           </div>
+1983:         </div>
+1984:       )}
+1985: 
+1986:       {/* Modal: Add Rule (3-Step Wizard Form) */}
+1987:       {showAddModal && (
+1988:         <div className="modal-overlay animate-fade-in">
+1989:           <form onSubmit={handleAddSubmit} className="modal-content animate-slide-up" style={{ maxWidth: '560px', borderRadius: '16px', border: '1px solid var(--border)', padding: '1.75rem' }}>
+1990: 
+1991:             {/* Modal Header */}
+1992:             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+1993:               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+1994:                 <span style={{ width: '8px', height: '18px', borderRadius: '9999px', backgroundColor: 'var(--primary)' }} />
+1995:                 Tambah Aturan Pakar Baru
+1996:               </h3>
+1997:               <button
+1998:                 type="button"
+1999:                 onClick={() => setShowAddModal(false)}
+2000:                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', display: 'flex' }}
+2001:               >
+2002:                 <CloseIcon className="w-5 h-5" />
+2003:               </button>
+2004:             </div>
+2005: 
+2006:             {/* Wizard Steps indicator bar */}
+2007:             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem', padding: '0 0.5rem' }}>
+2008:               <div className={`wizard-step-pill ${formStep === 1 ? 'active' : 'completed'}`}>1</div>
+2009:               <div className={`wizard-step-connector ${formStep > 1 ? 'completed' : ''}`} />
+2010:               <div className={`wizard-step-pill ${formStep === 2 ? 'active' : formStep > 2 ? 'completed' : ''}`}>2</div>
+2011:               <div className={`wizard-step-connector ${formStep > 2 ? 'completed' : ''}`} />
+2012:               <div className={`wizard-step-pill ${formStep === 3 ? 'active' : ''}`}>3</div>
+2013:             </div>
+2014: 
+2015:             {/* Step 1: Profil Aturan */}
+2016:             {formStep === 1 && (
+2017:               <div className="anim-fade-in">
+2018:                 <div className="form-row">
+2019:                   <div className="form-group">
+2020:                     <label className="form-label" style={{ fontSize: '0.75rem' }}>Kode Aturan <span style={{ color: 'var(--danger)' }}>*</span></label>
+2021:                     <input
+2022:                       type="text"
+2023:                       className="form-control"
+2024:                       placeholder="e.g. R-016"
+2025:                       value={code}
+2026:                       onChange={(e) => setCode(e.target.value)}
+2027:                       required
+2028:                       style={{ borderRadius: '8px', borderColor: validationError ? 'var(--warning)' : 'var(--border)' }}
+2029:                     />
+2030:                   </div>
+2031:                   <div className="form-group">
+2032:                     <label className="form-label" style={{ fontSize: '0.75rem' }}>Nama Aturan <span style={{ color: 'var(--danger)' }}>*</span></label>
+2033:                     <input
+2034:                       type="text"
+2035:                       className="form-control"
+2036:                       placeholder="e.g. Pembelian ATK Kantor"
+2037:                       value={name}
+2038:                       onChange={(e) => setName(e.target.value)}
+2039:                       required
+2040:                       style={{ borderRadius: '8px' }}
+2041:                     />
+2042:                   </div>
+2043:                 </div>
+2044: 
+2045:                 <div className="form-group">
+2046:                   <label className="form-label" style={{ fontSize: '0.75rem' }}>Tipe Usaha Terkait <span style={{ color: 'var(--danger)' }}>*</span></label>
+2047:                   <select
+2048:                     className="form-control"
+2049:                     value={businessType}
+2050:                     onChange={(e) => setBusinessType(e.target.value)}
+2051:                     required
+2052:                     style={{ borderRadius: '8px', cursor: 'pointer' }}
+2053:                   >
+2054:                     <option value="semua">Semua Tipe Usaha</option>
+2055:                     <option value="jasa">Usaha Jasa</option>
+2056:                     <option value="dagang">Usaha Dagang</option>
+2057:                   </select>
+2058:                 </div>
+2059: 
+2060:                 <div className="form-group">

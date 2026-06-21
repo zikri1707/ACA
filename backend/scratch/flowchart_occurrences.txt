@@ -1,0 +1,269 @@
+Line 61:   // Workspace Tabs State: 'list' | 'visualizer' | 'fakta' | 'rules_diagram'
+--- Details ---
+  46:     gradient: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+  47:     shadow: 'rgba(220, 38, 38, 0.15)'
+  48:   }
+  49: };
+  50: 
+  51: export const RuleBaseIndex = () => {
+  52:   const { token, user, showToast } = useAuth();
+  53:   const [rules, setRules] = useState([]);
+  54:   const [questions, setQuestions] = useState([]);
+  55:   const [accounts, setAccounts] = useState([]);
+  56:   const [loading, setLoading] = useState(true);
+  57: 
+  58:   // Search filter
+  59:   const [search, setSearch] = useState('');
+  60: 
+  61:   // Workspace Tabs State: 'list' | 'visualizer' | 'fakta' | 'rules_diagram'
+  62:   const [activeTab, setActiveTab] = useState('list');
+  63: 
+  64:   // Usaha Filters Nested State inside Tab 1: 'semua' | 'jasa' | 'dagang'
+  65:   const [nestedFilter, setNestedFilter] = useState('semua');
+  66: 
+  67:   // Selected rule for visual logic board
+  68:   const [selectedRule, setSelectedRule] = useState(null);
+  69: 
+  70:   // Collapsible accordion tips states
+  71:   const [openTipIdx, setOpenTipIdx] = useState(0);
+  72: 
+  73:   // Modal states
+  74:   const [showAddModal, setShowAddModal] = useState(false);
+  75:   const [showEditModal, setShowEditModal] = useState(false);
+  76:   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  77: 
+  78:   // Form states & Step Wizard
+  79:   const [formStep, setFormStep] = useState(1); // 1, 2, 3
+  80:   const [selectedRuleId, setSelectedRuleId] = useState(null);
+  81:   const [code, setCode] = useState('');
+  82:   const [name, setName] = useState('');
+  83:   const [businessType, setBusinessType] = useState('semua');
+  84:   const [conclusionAccountId, setConclusionAccountId] = useState('');
+  85:   const [description, setDescription] = useState('');
+  86:   const [isActive, setIsActive] = useState(1);
+  87:   const [conditions, setConditions] = useState([{ fact_name: 'is_penerimaan', expected_value: 'yes' }]);
+  88: 
+  89:   // Zoom & Pan state for interactive flowchart
+  90:   const [scale, setScale] = useState(1.7);
+  91:   const [pan, setPan] = useState({ x: 0, y: 0 });
+  92:   const [isDragging, setIsDragging] = useState(false);
+  93:   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  94:   const flowchartContainerRef = useRef(null);
+  95:   const flowchartRef = useRef(null);
+---------------
+
+Line 165:     if (activeTab === 'rules_diagram') {
+--- Details ---
+  150:           setConclusionAccountId(aData.accounts[0].id.toString());
+  151:         }
+  152:       }
+  153:     } catch (err) {
+  154:       console.error(err);
+  155:     }
+  156:   };
+  157: 
+  158:   useEffect(() => {
+  159:     fetchRules();
+  160:     fetchDependencies();
+  161:   }, [token]);
+  162: 
+  163:   // Effect for rendering Mermaid diagram dynamically
+  164:   useEffect(() => {
+  165:     if (activeTab === 'rules_diagram') {
+  166:       const renderDiagram = () => {
+  167:         if (window.mermaid && flowchartRef.current) {
+  168:           try {
+  169:             // Set raw definition
+  170:             flowchartRef.current.innerHTML = `<div class="mermaid">graph TD
+  171:     Start(["  Mulai Transaksi  "]) --> Q001{"Arah Transaksi?<br/>(is_inbound)"}
+  172:     
+  173:     %% CABANG INBOUND (PENERIMAAN)
+  174:     Q001 -- TERIMA --> Q005In{"Pembayaran Kredit?<br/>(is_kredit)"}
+  175:     
+  176:     %% Inbound Kredit (Piutang)
+  177:     Q005In -- Ya --> R002["1-1200 Piutang Usaha"]
+  178:     
+  179:     %% Inbound Tunai
+  180:     Q005In -- Tidak --> Q009{"Setoran Modal?<br/>(is_setoran_modal)"}
+  181:     Q009 -- Ya --> R007["3-1000 Modal Pemilik"]
+  182:     
+  183:     Q009 -- Tidak --> Q015{"Pinjaman Bank?<br/>(is_pinjaman_bank)"}
+  184:     Q015 -- Ya --> R015["2-2000 Hutang Bank"]
+  185:     
+  186:     Q015 -- Tidak --> Q000In{"Jenis Usaha?"}
+  187:     
+  188:     %% Dagang - Penjualan Barang
+  189:     Q000In -- Dagang --> Q003{"Penjualan Barang?<br/>(is_penjualan_barang)"}
+  190:     Q003 -- Ya --> R009["4-1000 Pendapatan Penjualan"]
+  191:     Q003 -- Tidak --> Q112D{"Terima Piutang?<br/>(is_penerimaan_piutang)"}
+  192:     
+  193:     %% Jasa - Penjualan Jasa
+  194:     Q000In -- Jasa --> Q004{"Penjualan Jasa?<br/>(is_penjualan_jasa)"}
+  195:     Q004 -- Ya --> R010["4-1100 Pendapatan Jasa"]
+  196:     Q004 -- Tidak --> Q112J{"Terima Piutang?<br/>(is_penerimaan_piutang)"}
+  197:     
+  198:     Q112D -- Ya --> R019["1-1000 Kas Utama"]
+  199:     Q112D -- Tidak --> R001["1-1000 Kas Utama"]
+---------------
+
+Line 1116:             onClick={() => setActiveTab('rules_diagram')}
+--- Details ---
+  1101:           <button
+  1102:             onClick={() => setActiveTab('list')}
+  1103:             className={`rule-tab-btn ${activeTab === 'list' ? 'active' : ''}`}
+  1104:             style={{ whiteSpace: 'nowrap' }}
+  1105:           >
+  1106:             📁 Daftar Aturan
+  1107:           </button>
+  1108:           <button
+  1109:             onClick={() => setActiveTab('fakta')}
+  1110:             className={`rule-tab-btn ${activeTab === 'fakta' ? 'active' : ''}`}
+  1111:             style={{ whiteSpace: 'nowrap' }}
+  1112:           >
+  1113:             📝 Daftar Fakta
+  1114:           </button>
+  1115:           <button
+  1116:             onClick={() => setActiveTab('rules_diagram')}
+  1117:             className={`rule-tab-btn ${activeTab === 'rules_diagram' ? 'active' : ''}`}
+  1118:             style={{ whiteSpace: 'nowrap' }}
+  1119:           >
+  1120:             📊 Flowchart & Matriks
+  1121:           </button>
+  1122:           <button
+  1123:             onClick={() => setActiveTab('visualizer')}
+  1124:             className={`rule-tab-btn ${activeTab === 'visualizer' ? 'active' : ''}`}
+  1125:             style={{ whiteSpace: 'nowrap' }}
+  1126:           >
+  1127:             👁️‍🗨️ Visualizer Logika
+  1128:           </button>
+  1129: 
+  1130:         </div>
+  1131:       </div>
+  1132: 
+  1133:       {/* Tab 1: Daftar Aturan */}
+  1134:       {activeTab === 'list' && (
+  1135:         <div className="anim-fade-in">
+  1136:           <div className="card" style={{ padding: 0, borderRadius: '12px', overflow: 'hidden' }}>
+  1137:             {/* Table Actions Header */}
+  1138:             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', backgroundColor: 'var(--background)' }}>
+  1139: 
+  1140:               {/* Nested Business Type Filter Tabs */}
+  1141:               <div style={{ display: 'flex', gap: '0.25rem', backgroundColor: 'var(--surface)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+  1142:                 {[
+  1143:                   { id: 'semua', label: 'Semua Usaha' },
+  1144:                   { id: 'jasa', label: 'Usaha Jasa' },
+  1145:                   { id: 'dagang', label: 'Usaha Dagang' }
+  1146:                 ].map(tab => (
+  1147:                   <button
+  1148:                     key={tab.id}
+  1149:                     onClick={() => setNestedFilter(tab.id)}
+  1150:                     style={{
+---------------
+
+Line 1117:             className={`rule-tab-btn ${activeTab === 'rules_diagram' ? 'active' : ''}`}
+--- Details ---
+  1102:             onClick={() => setActiveTab('list')}
+  1103:             className={`rule-tab-btn ${activeTab === 'list' ? 'active' : ''}`}
+  1104:             style={{ whiteSpace: 'nowrap' }}
+  1105:           >
+  1106:             📁 Daftar Aturan
+  1107:           </button>
+  1108:           <button
+  1109:             onClick={() => setActiveTab('fakta')}
+  1110:             className={`rule-tab-btn ${activeTab === 'fakta' ? 'active' : ''}`}
+  1111:             style={{ whiteSpace: 'nowrap' }}
+  1112:           >
+  1113:             📝 Daftar Fakta
+  1114:           </button>
+  1115:           <button
+  1116:             onClick={() => setActiveTab('rules_diagram')}
+  1117:             className={`rule-tab-btn ${activeTab === 'rules_diagram' ? 'active' : ''}`}
+  1118:             style={{ whiteSpace: 'nowrap' }}
+  1119:           >
+  1120:             📊 Flowchart & Matriks
+  1121:           </button>
+  1122:           <button
+  1123:             onClick={() => setActiveTab('visualizer')}
+  1124:             className={`rule-tab-btn ${activeTab === 'visualizer' ? 'active' : ''}`}
+  1125:             style={{ whiteSpace: 'nowrap' }}
+  1126:           >
+  1127:             👁️‍🗨️ Visualizer Logika
+  1128:           </button>
+  1129: 
+  1130:         </div>
+  1131:       </div>
+  1132: 
+  1133:       {/* Tab 1: Daftar Aturan */}
+  1134:       {activeTab === 'list' && (
+  1135:         <div className="anim-fade-in">
+  1136:           <div className="card" style={{ padding: 0, borderRadius: '12px', overflow: 'hidden' }}>
+  1137:             {/* Table Actions Header */}
+  1138:             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', backgroundColor: 'var(--background)' }}>
+  1139: 
+  1140:               {/* Nested Business Type Filter Tabs */}
+  1141:               <div style={{ display: 'flex', gap: '0.25rem', backgroundColor: 'var(--surface)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+  1142:                 {[
+  1143:                   { id: 'semua', label: 'Semua Usaha' },
+  1144:                   { id: 'jasa', label: 'Usaha Jasa' },
+  1145:                   { id: 'dagang', label: 'Usaha Dagang' }
+  1146:                 ].map(tab => (
+  1147:                   <button
+  1148:                     key={tab.id}
+  1149:                     onClick={() => setNestedFilter(tab.id)}
+  1150:                     style={{
+  1151:                       padding: '0.4rem 0.85rem',
+---------------
+
+Line 1761:       {activeTab === 'rules_diagram' && (
+--- Details ---
+  1746:               <tbody>
+  1747:                 {questions.map(q => (
+  1748:                   <tr key={q.id} style={{ borderBottom: '1px solid var(--border)' }}>
+  1749:                     <td style={{ padding: '1rem', fontWeight: 600 }}>{q.code}</td>
+  1750:                     <td style={{ padding: '1rem', fontFamily: 'monospace', color: 'var(--primary)' }}>{q.fact_name}</td>
+  1751:                     <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{q.question_text}</td>
+  1752:                   </tr>
+  1753:                 ))}
+  1754:               </tbody>
+  1755:             </table>
+  1756:           </div>
+  1757:         </div>
+  1758:       )}
+  1759: 
+  1760:       {/* Tab 5: Flowchart & Matriks */}
+  1761:       {activeTab === 'rules_diagram' && (
+  1762:         <div className="anim-fade-in">
+  1763:           <div className="card" style={{ padding: '2rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
+  1764:             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Flowchart (Diagram Alir Logika)</h3>
+  1765:             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+  1766:               Representasi diagram alir memetakan percabangan sistem secara eksak sesuai pertanyaan yang muncul kepada pengguna.
+  1767:             </p>
+  1768:             <div
+  1769:               ref={flowchartContainerRef}
+  1770:               onMouseDown={(e) => {
+  1771:                 if (e.button !== 0) return;
+  1772:                 setIsDragging(true);
+  1773:                 setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  1774:               }}
+  1775:               onMouseMove={(e) => {
+  1776:                 if (!isDragging) return;
+  1777:                 setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  1778:               }}
+  1779:               onMouseUp={() => setIsDragging(false)}
+  1780:               onMouseLeave={() => setIsDragging(false)}
+  1781:               style={{
+  1782:                 backgroundColor: '#f8fafc',
+  1783:                 borderRadius: '12px',
+  1784:                 border: '1px solid var(--border)',
+  1785:                 height: 'calc(100vh - 280px)',
+  1786:                 minHeight: '600px',
+  1787:                 overflow: 'hidden',
+  1788:                 position: 'relative',
+  1789:                 cursor: isDragging ? 'grabbing' : 'grab',
+  1790:                 userSelect: 'none'
+  1791:               }}
+  1792:             >
+  1793:               {/* Floating Zoom Controls */}
+  1794:               <div style={{
+  1795:                 position: 'absolute',
+---------------

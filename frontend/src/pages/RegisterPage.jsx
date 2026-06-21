@@ -74,7 +74,7 @@ export const RegisterPage = () => {
         }}>
           {/* Logo & Header */}
           <div>
-            <div 
+            <div
               style={{ display: 'flex', flexDirection: 'column', marginBottom: '2rem', cursor: 'pointer' }}
               onClick={() => navigateTo('landing')}
             >
@@ -98,7 +98,7 @@ export const RegisterPage = () => {
                   <label className="form-label" style={{ color: '#475569', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.5rem', display: 'block' }}>Nama Lengkap *</label>
                   <input
                     type="text"
-                    placeholder="Budi Santoso"
+                    placeholder="Zikri Zildan"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     style={{
@@ -121,7 +121,7 @@ export const RegisterPage = () => {
                   <label className="form-label" style={{ color: '#475569', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.5rem', display: 'block' }}>Alamat Email *</label>
                   <input
                     type="email"
-                    placeholder="budi@perusahaan.com"
+                    placeholder="zikribumble@datingAPP.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     style={{
@@ -147,7 +147,7 @@ export const RegisterPage = () => {
                   <label className="form-label" style={{ color: '#475569', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.5rem', display: 'block' }}>Nama Usaha</label>
                   <input
                     type="text"
-                    placeholder="Laundry Berkah"
+                    placeholder="DATINGAPP MUAH"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
                     style={{
@@ -240,8 +240,8 @@ export const RegisterPage = () => {
                 </div>
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 style={{
                   width: '100%', padding: '0.85rem', fontSize: '0.9rem', fontWeight: 800,
                   borderRadius: '10px', border: 'none', backgroundColor: '#2563eb', color: 'white',
@@ -257,8 +257,8 @@ export const RegisterPage = () => {
 
             <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>
               Sudah memiliki akun?{' '}
-              <button 
-                onClick={() => navigateTo('login')} 
+              <button
+                onClick={() => navigateTo('login')}
                 style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 800, cursor: 'pointer', padding: 0 }}
               >
                 Masuk
