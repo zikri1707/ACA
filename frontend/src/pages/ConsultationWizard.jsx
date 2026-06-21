@@ -400,8 +400,50 @@ export const ConsultationWizard = () => {
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-                  <button onClick={handleBack} className="btn btn-secondary" style={{ padding: '0.75rem 1.5rem', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 600 }}>
-                    ← Kembali
+                  <button 
+                    onClick={handleBack} 
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--primary)';
+                      e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.2)';
+                      e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.04)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.08)';
+                      const arrow = e.currentTarget.querySelector('.back-arrow-svg');
+                      if (arrow) arrow.style.transform = 'translateX(-3px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                      e.currentTarget.style.backgroundColor = 'var(--surface)';
+                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.03)';
+                      const arrow = e.currentTarget.querySelector('.back-arrow-svg');
+                      if (arrow) arrow.style.transform = 'none';
+                    }}
+                    style={{ 
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '0.7rem 1.35rem', 
+                      borderRadius: '10px', 
+                      border: '1.5px solid var(--border)',
+                      backgroundColor: 'var(--surface)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.95rem', 
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+                      transition: 'all 0.25s ease'
+                    }}
+                  >
+                    <svg 
+                      className="back-arrow-svg"
+                      style={{ marginRight: '8px', width: '16px', height: '16px', transition: 'transform 0.2s ease', display: 'flex' }} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor" 
+                      strokeWidth={3}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Kembali</span>
                   </button>
                 </div>
               </>
