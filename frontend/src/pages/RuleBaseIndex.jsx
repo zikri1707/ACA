@@ -1170,10 +1170,10 @@ export const RuleBaseIndex = () => {
         <div className="anim-fade-in">
           <div className="card" style={{ padding: 0, borderRadius: '12px', overflow: 'hidden' }}>
             {/* Table Actions Header */}
-            <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', backgroundColor: 'var(--background)' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem', backgroundColor: 'var(--background)' }}>
               
               {/* Nested Business Type Filter Tabs */}
-              <div style={{ display: 'flex', gap: '0.25rem', backgroundColor: 'var(--surface)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'var(--surface)', padding: '6px', borderRadius: '10px', border: '1px solid var(--border)' }}>
                 {[
                   { id: 'semua', label: 'Semua Usaha' },
                   { id: 'jasa', label: 'Usaha Jasa' },
@@ -1183,13 +1183,13 @@ export const RuleBaseIndex = () => {
                     key={tab.id}
                     onClick={() => setNestedFilter(tab.id)}
                     style={{
-                      padding: '0.4rem 0.85rem',
-                      borderRadius: '6px',
+                      padding: '0.6rem 1.2rem',
+                      borderRadius: '8px',
                       border: 'none',
                       backgroundColor: nestedFilter === tab.id ? 'var(--primary)' : 'transparent',
                       color: nestedFilter === tab.id ? 'white' : 'var(--text-secondary)',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
+                      fontSize: '0.95rem',
+                      fontWeight: 700,
                       cursor: 'pointer',
                       transition: 'var(--transition)'
                     }}
@@ -1200,10 +1200,10 @@ export const RuleBaseIndex = () => {
               </div>
 
               {/* Search & Add Rule */}
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flex: 1, justifyContent: 'flex-end', maxWidth: '450px' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flex: 1, justifyContent: 'flex-end', maxWidth: '550px' }}>
                 <div style={{ position: 'relative', flex: 1 }}>
-                  <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', display: 'flex' }}>
-                    <SearchIcon className="w-4 h-4" />
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', display: 'flex' }}>
+                    <SearchIcon className="w-5 h-5" />
                   </span>
                   <input
                     type="text"
@@ -1211,7 +1211,7 @@ export const RuleBaseIndex = () => {
                     placeholder="Cari Kode, Nama, atau Hasil Akun..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    style={{ paddingLeft: '32px', borderRadius: '8px', fontSize: '0.85rem' }}
+                    style={{ paddingLeft: '40px', paddingRight: '12px', paddingTop: '0.65rem', paddingBottom: '0.65rem', borderRadius: '10px', fontSize: '1rem' }}
                   />
                 </div>
 
@@ -1219,9 +1219,9 @@ export const RuleBaseIndex = () => {
                   <button
                     onClick={() => { resetForm(); setShowAddModal(true); }}
                     className="btn btn-primary"
-                    style={{ padding: '0.55rem 1.1rem', fontSize: '0.85rem', borderRadius: '8px', whiteSpace: 'nowrap' }}
+                    style={{ padding: '0.65rem 1.3rem', fontSize: '0.95rem', borderRadius: '10px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
                   >
-                    <PlusIcon className="w-4 h-4" /> Tambah Rule
+                    <PlusIcon className="w-5 h-5" /> Tambah Rule
                   </button>
                 )}
               </div>
