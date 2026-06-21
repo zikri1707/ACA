@@ -20,7 +20,7 @@ export const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '88px' : '260px');
+    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '90px' : '280px');
   }, [isCollapsed]);
 
   if (!user) return null;
@@ -28,16 +28,16 @@ export const Sidebar = () => {
   const isAdmin = user.role === 'Admin';
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon className="w-5 h-5" /> },
-    { id: 'consultation', label: 'Konsultasi', icon: <ConsultationIcon className="w-5 h-5" /> },
-    { id: 'rules', label: 'Rule Base', icon: <RulesIcon className="w-5 h-5" /> },
-    { id: 'history', label: 'Riwayat', icon: <HistoryIcon className="w-5 h-5" /> },
-    // { id: 'reports', label: 'Laporan', icon: <ReportsIcon className="w-5 h-5" /> },
-    { id: 'profile', label: 'Profil Saya', icon: <ProfileIcon className="w-5 h-5" /> }
+    { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon className="w-6 h-6" /> },
+    { id: 'consultation', label: 'Konsultasi', icon: <ConsultationIcon className="w-6 h-6" /> },
+    { id: 'rules', label: 'Rule Base', icon: <RulesIcon className="w-6 h-6" /> },
+    { id: 'history', label: 'Riwayat', icon: <HistoryIcon className="w-6 h-6" /> },
+    // { id: 'reports', label: 'Laporan', icon: <ReportsIcon className="w-6 h-6" /> },
+    { id: 'profile', label: 'Profil Saya', icon: <ProfileIcon className="w-6 h-6" /> }
   ];
 
   if (isAdmin) {
-    menuItems.push({ id: 'settings', label: 'Pengaturan', icon: <SettingsIcon className="w-5 h-5" /> });
+    menuItems.push({ id: 'settings', label: 'Pengaturan', icon: <SettingsIcon className="w-6 h-6" /> });
   }
 
   const handleLogoutClick = () => setShowLogoutModal(true);
@@ -63,27 +63,27 @@ export const Sidebar = () => {
         display: 'flex',
         flexDirection: 'column',
         zIndex: 100,
-        padding: '1.5rem 1rem',
+        padding: '1.75rem 1.25rem',
         transition: 'width 0.3s ease'
       }}>
         {/* System branding */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: '2rem', paddingLeft: isCollapsed ? '0' : '0.5rem',
+          marginBottom: '2.5rem', paddingLeft: isCollapsed ? '0' : '0.75rem',
           flexDirection: isCollapsed ? 'column' : 'row',
           gap: isCollapsed ? '1rem' : '0'
         }}>
           {!isCollapsed ? (
             <div style={{ display: 'flex', flexDirection: 'column' }} onClick={() => navigateTo('dashboard')} className="cursor-pointer">
-              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.025em' }}>
+              <span style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.03em' }}>
                 ACA Advisor
               </span>
-              <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+              <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
                 Expert System
               </span>
             </div>
           ) : (
-            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.1rem', cursor: 'pointer' }} onClick={() => navigateTo('dashboard')}>
+            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.25rem', cursor: 'pointer' }} onClick={() => navigateTo('dashboard')}>
               ACA
             </div>
           )}
@@ -94,7 +94,8 @@ export const Sidebar = () => {
               background: 'var(--primary-light)', border: 'none', cursor: 'pointer',
               color: 'var(--primary)', display: 'flex', alignItems: 'center',
               justifyContent: 'center', padding: '0.4rem', borderRadius: '8px',
-              transition: 'all 0.2s ease', width: '32px', height: '32px'
+              transition: 'all 0.2s ease', width: '36px', height: '36px',
+              fontSize: '1.1rem'
             }}
             className="sidebar-toggle"
             title={isCollapsed ? "Buka Menu" : "Tutup Menu"}
@@ -104,7 +105,7 @@ export const Sidebar = () => {
         </div>
 
         {/* Navigation Menu */}
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
           {menuItems.map(item => {
             const isActive = currentPage === item.id ||
               (item.id === 'consultation' && currentPage === 'consultation-wizard');
@@ -113,12 +114,12 @@ export const Sidebar = () => {
                 key={item.id}
                 onClick={() => navigateTo(item.id)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '0.75rem',
-                  padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', border: 'none',
+                  display: 'flex', alignItems: 'center', gap: '1rem',
+                  padding: '0.9rem 1.25rem', borderRadius: '10px', border: 'none',
                   backgroundColor: isActive ? 'var(--primary-light)' : 'transparent',
                   color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-                  cursor: 'pointer', fontWeight: isActive ? 600 : 500,
-                  fontSize: '0.9rem', textAlign: 'left', transition: 'var(--transition)',
+                  cursor: 'pointer', fontWeight: isActive ? 700 : 500,
+                  fontSize: '1.05rem', textAlign: 'left', transition: 'var(--transition)',
                   justifyContent: isCollapsed ? 'center' : 'flex-start'
                 }}
                 className="sidebar-link"
@@ -139,9 +140,9 @@ export const Sidebar = () => {
               title={isCollapsed ? "Keluar" : undefined}
               style={{
                 width: '100%',
-                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                display: 'flex', alignItems: 'center', gap: '1rem',
                 justifyContent: isCollapsed ? 'center' : 'flex-start',
-                padding: isCollapsed ? '0.85rem 0' : '0.85rem 1rem',
+                padding: isCollapsed ? '1rem 0' : '1rem 1.25rem',
                 borderRadius: '12px',
                 border: logoutHover ? '1.5px solid #fca5a5' : '1.5px solid #fecdd3',
                 background: logoutHover
@@ -150,7 +151,7 @@ export const Sidebar = () => {
                 color: logoutHover ? '#b91c1c' : '#ef4444',
                 cursor: 'pointer',
                 fontWeight: 700,
-                fontSize: '0.88rem',
+                fontSize: '1rem',
                 textAlign: 'left',
                 transition: 'all 0.25s ease',
                 boxShadow: logoutHover
@@ -161,16 +162,16 @@ export const Sidebar = () => {
             >
               <span style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: '28px', height: '28px', borderRadius: '8px',
+                width: '32px', height: '32px', borderRadius: '8px',
                 backgroundColor: logoutHover ? '#fca5a5' : '#fecdd3',
                 transition: 'all 0.25s ease',
                 flexShrink: 0
               }}>
-                <LogoutIcon className="w-4 h-4" />
+                <LogoutIcon className="w-5 h-5" />
               </span>
               {!isCollapsed && <span>Keluar</span>}
               {!isCollapsed && logoutHover && (
-                <span style={{ marginLeft: 'auto', fontSize: '0.7rem', opacity: 0.7 }}>→</span>
+                <span style={{ marginLeft: 'auto', fontSize: '0.8rem', opacity: 0.7 }}>→</span>
               )}
             </button>
           </div>
@@ -179,14 +180,14 @@ export const Sidebar = () => {
         {/* User Card */}
         <div style={{
           borderTop: '1px solid var(--border)',
-          paddingTop: '1rem', marginTop: '1rem',
-          display: 'flex', alignItems: 'center', gap: '0.75rem',
+          paddingTop: '1.25rem', marginTop: '1.25rem',
+          display: 'flex', alignItems: 'center', gap: '1rem',
           justifyContent: isCollapsed ? 'center' : 'flex-start'
         }}>
           <div style={{
-            width: '40px', height: '40px', borderRadius: '50%',
+            width: '46px', height: '46px', borderRadius: '50%',
             background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-            color: 'white', fontWeight: 700, fontSize: '0.9rem',
+            color: 'white', fontWeight: 700, fontSize: '1.05rem',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0, boxShadow: '0 2px 8px rgba(37,99,235,0.3)'
           }} title={isCollapsed ? user.name : undefined}>
@@ -194,8 +195,8 @@ export const Sidebar = () => {
           </div>
           {!isCollapsed && (
             <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{user.name}</h4>
-              <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{user.name}</h4>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
                 {isAdmin ? 'Senior Accountant' : `${user.business_name || 'UMKM Owner'}`}
               </p>
             </div>
