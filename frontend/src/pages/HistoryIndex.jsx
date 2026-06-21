@@ -179,18 +179,23 @@ export const HistoryIndex = () => {
       {/* ─── KPI Cards (real data) ─── */}
       <div className="grid-cols-4">
         {[
-          { label: 'Total Konsultasi',      value: stats?.total ?? '—',        sub: 'Semua riwayat tersimpan',         color: '#2563eb', icon: '📋' },
-          { label: 'Berhasil Diklasifikasi',value: stats?.classified ?? '—',   sub: `${stats?.accuracy ?? 0}% tingkat keberhasilan`, color: '#10b981', icon: '✅' },
-          { label: 'Rata-rata Keyakinan',   value: `${stats?.avgConf ?? 0}%`,  sub: 'Confidence score rata-rata',      color: '#7c3aed', icon: '🎯' },
-          { label: 'Akurasi Klasifikasi',   value: `${stats?.accuracy ?? 0}%`, sub: 'Berdasarkan SAK EMKM',            color: '#f59e0b', icon: '📊' },
+          { label: 'Total Konsultasi',       value: stats?.total ?? '—',        sub: 'Semua riwayat tersimpan',         borderColor: '#2563eb' },
+          { label: 'Berhasil Diklasifikasi', value: stats?.classified ?? '—',   sub: `${stats?.accuracy ?? 0}% tingkat keberhasilan`, borderColor: '#10b981', valueColor: '#10b981', subColor: '#10b981' },
+          { label: 'Rata-rata Keyakinan',    value: `${stats?.avgConf ?? 0}%`,  sub: 'Confidence score rata-rata',      borderColor: '#7c3aed', valueColor: '#7c3aed', subColor: '#7c3aed' },
+          { label: 'Akurasi Klasifikasi',    value: `${stats?.accuracy ?? 0}%`, sub: 'Berdasarkan SAK EMKM',            borderColor: '#f59e0b', valueColor: '#f59e0b', subColor: '#f59e0b' },
         ].map((card, i) => (
-          <div key={i} className="card" style={{ padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: '-12px', right: '-12px', width: '70px', height: '70px', borderRadius: '50%', backgroundColor: card.color + '18' }} />
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-              {card.icon} {card.label}
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: card.color, lineHeight: 1 }}>{loading ? '...' : card.value}</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>{card.sub}</div>
+          <div key={i} className="card" style={{
+            padding: '1.75rem 2rem',
+            borderRadius: '16px',
+            borderLeft: `6px solid ${card.borderColor}`,
+            boxShadow: `0 10px 25px -5px ${card.borderColor}22`,
+            display: 'flex', flexDirection: 'column', gap: '0.35rem'
+          }}>
+            <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</span>
+            <h2 style={{ fontSize: '3rem', fontWeight: 800, margin: '0.25rem 0', color: card.valueColor || 'var(--text-primary)', lineHeight: 1.1 }}>
+              {loading ? '…' : card.value}
+            </h2>
+            <span style={{ fontSize: '0.9rem', color: card.subColor || 'var(--text-secondary)', fontWeight: card.subColor ? 700 : 500 }}>{card.sub}</span>
           </div>
         ))}
       </div>
