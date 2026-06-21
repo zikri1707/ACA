@@ -831,7 +831,7 @@ export const RuleBaseIndex = () => {
     
     if (nestedFilter === 'semua') return matchesSearch;
     return matchesSearch && r.business_type.toLowerCase() === nestedFilter;
-  });
+  }).sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
 
   return (
     <div style={{ position: 'relative' }}>
