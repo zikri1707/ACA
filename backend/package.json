@@ -9,7 +9,6 @@
     "db:init": "node src/config/initDb.js"
   },
   "dependencies": {
-    "aca-monorepo": "file:..",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.19.2",

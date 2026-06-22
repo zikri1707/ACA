@@ -11,8 +11,15 @@ import settingsRoutes from './routes/settingsRoutes.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enable CORS for all domains (essential for Vite frontend connectivity)
-app.use(cors());
+// CORS configuration — supports local dev and Netlify production
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL, 'http://localhost:3000', 'http://localhost:3002']
+  : true; // allow all in dev
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes registration

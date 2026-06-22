@@ -511,7 +511,7 @@ export const RuleBaseIndex = () => {
 
   const fetchAllConditions = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/rule-conditions');
+      const res = await fetch('/api/rule-conditions');
       const data = await res.json();
       setAllConditions(data || []);
     } catch (err) {
