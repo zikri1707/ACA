@@ -12,9 +12,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // CORS configuration — supports local dev and Netlify production
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL, 'http://localhost:3000', 'http://localhost:3002']
-  : true; // allow all in dev
+const allowedOrigins = [
+  'https://akuntansiexpert.netlify.app', // Netlify production
+  'http://localhost:3000',
+  'http://localhost:3002',
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])
+];
 
 app.use(cors({
   origin: allowedOrigins,
