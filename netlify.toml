@@ -7,7 +7,7 @@
 # Ganti RAILWAY_URL dengan URL Railway kamu setelah deploy
 [[redirects]]
   from = "/api/*"
-  to   = "https://RAILWAY_URL/api/:splat"
+  to   = "https://aca-backend-production.up.railway.app/api/:splat"
   status = 200
   force = true
 
