@@ -223,9 +223,9 @@ export const RuleBaseIndex = () => {
     %% --- SUB-BLOK ASET (jalur mandiri, tidak lagi bertemu jalur beban) ---
     OB2 -- TRUE --> OB2_M{"Q-008 — is_manfaat_lebih_1_tahun?<br/>Apakah aset memiliki masa manfaat<br/>lebih dari satu tahun?"}
     OB2_M -- TRUE --> B3["G-11: Pembelian Aset Tetap<br/>Db: Peralatan<br/>Cr: Kas Utama"]
-    OB2_M -- FALSE --> OB2_AL{"Q-016 — is_pembelian_perlengkapan?<br/>Apakah pembelian ini termasuk<br/>perlengkapan (Like ATK office)?"}
-    OB2_AL -- TRUE --> B12["G-21: Perlengkapan<br/>Db: Perlengkapan<br/>Cr: Kas Utama / Hutang Dagang"]
-    OB2_AL -- FALSE --> B15["G-23: Pembelian Aset Lainnya<br/>Db: Aset Lain-lain<br/>Cr: Kas Utama / Hutang Dagang<br/><i>Default/Fallback (Aset)</i>"]
+    OB2_M -- FALSE --> OB2_AL{"Q-016 — is_pembelian_perlengkapan?<br/>Apakah pembelian ini termasuk<br/>perlengkapan (seperti ATK kantor)?"}
+    OB2_AL -- TRUE --> B12["G-21: Pembelian Aset Lancar<br/>Db: Perlengkapan<br/>Cr: Kas Utama"]
+    OB2_AL -- FALSE --> B15["G-23: Pembelian Aset Lain-lain<br/>Db: Perlengkapan<br/>Cr: Kas Utama<br/><i>Default/Fallback (Aset)</i>"]
 
     OB2 -- FALSE --> OB3{"Q-010 — is_prive?<br/>Apakah pengeluaran digunakan untuk<br/>kepentingan pribadi pemilik (prive)?"}
     OB3 -- TRUE --> B4["G-12: Prive<br/>Db: Prive<br/>Cr: Kas Utama"]
@@ -239,7 +239,7 @@ export const RuleBaseIndex = () => {
     OB4_B -- FALSE --> B6X["G-15: Pelunasan Hutang Lainnya<br/>Db: Hutang Lain-lain<br/>Cr: Kas Utama"]
     %% SUB-BLOK: PEMBAYARAN BEBAN (jalur mandiri, tidak lagi bertemu jalur aset)
     OB4 -- FALSE --> OB5{"Q-018 — is_beban?<br/>Apakah pengeluaran ditujukan untuk<br/>pembayaran beban?"}
-    OB5 -- FALSE --> B13["G-22: Pengeluaran Kas Lainnya<br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback</i>"]
+    OB5 -- FALSE --> B13["Tidak Terklasifikasi"]
     OB5 -- TRUE --> OB5_G{"Q-011 — is_beban_gaji?<br/>Apakah pengeluaran merupakan<br/>pembayaran gaji?"}
 
     OB5_G -- TRUE --> B7["G-16: Beban Gaji<br/>Db: Beban Gaji<br/>Cr: Kas Utama"]
@@ -254,7 +254,7 @@ export const RuleBaseIndex = () => {
     OB5_P -- TRUE --> B10["G-19: Beban Pemasaran<br/>Db: Beban Pemasaran<br/>Cr: Kas Utama"]
     OB5_P -- FALSE --> OB5_ATK{"Q-014 — is_beban_atk?<br/>Apakah pengeluaran ini termasuk<br/>biaya ATK (alat tulis kantor)?"}
     OB5_ATK -- TRUE --> B11["G-20: Beban ATK<br/>Db: Beban ATK<br/>Cr: Kas Utama"]
-    OB5_ATK -- FALSE --> B14["G-22: Beban Lain-lain<br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback (Beban)</i>"]
+    OB5_ATK -- FALSE --> B14["G-24: Beban Lain-lain<br/>Db: Beban Lain-lain<br/>Cr: Kas Utama<br/><i>Default/Fallback (Beban)</i>"]
 </div>`;
             window.mermaid.initialize({
               startOnLoad: false,
@@ -522,16 +522,38 @@ export const RuleBaseIndex = () => {
   const getRuleNarrative = (code) => {
     const q = (id) => questions.find(x => x.fact_name === id)?.question_text || id;
     
-    const rule = rules.find(r => r.code === code);
+    let rule = rules.find(r => r.code === code);
     if (!rule || !rule.conditions || rule.conditions.length === 0) {
       return [];
     }
+
+    // Inject gateway conditions dynamically for visualizer (sync with backend)
+    const injectedConds = [...rule.conditions];
+    if (['G-13', 'G-14', 'G-15'].includes(rule.code)) {
+      if (!injectedConds.find(c => c.fact_name === 'is_pelunasan_hutang')) {
+        injectedConds.push({ fact_name: 'is_pelunasan_hutang', expected_value: 'yes' });
+      }
+    } else if (['G-16', 'G-17', 'G-18', 'G-19', 'G-20', 'G-24'].includes(rule.code)) {
+      if (!injectedConds.find(c => c.fact_name === 'is_beban')) {
+        injectedConds.push({ fact_name: 'is_beban', expected_value: 'yes' });
+      }
+    }
+    rule = { ...rule, conditions: injectedConds };
 
     const generateQuestionSequence = (targetRule) => {
       if (!targetRule || !targetRule.conditions) return [];
       
       const activeRules = [...rules]
         .filter(r => r.is_active === 1)
+        .map(r => {
+          const newConds = [...(r.conditions || [])];
+          if (['G-13', 'G-14', 'G-15'].includes(r.code)) {
+            if (!newConds.find(c => c.fact_name === 'is_pelunasan_hutang')) newConds.push({ fact_name: 'is_pelunasan_hutang', expected_value: 'yes' });
+          } else if (['G-16', 'G-17', 'G-18', 'G-19', 'G-20', 'G-24'].includes(r.code)) {
+            if (!newConds.find(c => c.fact_name === 'is_beban')) newConds.push({ fact_name: 'is_beban', expected_value: 'yes' });
+          }
+          return { ...r, conditions: newConds };
+        })
         .sort((a, b) => b.priority - a.priority);
       
       const targetAnswers = {};
@@ -548,19 +570,22 @@ export const RuleBaseIndex = () => {
         'is_penjualan_barang',
         'is_penjualan_jasa',
         'is_dijual_kembali',
-        'is_kredit',
         'is_pembelian_aset',
         'is_manfaat_lebih_1_tahun',
+        'is_pembelian_perlengkapan',
+        'is_pembelian_aset_lainnya',
+        'is_kredit',
         'is_prive',
         'is_pelunasan_hutang',
-        'is_bayar_beban',
+        'is_pelunasan_hutang_dagang',
+        'is_pelunasan_hutang_bank',
+        'is_beban',
         'is_beban_gaji',
         'is_beban_utilitas',
         'is_beban_sewa',
-        'is_beban_atk',
         'is_beban_pemasaran',
-        'is_pelunasan_hutang_dagang',
-        'is_pelunasan_hutang_bank'
+        'is_beban_atk',
+        'is_beban_lainnya'
       ];
 
       const businessType = targetRule.business_type === 'jasa' ? 'jasa' : 'dagang';
@@ -806,7 +831,7 @@ export const RuleBaseIndex = () => {
     
     if (nestedFilter === 'semua') return matchesSearch;
     return matchesSearch && r.business_type.toLowerCase() === nestedFilter;
-  });
+  }).sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
 
   return (
     <div style={{ position: 'relative' }}>

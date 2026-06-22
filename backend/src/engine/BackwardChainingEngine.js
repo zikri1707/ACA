@@ -158,11 +158,11 @@ export class BackwardChainingEngine {
       'is_penjualan_barang',
       'is_penjualan_jasa',
       'is_dijual_kembali',
-      'is_kredit',
       'is_pembelian_aset',
       'is_manfaat_lebih_1_tahun',
       'is_pembelian_perlengkapan',
       'is_pembelian_aset_lainnya',
+      'is_kredit',
       'is_prive',
       'is_pelunasan_hutang',
       'is_pelunasan_hutang_dagang',
@@ -178,23 +178,7 @@ export class BackwardChainingEngine {
 
     const memoryRules = [];
     for (const rule of rulesRows) {
-      if (rule.code === 'G-21' || rule.code === 'G-23') {
-        // Kredit (priority higher)
-        memoryRules.push({
-          ...rule,
-          variant: 'kredit',
-          priority: rule.priority + 1,
-          credit_account_id: accountsMapByCode['2-1000']?.id || rule.credit_account_id
-        });
-        // Tunai
-        memoryRules.push({
-          ...rule,
-          variant: 'tunai',
-          credit_account_id: accountsMapByCode['1-1000']?.id || rule.credit_account_id
-        });
-      } else {
-        memoryRules.push(rule);
-      }
+      memoryRules.push(rule);
     }
 
     // Re-sort rules in memory by priority DESC
@@ -208,15 +192,6 @@ export class BackwardChainingEngine {
         conditions.push({ fact_name: 'is_pelunasan_hutang', expected_value: 'yes' });
       } else if (rule.code === 'G-16' || rule.code === 'G-17' || rule.code === 'G-18' || rule.code === 'G-19' || rule.code === 'G-20' || rule.code === 'G-24') {
         conditions.push({ fact_name: 'is_beban', expected_value: 'yes' });
-      }
-
-      // Inject kredit condition for G-21/G-23 variants
-      if (rule.code === 'G-21' || rule.code === 'G-23') {
-        if (rule.variant === 'kredit') {
-          conditions.push({ fact_name: 'is_kredit', expected_value: 'yes' });
-        } else if (rule.variant === 'tunai') {
-          conditions.push({ fact_name: 'is_kredit', expected_value: 'no' });
-        }
       }
 
       // Sort conditions using logical priority order

@@ -251,7 +251,7 @@ async function init() {
       { code: 'Q-013', question_text: 'Apakah pengeluaran merupakan pembayaran sewa?', fact_name: 'is_beban_sewa' },
       { code: 'Q-014', question_text: 'Apakah pengeluaran ini termasuk biaya ATK (alat tulis kantor)?', fact_name: 'is_beban_atk' },
       { code: 'Q-015', question_text: 'Apakah penerimaan berasal dari pinjaman bank?', fact_name: 'is_pinjaman_bank' },
-      { code: 'Q-016', question_text: 'Apakah pembelian ini termasuk perlengkapan (Seperti ATK kantor)?', fact_name: 'is_pembelian_perlengkapan' },
+      { code: 'Q-016', question_text: 'Apakah pembelian ini termasuk perlengkapan (seperti ATK kantor)?', fact_name: 'is_pembelian_perlengkapan' },
       { code: 'Q-017', question_text: 'Apakah pengeluaran ditujukan untuk pelunasan kewajiban/hutang?', fact_name: 'is_pelunasan_hutang' },
       { code: 'Q-018', question_text: 'Apakah pengeluaran ditujukan untuk pembayaran beban?', fact_name: 'is_beban' },
       { code: 'Q-110', question_text: 'Apakah pengeluaran merupakan biaya pemasaran atau promosi?', fact_name: 'is_beban_pemasaran' },
@@ -488,9 +488,9 @@ async function init() {
         ]
       },
       {
-        code: 'G-21', name: 'Perlengkapan', business_type: 'semua',
+        code: 'G-21', name: 'Pembelian Aset Lancar', business_type: 'semua',
         debit: accMap['1-1500'], credit: accMap['1-1000'],
-        description: 'Pembelian ATK dicatat sebagai aset perlengkapan (pendekatan aset).',
+        description: 'Pembelian aset lancar dicatat sebagai perlengkapan.',
         priority: 95,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
@@ -500,18 +500,9 @@ async function init() {
         ]
       },
       {
-        code: 'G-22', name: 'Pengeluaran Kas Lainnya', business_type: 'semua',
-        debit: accMap['5-9000'], credit: accMap['1-1000'],
-        description: 'Pengeluaran kas lain yang tidak terklasifikasi pada goal sebelumnya.',
-        priority: 1,
-        conditions: [
-          { fact_name: 'is_outbound', expected_value: 'yes' }
-        ]
-      },
-      {
-        code: 'G-23', name: 'Pembelian Aset Lainnya', business_type: 'semua',
-        debit: accMap['1-9000'], credit: accMap['1-1000'],
-        description: 'Pembelian aset lain selain peralatan dan perlengkapan.',
+        code: 'G-23', name: 'Pembelian Aset Lain-lain', business_type: 'semua',
+        debit: accMap['1-1500'], credit: accMap['1-1000'],
+        description: 'Pembelian aset lain selain peralatan dan aset lancar.',
         priority: 90,
         conditions: [
           { fact_name: 'is_outbound', expected_value: 'yes' },
