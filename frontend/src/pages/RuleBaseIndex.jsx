@@ -1133,16 +1133,11 @@ export const RuleBaseIndex = () => {
       `}</style>
 
       {/* Top dashboard metadata summary cards */}
-      <div className="grid-cols-4" style={{ marginBottom: '2rem' }}>
+      <div className="grid-cols-3" style={{ marginBottom: '2rem' }}>
         <div className="card" style={{ padding: '1.75rem 2rem', borderRadius: '16px', borderLeft: '6px solid var(--primary)', boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
           <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Rules</span>
           <h2 style={{ fontSize: '3rem', fontWeight: 800, margin: '0.25rem 0', color: 'var(--text-primary)', lineHeight: 1.1 }}>{rules.length}</h2>
           <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Definisi Sistem Pakar</span>
-        </div>
-        <div className="card" style={{ padding: '1.75rem 2rem', borderRadius: '16px', borderLeft: '6px solid #10b981', boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Akurasi Klasifikasi</span>
-          <h2 style={{ fontSize: '3rem', fontWeight: 800, margin: '0.25rem 0', color: '#10b981', lineHeight: 1.1 }}>98.4%</h2>
-          <span style={{ fontSize: '0.9rem', color: 'var(--success)', fontWeight: 700 }}>Berdasarkan SAK EMKM</span>
         </div>
         <div className="card" style={{ padding: '1.75rem 2rem', borderRadius: '16px', borderLeft: '6px solid #3b82f6', boxShadow: '0 10px 25px -5px rgba(59, 130, 246, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
           <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aturan Aktif</span>

@@ -119,28 +119,12 @@ export const DashboardPage = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
       {/* ─── Stats Row ─── */}
-      <div className="grid-cols-4">
+      <div className="grid-cols-2 no-print">
         <StatCard
           label="Total Konsultasi"
           value={stats.totalConsultations.toLocaleString('id-ID')}
           sub={`${stats.thisMonth} konsultasi bulan ini`}
           borderColor="#2563eb"
-        />
-        <StatCard
-          label="Akurasi Klasifikasi"
-          value={`${stats.accuracyRate}%`}
-          sub={`${stats.classifiedCount} dari ${stats.totalConsultations} terklasifikasi`}
-          borderColor="#10b981"
-          valueColor="#10b981"
-          subColor="#10b981"
-        />
-        <StatCard
-          label="Rata-rata Keyakinan"
-          value={`${stats.avgConfidence}%`}
-          sub="Confidence score rata-rata"
-          borderColor="#7c3aed"
-          valueColor="#7c3aed"
-          subColor="#7c3aed"
         />
         <StatCard
           label="Rule Pakar Aktif"
@@ -151,7 +135,7 @@ export const DashboardPage = () => {
       </div>
 
       {/* ─── Main Layout ─── */}
-      <div className="layout-main-side">
+      <div className="layout-main-side no-print">
 
         {/* LEFT: Chart + Table */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -531,7 +515,7 @@ export const DashboardPage = () => {
                                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#be185d' }}>{creditDisplay}</span>
                               </div>
                             </div>
-                            <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
+                            <div className="no-print" style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
                               <div style={{ textAlign: 'center' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981' }}>{detail.confidence_level}%</div>
                                 <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Confidence</div>
