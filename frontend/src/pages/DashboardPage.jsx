@@ -415,10 +415,9 @@ export const DashboardPage = () => {
               </div>
             </div>
             {[
-              { label: 'Basis Pengetahuan', value: `${stats.totalRules} rule`, ok: stats.totalRules > 0 },
-              { label: 'Akurasi Klasifikasi', value: `${stats.accuracyRate}%`, ok: stats.accuracyRate >= 80 },
+              { label: 'Basis Pengetahuan', value: `${stats.totalRules} rule`, ok: stats.totalRules > 0 }
             ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.9rem 0', borderBottom: i < 1 ? '1px solid var(--border)' : 'none' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.9rem 0', borderBottom: 'none' }}>
                 <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{item.label}</span>
                 <span style={{ fontSize: '0.9rem', fontWeight: 800, color: item.ok ? '#16a34a' : 'var(--danger)' }}>
                   {item.ok ? '✓ ' : '✕ '}{item.value}

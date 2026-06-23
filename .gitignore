@@ -3,3 +3,7 @@ dist
 .DS_Store
 .vscode
 *.sqlite-journal
+.env
+.env.local
+# Keep database.sqlite in git so Railway has initial data
+# ACA_Expert_System.db

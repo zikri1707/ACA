@@ -266,13 +266,7 @@ export const RegisterPage = () => {
             </div>
           </div>
 
-          {/* Footer compliance */}
-          <div style={{
-            fontSize: '0.65rem', color: '#64748b', fontWeight: 800,
-            display: 'flex', alignItems: 'center', gap: '0.35rem', letterSpacing: '0.05em', marginTop: '1.5rem'
-          }}>
-            🛡️ ACA ADVISOR • SAK EMKM AUDIT ENGINE V2.4.0
-          </div>
+
         </div>
 
         {/* Right Side: Decorative Compliance Dashboard Cards */}

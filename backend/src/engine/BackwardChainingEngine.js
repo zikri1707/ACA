@@ -2,21 +2,21 @@ import { query } from '../config/database.js';
 
 export class BackwardChainingEngine {
   static async evaluate(businessType, facts = {}) {
-    // 1. Fetch rules and their details (load all rules for dynamic unified flow)
+    // 1. Fetch rules and their details (filter by business type for strict boundaries)
     const rulesRows = await query(`
       SELECT id, code, name, business_type, description, debit_account_id, credit_account_id, priority
       FROM rules
-      WHERE is_active = 1
+      WHERE is_active = 1 AND (business_type = ? OR business_type = 'semua')
       ORDER BY priority DESC, code ASC
-    `);
+    `, [businessType]);
 
-    // 2. Fetch all conditions
+    // 2. Fetch conditions for the relevant rules only
     const conditionsRows = await query(`
       SELECT rc.rule_id, rc.fact_name, rc.operator, rc.expected_value
       FROM rule_conditions rc
       JOIN rules r ON rc.rule_id = r.id
-      WHERE r.is_active = 1
-    `);
+      WHERE r.is_active = 1 AND (r.business_type = ? OR r.business_type = 'semua')
+    `, [businessType]);
 
     const conditionsByRule = {};
     conditionsRows.forEach(cond => {
