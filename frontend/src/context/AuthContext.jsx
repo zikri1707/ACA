@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   
   // Theme state
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -161,6 +162,8 @@ export const AuthProvider = ({ children }) => {
       currentPage,
       toast,
       theme,
+      sidebarOpen,
+      setSidebarOpen,
       login,
       register,
       logout,

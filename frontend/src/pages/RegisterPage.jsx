@@ -24,17 +24,42 @@ export const RegisterPage = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      backgroundColor: '#f8fafc', // Soft blue-grey background
-      fontFamily: 'var(--font-sans)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
+    <div 
+      className="register-container"
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        backgroundColor: '#f8fafc', // Soft blue-grey background
+        fontFamily: 'var(--font-sans)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      <style>{`
+        @media (max-width: 768px) {
+          .register-container {
+            padding: 1rem !important;
+          }
+          .register-split-card {
+            grid-template-columns: 1fr !important;
+            min-height: auto !important;
+            border-radius: 16px !important;
+          }
+          .register-left-panel {
+            padding: 2.5rem 1.5rem !important;
+          }
+          .register-form-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0 !important;
+          }
+          .register-right-panel {
+            display: none !important;
+          }
+        }
+      `}</style>
       {/* Decorative Light Blue Glows */}
       <div style={{
         position: 'absolute', top: '-10%', left: '-10%',
@@ -50,28 +75,34 @@ export const RegisterPage = () => {
       }} />
 
       {/* Split Card */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1.15fr 1fr',
-        backgroundColor: '#ffffff',
-        borderRadius: '24px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 20px 50px rgba(15, 23, 42, 0.08)',
-        overflow: 'hidden',
-        maxWidth: '1080px',
-        width: '100%',
-        minHeight: '640px',
-        position: 'relative',
-        zIndex: 10
-      }}>
+      <div 
+        className="register-split-card"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1.15fr 1fr',
+          backgroundColor: '#ffffff',
+          borderRadius: '24px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 20px 50px rgba(15, 23, 42, 0.08)',
+          overflow: 'hidden',
+          maxWidth: '1080px',
+          width: '100%',
+          minHeight: '640px',
+          position: 'relative',
+          zIndex: 10
+        }}
+      >
         {/* Left Side: Form */}
-        <div style={{
-          padding: '3rem 3rem',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          backgroundColor: '#ffffff'
-        }}>
+        <div 
+          className="register-left-panel"
+          style={{
+            padding: '3rem 3rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            backgroundColor: '#ffffff'
+          }}
+        >
           {/* Logo & Header */}
           <div>
             <div
@@ -93,7 +124,7 @@ export const RegisterPage = () => {
             </p>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+              <div className="register-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                 <div className="form-group">
                   <label className="form-label" style={{ color: '#475569', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.5rem', display: 'block' }}>Nama Lengkap *</label>
                   <input
@@ -270,16 +301,19 @@ export const RegisterPage = () => {
         </div>
 
         {/* Right Side: Decorative Compliance Dashboard Cards */}
-        <div style={{
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
-          padding: '3.5rem 3rem',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          position: 'relative',
-          overflow: 'hidden',
-          borderLeft: '1px solid #cbd5e1'
-        }}>
+        <div 
+          className="register-right-panel"
+          style={{
+            background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+            padding: '3.5rem 3rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            position: 'relative',
+            overflow: 'hidden',
+            borderLeft: '1px solid #cbd5e1'
+          }}
+        >
           {/* Abstract Grid Background Overlay */}
           <div style={{
             position: 'absolute', inset: 0,

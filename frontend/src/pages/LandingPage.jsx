@@ -107,6 +107,42 @@ export const LandingPage = () => {
           color: #0f172a;
           background-color: #f1f5f9;
         }
+        @media (max-width: 1024px) {
+          #hero {
+            grid-template-columns: 1fr !important;
+            gap: 3rem !important;
+            padding: 4rem 1.5rem 3rem !important;
+            text-align: center;
+          }
+          .landing-nav-links {
+            display: none !important;
+          }
+          .features-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .step-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .footer-grid {
+            grid-template-columns: 1fr !important;
+            gap: 2.5rem !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .features-grid, .step-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .hero-buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+          }
+          .hero-buttons button, .hero-buttons a {
+            width: 100% !important;
+            justify-content: center;
+          }
+        }
       `}</style>
 
       {/* Background Decorative Glows */}
@@ -145,7 +181,7 @@ export const LandingPage = () => {
           </div>
 
           {/* Links */}
-          <nav style={{ display: 'flex', gap: '2rem', fontSize: '0.85rem', fontWeight: 700 }}>
+          <nav className="landing-nav-links" style={{ display: 'flex', gap: '2rem', fontSize: '0.85rem', fontWeight: 700 }}>
             <a href="#hero" className="nav-link">Beranda</a>
             <a href="#features" className="nav-link">Fitur Utama</a>
             <a href="#how-it-works" className="nav-link">Cara Kerja</a>
@@ -208,7 +244,7 @@ export const LandingPage = () => {
             </span>
           </h1>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div className="hero-buttons" style={{ display: 'flex', gap: '1rem' }}>
             <button 
               onClick={handleStartConsultation} 
               style={{
@@ -321,7 +357,7 @@ export const LandingPage = () => {
             </p>
           </div>
 
-          <div style={{
+          <div className="features-grid" style={{
             display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem'
           }}>
             {[
@@ -361,7 +397,7 @@ export const LandingPage = () => {
             </p>
           </div>
 
-          <div style={{
+          <div className="step-grid" style={{
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem',
             position: 'relative'
           }}>
@@ -503,7 +539,7 @@ export const LandingPage = () => {
         backgroundColor: '#ffffff', color: '#475569', padding: '5rem 2rem 3rem',
         borderTop: '1px solid #cbd5e1'
       }}>
-        <div style={{
+        <div className="footer-grid" style={{
           maxWidth: '1200px', margin: '0 auto',
           display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '5rem',
           fontSize: '0.85rem'

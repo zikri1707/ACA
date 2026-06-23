@@ -13,7 +13,7 @@ import {
 } from './Icons';
 
 export const Sidebar = () => {
-  const { user, currentPage, navigateTo, logout } = useAuth();
+  const { user, currentPage, navigateTo, logout, sidebarOpen, setSidebarOpen } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [logoutHover, setLogoutHover] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -53,7 +53,23 @@ export const Sidebar = () => {
 
   return (
     <>
-      <aside style={{
+      {sidebarOpen && (
+        <div 
+          className="sidebar-backdrop" 
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.45)',
+            zIndex: 999,
+            backdropFilter: 'blur(3px)',
+            animation: 'fadeInOverlay 0.2s ease'
+          }}
+        />
+      )}
+      <aside 
+        className={sidebarOpen ? "mobile-open" : ""}
+        style={{
         width: 'var(--sidebar-width)',
         backgroundColor: 'var(--surface)',
         borderRight: '1px solid var(--border)',
@@ -74,7 +90,7 @@ export const Sidebar = () => {
           gap: isCollapsed ? '1rem' : '0'
         }}>
           {!isCollapsed ? (
-            <div style={{ display: 'flex', flexDirection: 'column' }} onClick={() => navigateTo('dashboard')} className="cursor-pointer">
+            <div style={{ display: 'flex', flexDirection: 'column' }} onClick={() => { navigateTo('dashboard'); setSidebarOpen(false); }} className="cursor-pointer">
               <span style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.03em' }}>
                 ACA Advisor
               </span>
@@ -83,7 +99,7 @@ export const Sidebar = () => {
               </span>
             </div>
           ) : (
-            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.25rem', cursor: 'pointer' }} onClick={() => navigateTo('dashboard')}>
+            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.25rem', cursor: 'pointer' }} onClick={() => { navigateTo('dashboard'); setSidebarOpen(false); }}>
               ACA
             </div>
           )}
@@ -112,7 +128,7 @@ export const Sidebar = () => {
             return (
               <button
                 key={item.id}
-                onClick={() => navigateTo(item.id)}
+                onClick={() => { navigateTo(item.id); setSidebarOpen(false); }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '1rem',
                   padding: '0.9rem 1.25rem', borderRadius: '10px', border: 'none',

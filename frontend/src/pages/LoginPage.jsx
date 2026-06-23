@@ -15,17 +15,38 @@ export const LoginPage = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      backgroundColor: '#f8fafc', // Soft blue-grey background
-      fontFamily: 'var(--font-sans)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
+    <div 
+      className="login-container"
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        backgroundColor: '#f8fafc', // Soft blue-grey background
+        fontFamily: 'var(--font-sans)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      <style>{`
+        @media (max-width: 768px) {
+          .login-container {
+            padding: 1rem !important;
+          }
+          .login-split-card {
+            grid-template-columns: 1fr !important;
+            min-height: auto !important;
+            border-radius: 16px !important;
+          }
+          .login-left-panel {
+            padding: 2.5rem 1.5rem !important;
+          }
+          .login-right-panel {
+            display: none !important;
+          }
+        }
+      `}</style>
       {/* Decorative Light Blue Glows */}
       <div style={{
         position: 'absolute', top: '-10%', left: '-10%',
@@ -41,28 +62,34 @@ export const LoginPage = () => {
       }} />
 
       {/* Split Card */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1.15fr',
-        backgroundColor: '#ffffff',
-        borderRadius: '24px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 20px 50px rgba(15, 23, 42, 0.08)',
-        overflow: 'hidden',
-        maxWidth: '1080px',
-        width: '100%',
-        minHeight: '640px',
-        position: 'relative',
-        zIndex: 10
-      }}>
+      <div 
+        className="login-split-card"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1.15fr',
+          backgroundColor: '#ffffff',
+          borderRadius: '24px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 20px 50px rgba(15, 23, 42, 0.08)',
+          overflow: 'hidden',
+          maxWidth: '1080px',
+          width: '100%',
+          minHeight: '640px',
+          position: 'relative',
+          zIndex: 10
+        }}
+      >
         {/* Left Side: Form */}
-        <div style={{
-          padding: '3.5rem 3rem',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          backgroundColor: '#ffffff'
-        }}>
+        <div 
+          className="login-left-panel"
+          style={{
+            padding: '3.5rem 3rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            backgroundColor: '#ffffff'
+          }}
+        >
           {/* Logo & Header */}
           <div>
             <div 
@@ -203,16 +230,19 @@ export const LoginPage = () => {
         </div>
 
         {/* Right Side: Blue Premium Panel */}
-        <div style={{
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
-          padding: '3.5rem 3rem',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          position: 'relative',
-          overflow: 'hidden',
-          borderLeft: '1px solid #cbd5e1'
-        }}>
+        <div 
+          className="login-right-panel"
+          style={{
+            background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+            padding: '3.5rem 3rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            position: 'relative',
+            overflow: 'hidden',
+            borderLeft: '1px solid #cbd5e1'
+          }}
+        >
           {/* Abstract Grid Background Overlay */}
           <div style={{
             position: 'absolute', inset: 0,

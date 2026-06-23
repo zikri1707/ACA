@@ -425,14 +425,32 @@ a:hover {
 
 @media (max-width: 1024px) {
   .main-content {
-    padding: 1.5rem;
+    margin-left: 0 !important;
+    padding: 1.25rem;
   }
   .layout-main-side {
     grid-template-columns: 1fr;
   }
+  /* Responsive Sidebar Drawer styling */
+  aside {
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh !important;
+    width: 280px !important;
+    z-index: 1000 !important;
+  }
+  aside.mobile-open {
+    transform: translateX(0) !important;
+  }
 }
 
 @media (max-width: 640px) {
+  .main-content {
+    padding: 1rem;
+  }
   .grid-cols-2, .grid-cols-3, .grid-cols-4 {
     grid-template-columns: 1fr;
   }

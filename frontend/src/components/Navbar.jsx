@@ -170,7 +170,7 @@ const typeColorMap = {
 };
 
 export const Navbar = () => {
-  const { user, currentPage, toggleTheme, theme } = useAuth();
+  const { user, currentPage, toggleTheme, theme, sidebarOpen, setSidebarOpen } = useAuth();
   const [bellOpen, setBellOpen] = useState(false);
   const [themeHovered, setThemeHovered] = useState(false);
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
@@ -219,6 +219,31 @@ export const Navbar = () => {
           color: var(--primary) !important;
           border-color: var(--primary) !important;
         }
+        @media (max-width: 1024px) {
+          .navbar-subtitle {
+            display: none !important;
+          }
+          .navbar-user-text {
+            display: none !important;
+          }
+          .navbar-user-card {
+            padding: 0.5rem !important;
+          }
+          .mobile-burger-btn {
+            display: flex !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .navbar-page-icon {
+            display: none !important;
+          }
+          .navbar-divider {
+            display: none !important;
+          }
+          header {
+            padding: 1rem !important;
+          }
+        }
       `}</style>
 
       <header
@@ -236,7 +261,26 @@ export const Navbar = () => {
       >
         {/* ─── LEFT: Page Icon + Title + Subtitle ─── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0 }}>
+          <button
+            className="mobile-burger-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '1.75rem',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'none',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '8px'
+            }}
+          >
+            ☰
+          </button>
           <div
+            className="navbar-page-icon"
             style={{
               width: '52px',
               height: '52px',
@@ -267,6 +311,7 @@ export const Navbar = () => {
               {meta.title}
             </h1>
             <p
+              className="navbar-subtitle"
               style={{
                 fontSize: '0.85rem',
                 color: 'var(--text-muted)',
@@ -534,10 +579,11 @@ export const Navbar = () => {
           </button>
 
           {/* ── Divider ── */}
-          <div style={{ width: '1px', height: '32px', backgroundColor: 'var(--border)' }} />
+          <div className="navbar-divider" style={{ width: '1px', height: '32px', backgroundColor: 'var(--border)' }} />
 
           {/* ── User Avatar Card ── */}
           <div
+            className="navbar-user-card"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -569,7 +615,7 @@ export const Navbar = () => {
               {initials}
             </div>
 
-            <div style={{ lineHeight: 1.3 }}>
+            <div className="navbar-user-text" style={{ lineHeight: 1.3 }}>
               <div
                 style={{
                   fontSize: '0.9rem',
