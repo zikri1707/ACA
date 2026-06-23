@@ -7,7 +7,7 @@ const router = express.Router();
 // Get all rules with conditions and accounts info
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const rules = await query(`
+    let sql = `
       SELECT r.*,
              ad.code as debit_account_code,
              ad.name as debit_account_name,
@@ -18,8 +18,15 @@ router.get('/', authenticateToken, async (req, res) => {
       FROM rules r
       LEFT JOIN accounts ad ON r.debit_account_id = ad.id
       LEFT JOIN accounts ac ON r.credit_account_id = ac.id
-      ORDER BY r.priority DESC, r.code ASC
-    `);
+    `;
+    const params = [];
+    if (req.user.role !== 'Admin') {
+      sql += " WHERE r.business_type = ? OR r.business_type = 'semua'";
+      params.push(req.user.business_type);
+    }
+    sql += " ORDER BY r.priority DESC, r.code ASC";
+
+    const rules = await query(sql, params);
 
     const conditions = await query('SELECT * FROM rule_conditions');
 

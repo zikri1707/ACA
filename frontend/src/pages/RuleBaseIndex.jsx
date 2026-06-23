@@ -62,7 +62,7 @@ export const RuleBaseIndex = () => {
   const [activeTab, setActiveTab] = useState('list');
 
   // Usaha Filters Nested State inside Tab 1: 'semua' | 'jasa' | 'dagang'
-  const [nestedFilter, setNestedFilter] = useState('semua');
+  const [nestedFilter, setNestedFilter] = useState(user?.role === 'Admin' ? 'semua' : (user?.business_type || 'semua'));
 
   // Selected rule for visual logic board
   const [selectedRule, setSelectedRule] = useState(null);
@@ -1188,31 +1188,33 @@ export const RuleBaseIndex = () => {
             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem', backgroundColor: 'var(--background)' }}>
               
               {/* Nested Business Type Filter Tabs */}
-              <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'var(--surface)', padding: '6px', borderRadius: '10px', border: '1px solid var(--border)' }}>
-                {[
-                  { id: 'semua', label: 'Semua Usaha' },
-                  { id: 'jasa', label: 'Usaha Jasa' },
-                  { id: 'dagang', label: 'Usaha Dagang' }
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setNestedFilter(tab.id)}
-                    style={{
-                      padding: '0.6rem 1.2rem',
-                      borderRadius: '8px',
-                      border: 'none',
-                      backgroundColor: nestedFilter === tab.id ? 'var(--primary)' : 'transparent',
-                      color: nestedFilter === tab.id ? 'white' : 'var(--text-secondary)',
-                      fontSize: '0.95rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'var(--transition)'
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+              {isAdmin && (
+                <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: 'var(--surface)', padding: '6px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                  {[
+                    { id: 'semua', label: 'Semua Usaha' },
+                    { id: 'jasa', label: 'Usaha Jasa' },
+                    { id: 'dagang', label: 'Usaha Dagang' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setNestedFilter(tab.id)}
+                      style={{
+                        padding: '0.6rem 1.2rem',
+                        borderRadius: '8px',
+                        border: 'none',
+                        backgroundColor: nestedFilter === tab.id ? 'var(--primary)' : 'transparent',
+                        color: nestedFilter === tab.id ? 'white' : 'var(--text-secondary)',
+                        fontSize: '0.95rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'var(--transition)'
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Search & Add Rule */}
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flex: 1, justifyContent: 'flex-end', maxWidth: '550px' }}>
