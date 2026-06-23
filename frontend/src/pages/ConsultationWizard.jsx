@@ -3,11 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { ArrowLeftIcon, ArrowRightIcon, SaveIcon } from '../components/Icons';
 
 export const ConsultationWizard = () => {
-  const { user, token, navigateTo, showToast } = useAuth();
+  const { user, token, loading: authLoading, navigateTo, showToast } = useAuth();
   
-  // Wizard steps: 'business_select', 'questions', 'result'
-  const [step, setStep] = useState('business_select');
-  const [businessType, setBusinessType] = useState(user?.business_type || 'jasa');
+  // Wizard steps: 'questions', 'result'
+  const [step, setStep] = useState('questions');
+  const [isInitialized, setIsInitialized] = useState(false);
   
   const [facts, setFacts] = useState({});
   const [answersHistory, setAnswersHistory] = useState([]);
@@ -47,12 +47,14 @@ export const ConsultationWizard = () => {
     }
   }, [provenGoal, token]);
 
-  // Sync businessType state when user profile loads
+  // Auto-initialize when user and token are ready
   useEffect(() => {
-    if (user?.business_type) {
-      setBusinessType(user.business_type);
+    if (user?.business_type && token && !isInitialized) {
+      setIsInitialized(true);
+      setStep('questions');
+      evaluateSession({}, user.business_type);
     }
-  }, [user]);
+  }, [user, token, isInitialized]);
 
   const resetConsultation = () => {
     setFacts({});
@@ -62,19 +64,16 @@ export const ConsultationWizard = () => {
     setAmount('1000');
     setDescription('');
     setSelectedDynamicAccountId('');
-    setStep('business_select');
-  };
-
-  const startConsultation = () => {
-    setFacts({});
-    setAnswersHistory([]);
-    setProvenGoal(null);
-    setRuleTrace([]);
     setStep('questions');
-    evaluateSession({});
+    if (user?.business_type) {
+      evaluateSession({}, user.business_type);
+    }
   };
 
-  const evaluateSession = async (currentFacts) => {
+  const evaluateSession = async (currentFacts, bType) => {
+    const targetBusinessType = bType || user?.business_type;
+    if (!targetBusinessType) return;
+    
     setLoading(true);
     try {
       const response = await fetch('/api/consultations/evaluate', {
@@ -84,7 +83,7 @@ export const ConsultationWizard = () => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          business_type: businessType,
+          business_type: targetBusinessType,
           facts: currentFacts
         })
       });
@@ -133,7 +132,6 @@ export const ConsultationWizard = () => {
 
   const handleBack = () => {
     if (answersHistory.length === 0) {
-      setStep('business_select');
       return;
     }
 
@@ -175,7 +173,7 @@ export const ConsultationWizard = () => {
       if (provenGoal?.requiresUserInput === 'debit') debitId = selectedDynamicAccountId;
 
       const postBody = {
-        business_type: businessType,
+        business_type: user?.business_type || 'jasa',
         confidence_level: provenGoal ? 95 : 0,
         reasoning_text: provenGoal 
           ? `Transaksi terklasifikasi otomatis sebagai ${provenGoal.rule_name} berdasarkan rule ${provenGoal.rule_code}.` 
@@ -221,60 +219,17 @@ export const ConsultationWizard = () => {
   const specificAccount = provenGoal ? provenGoal.rule_name.split(' (')[0] : '';
   const category = provenGoal ? ((provenGoal.debit?.name?.includes(specificAccount) ? provenGoal.debit?.category : provenGoal.credit?.category) || 'Akuntansi') : '';
 
+  if (authLoading || (!user && !isInitialized)) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '400px', gap: '1rem' }}>
+        <div className="spinner" style={{ width: '50px', height: '50px', borderWidth: '4px' }} />
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Memuat profil usaha...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="printable-consultation">
-      {step === 'business_select' && (
-        <div className="card" style={{ maxWidth: '650px', margin: '2rem auto' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.5rem' }}>Mulai Konsultasi Akuntansi</h2>
-          <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>
-            Pilih klasifikasi jenis usaha entitas UMKM Anda untuk memuat rule-base yang sesuai.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
-            <div 
-              onClick={() => setBusinessType('jasa')}
-              style={{
-                border: businessType === 'jasa' ? '2px solid var(--primary)' : '1px solid var(--border)',
-                backgroundColor: businessType === 'jasa' ? 'var(--primary-light)' : 'var(--surface)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '1.5rem',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'var(--transition)'
-              }}
-            >
-              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>💼</div>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: businessType === 'jasa' ? 'var(--primary)' : 'var(--text-primary)' }}>UMKM Jasa</h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Bengkel, Laundry, Salon, Jasa Konsultan, Studio Desain, dll.
-              </p>
-            </div>
-
-            <div 
-              onClick={() => setBusinessType('dagang')}
-              style={{
-                border: businessType === 'dagang' ? '2px solid var(--primary)' : '1px solid var(--border)',
-                backgroundColor: businessType === 'dagang' ? 'var(--primary-light)' : 'var(--surface)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '1.5rem',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'var(--transition)'
-              }}
-            >
-              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🛒</div>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: businessType === 'dagang' ? 'var(--primary)' : 'var(--text-primary)' }}>UMKM Dagang</h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Toko Sembako, Butik Pakaian, Toko Kosmetik, Retail Elektronik, dll.
-              </p>
-            </div>
-          </div>
-
-          <button onClick={startConsultation} className="btn btn-primary" style={{ width: '100%', padding: '0.9rem' }}>
-            Lanjutkan ke Kuisioner →
-          </button>
-        </div>
-      )}
 
       {step === 'questions' && (
         <div style={{ maxWidth: '850px', margin: '2rem auto' }}>
@@ -398,51 +353,53 @@ export const ConsultationWizard = () => {
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-                  <button 
-                    onClick={handleBack} 
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = 'var(--primary)';
-                      e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.2)';
-                      e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.04)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.08)';
-                      const arrow = e.currentTarget.querySelector('.back-arrow-svg');
-                      if (arrow) arrow.style.transform = 'translateX(-3px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = 'var(--text-secondary)';
-                      e.currentTarget.style.borderColor = 'var(--border)';
-                      e.currentTarget.style.backgroundColor = 'var(--surface)';
-                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.03)';
-                      const arrow = e.currentTarget.querySelector('.back-arrow-svg');
-                      if (arrow) arrow.style.transform = 'none';
-                    }}
-                    style={{ 
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      padding: '0.7rem 1.35rem', 
-                      borderRadius: '10px', 
-                      border: '1.5px solid var(--border)',
-                      backgroundColor: 'var(--surface)',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.95rem', 
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
-                      transition: 'all 0.25s ease'
-                    }}
-                  >
-                    <svg 
-                      className="back-arrow-svg"
-                      style={{ marginRight: '8px', width: '16px', height: '16px', transition: 'transform 0.2s ease', display: 'flex' }} 
-                      fill="none" 
-                      viewBox="0 0 24 24" 
-                      stroke="currentColor" 
-                      strokeWidth={3}
+                  {answersHistory.length > 0 ? (
+                    <button 
+                      onClick={handleBack} 
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = 'var(--primary)';
+                        e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.2)';
+                        e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.04)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.08)';
+                        const arrow = e.currentTarget.querySelector('.back-arrow-svg');
+                        if (arrow) arrow.style.transform = 'translateX(-3px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'var(--text-secondary)';
+                        e.currentTarget.style.borderColor = 'var(--border)';
+                        e.currentTarget.style.backgroundColor = 'var(--surface)';
+                        e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.03)';
+                        const arrow = e.currentTarget.querySelector('.back-arrow-svg');
+                        if (arrow) arrow.style.transform = 'none';
+                      }}
+                      style={{ 
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '0.7rem 1.35rem', 
+                        borderRadius: '10px', 
+                        border: '1.5px solid var(--border)',
+                        backgroundColor: 'var(--surface)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.95rem', 
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+                        transition: 'all 0.25s ease'
+                      }}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    <span>Kembali</span>
-                  </button>
+                      <svg 
+                        className="back-arrow-svg"
+                        style={{ marginRight: '8px', width: '16px', height: '16px', transition: 'transform 0.2s ease', display: 'flex' }} 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor" 
+                        strokeWidth={3}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                      </svg>
+                      <span>Kembali</span>
+                    </button>
+                  ) : <div />}
                 </div>
               </>
             ) : (
