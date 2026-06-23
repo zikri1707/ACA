@@ -47,12 +47,12 @@ export const ConsultationWizard = () => {
     }
   }, [provenGoal, token]);
 
-  // Auto-start for ALL users based on their registered business_type
+  // Sync businessType state when user profile loads
   useEffect(() => {
-    if (user && step === 'business_select') {
-      startConsultation();
+    if (user?.business_type) {
+      setBusinessType(user.business_type);
     }
-  }, [user, step]);
+  }, [user]);
 
   const resetConsultation = () => {
     setFacts({});
@@ -62,9 +62,7 @@ export const ConsultationWizard = () => {
     setAmount('1000');
     setDescription('');
     setSelectedDynamicAccountId('');
-    // Auto start directly
-    setStep('questions');
-    evaluateSession({});
+    setStep('business_select');
   };
 
   const startConsultation = () => {
