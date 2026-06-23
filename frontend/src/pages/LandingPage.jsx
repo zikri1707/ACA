@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export const LandingPage = () => {
   const { token, navigateTo } = useAuth();
-  const [activeTab, setActiveTab] = useState('rules'); // Documentation section active tab
 
   const handleStartConsultation = () => {
     if (token) {
@@ -19,16 +18,6 @@ export const LandingPage = () => {
     { code: 'R-02', desc: 'Prive Pemilik', cond: 'IF Penarikan Pribadi AND Akun Ekuitas', result: 'Debet: Prive (3-1200) / Kredit: Kas Utama (1-1000)' },
     { code: 'R-03', desc: 'Beban Dibayar Dimuka', cond: 'IF Pembayaran Sewa > 12 Bulan', result: 'Debet: Sewa Dibayar Dimuka (1-1500) / Kredit: Kas (1-1000)' },
     { code: 'R-04', desc: 'Utang Usaha', cond: 'IF Pembelian Kredit AND Kewajiban Lancar', result: 'Debet: Persediaan (1-1300) / Kredit: Utang Usaha (2-1000)' }
-  ];
-
-  // Sample data for CoA documentation
-  const coaDoc = [
-    { code: '1-1000', name: 'Kas & Setara Kas', cat: 'Aset', desc: 'Uang tunai dan rekening bank yang tersedia segera.' },
-    { code: '1-1200', name: 'Piutang Usaha', cat: 'Aset', desc: 'Hak klaim kepada pihak ketiga atas transaksi penjualan.' },
-    { code: '2-1000', name: 'Utang Usaha', cat: 'Kewajiban', desc: 'Kewajiban pembayaran kepada supplier pihak ketiga.' },
-    { code: '3-1000', name: 'Modal Pemilik', cat: 'Ekuitas', desc: 'Setoran modal awal dan sisa laba ditahan usaha.' },
-    { code: '4-1000', name: 'Pendapatan Penjualan', cat: 'Pendapatan', desc: 'Hasil penjualan produk atau jasa utama UMKM.' },
-    { code: '5-1000', name: 'Beban Operasional', cat: 'Beban', desc: 'Biaya utilitas, sewa, gaji, dan keperluan umum.' }
   ];
 
   return (
@@ -218,12 +207,7 @@ export const LandingPage = () => {
               Inference Engine
             </span>
           </h1>
-          <p style={{
-            fontSize: '1.1rem', color: '#475569',
-            marginBottom: '2.5rem', lineHeight: 1.7
-          }}>
-            Sistem penasihat akuntansi cerdas berbasis kecerdasan buatan. Mengotomatiskan klasifikasi akun transaksi jurnal sesuai standar **SAK EMKM** menggunakan logika pelacakan **Backward Chaining** secara presisi.
-          </p>
+
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button 
               onClick={handleStartConsultation} 
@@ -343,10 +327,7 @@ export const LandingPage = () => {
             {[
               { icon: '⚙️', title: 'Klasifikasi Otomatis', desc: 'Mesin inferensi backward chaining kami memetakan transaksi langsung ke pos Debit & Kredit yang akurat.' },
               { icon: '🔍', title: 'Riwayat & Logika', desc: 'Sistem menyajikan audit log penelusuran rule yang transparan untuk setiap keputusan klasifikasi.' },
-              { icon: '📚', title: 'Basis Pengetahuan EMKM', desc: 'Kumpulan fakta dan aturan terstruktur yang disesuaikan secara dinamis dengan Standar Akuntansi Keuangan EMKM.' },
-              { icon: '📝', title: 'Jurnal Berpasangan Otomatis', desc: 'Menghasilkan draf catatan jurnal berpasangan akurat, lengkap dengan jumlah nominal dan keterangannya.' },
-              { icon: '📊', title: 'Analitik & Grafik Laporan', desc: 'Visualisasi grafik interaktif sebaran Debit/Kredit, buku besar, dan persentase kategori akun di riwayat.' },
-              { icon: '🛡️', title: 'Akses Keamanan RBAC', desc: 'Sistem login multi-peran untuk membedakan admin pengelola aturan dengan pengguna simulasi.' }
+              { icon: '📚', title: 'Basis Pengetahuan EMKM', desc: 'Kumpulan fakta dan aturan terstruktur yang disesuaikan secara dinamis dengan Standar Akuntansi Keuangan EMKM.' }
             ].map((f, i) => (
               <div key={i} className="feature-card" style={{
                 padding: '2.25rem', borderRadius: '16px', display: 'flex', flexDirection: 'column'
@@ -415,40 +396,17 @@ export const LandingPage = () => {
         padding: '6rem 2rem',
         borderTop: '1px solid #e2e8f0'
       }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5rem', alignItems: 'center' }}>
-          <div>
-            <h2 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '1.5rem', color: '#0f172a' }}>Tentang ACA Advisor</h2>
-            <p style={{ color: '#475569', marginBottom: '1.25rem', lineHeight: 1.7, fontSize: '0.9rem' }}>
-              **ACA Advisor (Account Classification Advisor)** adalah sistem pakar yang dikembangkan untuk menjembatani kesenjangan pengetahuan akuntansi bagi pemilik UMKM. Pelaku usaha sering kali kesulitan mengelompokkan transaksi ke akun yang benar sesuai standar akuntansi yang berlaku.
-            </p>
-            <p style={{ color: '#475569', marginBottom: '1.75rem', lineHeight: 1.7, fontSize: '0.9rem' }}>
-              Dengan menggabungkan kecerdasan buatan konvensional (**Sistem Pakar**) dan kerangka regulasi **SAK EMKM**, sistem ini bekerja layaknya konsultan keuangan digital pribadi yang bekerja 24/7 untuk bisnis Anda.
-            </p>
-            <div style={{ display: 'flex', gap: '2rem' }}>
-              <div>
-                <h4 style={{ color: '#2563eb', fontSize: '1.8rem', fontWeight: 900, marginBottom: '0.25rem' }}>100%</h4>
-                <p style={{ fontSize: '0.72rem', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>SAK EMKM Compliant</p>
-              </div>
-              <div>
-                <h4 style={{ color: '#7c3aed', fontSize: '1.8rem', fontWeight: 900, marginBottom: '0.25rem' }}>&lt; 3 Detik</h4>
-                <p style={{ fontSize: '0.72rem', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>Waktu Inferensi</p>
-              </div>
+        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '2rem', color: '#0f172a' }}>Tentang ACA Advisor</h2>
+          <div style={{ display: 'flex', gap: '3rem', justifyContent: 'center' }}>
+            <div>
+              <h4 style={{ color: '#2563eb', fontSize: '2.2rem', fontWeight: 900, marginBottom: '0.25rem' }}>100%</h4>
+              <p style={{ fontSize: '0.8rem', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>SAK EMKM Compliant</p>
             </div>
-          </div>
-
-          <div style={{
-            backgroundColor: '#f8fafc',
-            border: '1px solid #cbd5e1',
-            borderRadius: '20px', padding: '2.5rem',
-            position: 'relative'
-          }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '1.25rem', color: '#0f172a' }}>Mengapa Backward Chaining?</h3>
-            <p style={{ color: '#475569', fontSize: '0.85rem', lineHeight: 1.65, marginBottom: '1rem' }}>
-              Metode **Backward Chaining** (pelacakan ke belakang) bekerja efisien dengan menetapkan kesimpulan (gol) terlebih dahulu—yaitu kode akun Debit & Kredit yang potensial—kemudian bergerak mundur memeriksa fakta-fakta lapangan yang dimasukkan oleh UMKM.
-            </p>
-            <p style={{ color: '#475569', fontSize: '0.85rem', lineHeight: 1.65 }}>
-              Hal ini sangat cocok karena jumlah akun solusi dalam SAK EMKM bersifat terhingga dan pasti, sementara kombinasi kondisi transaksi di lapangan sangat bervariasi.
-            </p>
+            <div>
+              <h4 style={{ color: '#7c3aed', fontSize: '2.2rem', fontWeight: 900, marginBottom: '0.25rem' }}>&lt; 3 Detik</h4>
+              <p style={{ fontSize: '0.8rem', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>Waktu Inferensi</p>
+            </div>
           </div>
         </div>
       </section>
@@ -462,99 +420,39 @@ export const LandingPage = () => {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '1rem', color: '#0f172a' }}>Dokumentasi Sistem</h2>
-            <p style={{ color: '#475569', fontSize: '0.92rem' }}>
-              Kumpulan referensi basis aturan (*rules*) dan bagan kode akun standar (*Chart of Accounts*) SAK EMKM.
-            </p>
-          </div>
 
-          {/* Tabs header */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
-            <button 
-              className={`doc-tab ${activeTab === 'rules' ? 'active' : ''}`}
-              onClick={() => setActiveTab('rules')}
-            >
-              📚 Basis Aturan (Rules)
-            </button>
-            <button 
-              className={`doc-tab ${activeTab === 'coa' ? 'active' : ''}`}
-              onClick={() => setActiveTab('coa')}
-            >
-              📋 Chart of Accounts (CoA)
-            </button>
           </div>
 
           {/* Tab content: Rules */}
-          {activeTab === 'rules' && (
-            <div style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: '16px', padding: '1.5rem',
-              animation: 'fadeIn 0.3s ease forwards'
-            }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', color: '#334155', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                      <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>KODE</th>
-                      <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>DESKRIPSI LOGIKA</th>
-                      <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>PREMIS (KONDISI SYARAT)</th>
-                      <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>KONSTRUKSI REKOMENDASI JURNAL</th>
+          <div style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #cbd5e1',
+            borderRadius: '16px', padding: '1.5rem',
+            animation: 'fadeIn 0.3s ease forwards'
+          }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', color: '#334155', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                    <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>KODE</th>
+                    <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>DESKRIPSI LOGIKA</th>
+                    <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>PREMIS (KONDISI SYARAT)</th>
+                    <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>KONSTRUKSI REKOMENDASI JURNAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rulesDoc.map((rule, idx) => (
+                    <tr key={idx} style={{ borderBottom: idx < rulesDoc.length - 1 ? '1px solid #e2e8f0' : 'none' }}>
+                      <td style={{ padding: '1rem', fontWeight: 800, color: '#2563eb' }}>{rule.code}</td>
+                      <td style={{ padding: '1rem', fontWeight: 600 }}>{rule.desc}</td>
+                      <td style={{ padding: '1rem', color: '#475569', fontFamily: 'monospace' }}>{rule.cond}</td>
+                      <td style={{ padding: '1rem', color: '#059669', fontWeight: 700, fontFamily: 'monospace' }}>{rule.result}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {rulesDoc.map((rule, idx) => (
-                      <tr key={idx} style={{ borderBottom: idx < rulesDoc.length - 1 ? '1px solid #e2e8f0' : 'none' }}>
-                        <td style={{ padding: '1rem', fontWeight: 800, color: '#2563eb' }}>{rule.code}</td>
-                        <td style={{ padding: '1rem', fontWeight: 600 }}>{rule.desc}</td>
-                        <td style={{ padding: '1rem', color: '#475569', fontFamily: 'monospace' }}>{rule.cond}</td>
-                        <td style={{ padding: '1rem', color: '#059669', fontWeight: 700, fontFamily: 'monospace' }}>{rule.result}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-
-          {/* Tab content: CoA */}
-          {activeTab === 'coa' && (
-            <div style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: '16px', padding: '1.5rem',
-              animation: 'fadeIn 0.3s ease forwards'
-            }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', color: '#334155', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                      <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>KODE AKUN</th>
-                      <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>NAMA AKUN</th>
-                      <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>KLASIFIKASI</th>
-                      <th style={{ padding: '1rem', color: '#475569', fontWeight: 800 }}>DESKRIPSI STANDAR</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {coaDoc.map((coa, idx) => (
-                      <tr key={idx} style={{ borderBottom: idx < coaDoc.length - 1 ? '1px solid #e2e8f0' : 'none' }}>
-                        <td style={{ padding: '1rem', fontWeight: 800, color: '#7c3aed', fontFamily: 'monospace' }}>{coa.code}</td>
-                        <td style={{ padding: '1rem', fontWeight: 700 }}>{coa.name}</td>
-                        <td style={{ padding: '1rem' }}>
-                          <span style={{
-                            fontSize: '0.65rem', fontWeight: 800,
-                            padding: '0.2rem 0.5rem', borderRadius: '4px',
-                            backgroundColor: coa.cat === 'Aset' ? '#e0f2fe' : coa.cat === 'Kewajiban' ? '#fff7ed' : coa.cat === 'Ekuitas' ? '#f5f3ff' : coa.cat === 'Pendapatan' ? '#dcfce7' : '#fee2e2',
-                            color: coa.cat === 'Aset' ? '#0284c7' : coa.cat === 'Kewajiban' ? '#c2410c' : coa.cat === 'Ekuitas' ? '#6d28d9' : coa.cat === 'Pendapatan' ? '#15803d' : '#b91c1c'
-                          }}>{coa.cat}</span>
-                        </td>
-                        <td style={{ padding: '1rem', color: '#475569', lineHeight: 1.5 }}>{coa.desc}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </section>
 
@@ -633,9 +531,9 @@ export const LandingPage = () => {
           <div>
             <h4 style={{ color: '#0f172a', fontSize: '0.95rem', fontWeight: 800, marginBottom: '1.25rem' }}>Informasi Kontak</h4>
             <p style={{ lineHeight: 1.7, color: '#475569' }}>
-              📧 support@aca-advisor.com<br />
+              📧 zikribumble@gmail.com<br />
               📍 DKI Jakarta, Indonesia<br />
-              📞 +62 21 5092 1234
+              📞 +62 815 7465 7050
             </p>
           </div>
         </div>

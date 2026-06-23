@@ -119,28 +119,12 @@ export const DashboardPage = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
       {/* ─── Stats Row ─── */}
-      <div className="grid-cols-4">
+      <div className="grid-cols-2">
         <StatCard
           label="Total Konsultasi"
           value={stats.totalConsultations.toLocaleString('id-ID')}
           sub={`${stats.thisMonth} konsultasi bulan ini`}
           borderColor="#2563eb"
-        />
-        <StatCard
-          label="Akurasi Klasifikasi"
-          value={`${stats.accuracyRate}%`}
-          sub={`${stats.classifiedCount} dari ${stats.totalConsultations} terklasifikasi`}
-          borderColor="#10b981"
-          valueColor="#10b981"
-          subColor="#10b981"
-        />
-        <StatCard
-          label="Rata-rata Keyakinan"
-          value={`${stats.avgConfidence}%`}
-          sub="Confidence score rata-rata"
-          borderColor="#7c3aed"
-          valueColor="#7c3aed"
-          subColor="#7c3aed"
         />
         <StatCard
           label="Rule Pakar Aktif"
@@ -431,10 +415,9 @@ export const DashboardPage = () => {
               </div>
             </div>
             {[
-              { label: 'Basis Pengetahuan', value: `${stats.totalRules} rule`, ok: stats.totalRules > 0 },
-              { label: 'Akurasi Klasifikasi', value: `${stats.accuracyRate}%`, ok: stats.accuracyRate >= 80 },
+              { label: 'Basis Pengetahuan', value: `${stats.totalRules} rule`, ok: stats.totalRules > 0 }
             ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.9rem 0', borderBottom: i < 1 ? '1px solid var(--border)' : 'none' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.9rem 0', borderBottom: 'none' }}>
                 <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{item.label}</span>
                 <span style={{ fontSize: '0.9rem', fontWeight: 800, color: item.ok ? '#16a34a' : 'var(--danger)' }}>
                   {item.ok ? '✓ ' : '✕ '}{item.value}

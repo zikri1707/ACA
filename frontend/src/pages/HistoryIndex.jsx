@@ -177,12 +177,10 @@ export const HistoryIndex = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
       {/* ─── KPI Cards (real data) ─── */}
-      <div className="grid-cols-4">
+      <div className="grid-cols-2">
         {[
           { label: 'Total Konsultasi',       value: stats?.total ?? '—',        sub: 'Semua riwayat tersimpan',         borderColor: '#2563eb' },
           { label: 'Berhasil Diklasifikasi', value: stats?.classified ?? '—',   sub: `${stats?.accuracy ?? 0}% tingkat keberhasilan`, borderColor: '#10b981', valueColor: '#10b981', subColor: '#10b981' },
-          { label: 'Rata-rata Keyakinan',    value: `${stats?.avgConf ?? 0}%`,  sub: 'Confidence score rata-rata',      borderColor: '#7c3aed', valueColor: '#7c3aed', subColor: '#7c3aed' },
-          { label: 'Akurasi Klasifikasi',    value: `${stats?.accuracy ?? 0}%`, sub: 'Berdasarkan SAK EMKM',            borderColor: '#f59e0b', valueColor: '#f59e0b', subColor: '#f59e0b' },
         ].map((card, i) => (
           <div key={i} className="card" style={{
             padding: '1.75rem 2rem',
