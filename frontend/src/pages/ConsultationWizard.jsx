@@ -456,10 +456,56 @@ export const ConsultationWizard = () => {
                       </div>
                     </div>
                   </>
-                ) : (
-                  <h1 style={{ fontSize: '1.75rem', color: 'var(--danger)', marginTop: '0.5rem', marginBottom: '0.25rem' }}>
-                    Tidak Terklasifikasi
-                  </h1>
+                                ) : (
+                  <>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--danger)', marginTop: '0.5rem', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>
+                      Tidak Terklasifikasi
+                    </h1>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--danger)', backgroundColor: '#fee2e2', padding: '0.35rem 0.75rem', borderRadius: '12px', display: 'inline-block', marginBottom: '1.5rem', textTransform: 'uppercase' }}>
+                      Kombinasi Kondisi Tidak Sesuai Aturan Aktif ✗
+                    </span>
+                    
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
+                      <h4 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.65rem' }}>Penjelasan</h4>
+                      <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.75rem' }}>
+                        Berdasarkan hasil evaluasi <strong>Backward Chaining Engine</strong> menggunakan basis aturan (Rule Base) sistem pakar kami, transaksi Anda <strong>tidak dapat didefinisikan secara otomatis</strong> ke dalam akun SAK EMKM tertentu.
+                      </p>
+                      <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.75rem' }}>
+                        Hal ini terjadi karena serangkaian jawaban yang Anda berikan tidak memenuhi satupun jalur logika (rules) akuntansi yang telah dikonfigurasi di dalam sistem saat ini.
+                      </p>
+
+                      <h4 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.65rem' }}>Rekomendasi Tindakan</h4>
+                      <ul style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '1.75rem', paddingLeft: '1.2rem' }}>
+                        <li style={{ marginBottom: '0.5rem' }}>
+                          <strong style={{ color: 'var(--text-primary)' }}>Tinjau Kembali Jawaban Anda:</strong> Periksa ringkasan jawaban Anda di bawah untuk memastikan tidak ada kesalahan input informasi.
+                        </li>
+                        <li style={{ marginBottom: '0.5rem' }}>
+                          <strong style={{ color: 'var(--text-primary)' }}>Mulai Ulang Konsultasi:</strong> Jika Anda merasa ada jawaban yang kurang tepat, klik tombol <strong>Konsultasi Baru</strong> untuk mengulangi proses tanya jawab.
+                        </li>
+                        <li style={{ marginBottom: '0.5rem' }}>
+                          <strong style={{ color: 'var(--text-primary)' }}>Hubungi Pakar Akuntansi / Admin:</strong> Ajukan penambahan basis aturan baru jika transaksi ini merupakan aktivitas rutin usaha Anda yang belum terdaftar di sistem.
+                        </li>
+                        <li style={{ marginBottom: '0.5rem' }}>
+                          <strong style={{ color: 'var(--text-primary)' }}>Pencatatan Jurnal Manual:</strong> Lakukan pencatatan transaksi secara manual melalui buku kas atau sistem jurnal eksternal berdasarkan prinsip dasar akuntansi.
+                        </li>
+                      </ul>
+                      
+                      <h4 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.65rem' }}>Ringkasan Jawaban Anda</h4>
+                      <div style={{ backgroundColor: 'var(--surface-alt)', borderLeft: '4px solid var(--danger)', padding: '1.25rem 1.5rem', borderRadius: '0 8px 8px 0', fontSize: '1.05rem' }}>
+                        {answersHistory.length > 0 ? (
+                          <ul style={{ paddingLeft: '1.2rem', color: 'var(--text-secondary)', margin: 0 }}>
+                            {answersHistory.map((ans, idx) => (
+                              <li key={idx} style={{ marginBottom: '0.5rem' }}>
+                                {ans.question.question_text} <strong style={{ color: 'var(--text-primary)' }}>{facts[ans.question.fact_name] === 'yes' ? 'Ya' : 'Tidak'}</strong>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p style={{ color: 'var(--text-muted)', margin: 0 }}>Tidak ada riwayat pertanyaan.</p>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -525,42 +571,62 @@ export const ConsultationWizard = () => {
 
             {/* Right side: Journals Preview & Rule Trace */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{
-                background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
-                color: 'white',
-                padding: '1.75rem',
-                borderRadius: 'var(--radius-lg)',
-                boxShadow: 'var(--shadow-md)'
-              }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  📖 Preview Jurnal
-                </h3>
+              {provenGoal ? (
+                <div style={{
+                  background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+                  color: 'white',
+                  padding: '1.75rem',
+                  borderRadius: 'var(--radius-lg)',
+                  boxShadow: 'var(--shadow-md)'
+                }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    📖 Preview Jurnal
+                  </h3>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.15)', paddingBottom: '1.5rem', marginBottom: '1rem' }}>
-                  <div>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#bfdbfe' }}>
-                      DEBIT
-                    </span>
-                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', marginTop: '0.15rem' }}>
-                      {debitDisplay}
-                    </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.15)', paddingBottom: '1.5rem', marginBottom: '1rem' }}>
+                    <div>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#bfdbfe' }}>
+                        DEBIT
+                      </span>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', marginTop: '0.15rem' }}>
+                        {debitDisplay}
+                      </h4>
+                    </div>
+
+                    <div style={{ paddingLeft: '1.5rem' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#bfdbfe' }}>
+                        KREDIT
+                      </span>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', marginTop: '0.15rem' }}>
+                        {creditDisplay}
+                      </h4>
+                    </div>
                   </div>
 
-                  <div style={{ paddingLeft: '1.5rem' }}>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#bfdbfe' }}>
-                      KREDIT
-                    </span>
-                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', marginTop: '0.15rem' }}>
-                      {creditDisplay}
-                    </h4>
+                  <div style={{ fontSize: '0.75rem', color: '#e0f2fe', lineHeight: 1.5 }}>
+                    <p style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Cara Membacanya:</p>
+                    <p>Pencatatan uang masuk/keluar ini diletakkan di <strong>Debit</strong> pada <strong style={{color:'white'}}>{debitDisplay}</strong>, dengan sumber asalnya dicatat di <strong>Kredit</strong> pada <strong style={{color:'white'}}>{creditDisplay}</strong>.</p>
                   </div>
                 </div>
-
-                <div style={{ fontSize: '0.75rem', color: '#e0f2fe', lineHeight: 1.5 }}>
-                  <p style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Cara Membacanya:</p>
-                  <p>Pencatatan uang masuk/keluar ini diletakkan di <strong>Debit</strong> pada <strong style={{color:'white'}}>{debitDisplay}</strong>, dengan sumber asalnya dicatat di <strong>Kredit</strong> pada <strong style={{color:'white'}}>{creditDisplay}</strong>.</p>
+              ) : (
+                <div style={{
+                  background: 'linear-gradient(135deg, #475569 0%, #64748b 100%)',
+                  color: 'white',
+                  padding: '1.75rem',
+                  borderRadius: 'var(--radius-lg)',
+                  boxShadow: 'var(--shadow-md)'
+                }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    ⚠️ Jurnal Tidak Terbentuk
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: '#f1f5f9', lineHeight: 1.6, marginBottom: '1rem' }}>
+                    Sistem tidak dapat menghasilkan entri jurnal (Debit/Kredit) karena status klasifikasi transaksi adalah <strong>Tidak Terklasifikasi</strong>.
+                  </p>
+                  <p style={{ fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                    Akun Debit dan Kredit hanya dapat dipetakan jika kriteria transaksi memenuhi salah satu aturan akuntansi yang sah.
+                  </p>
                 </div>
-              </div>
+              )}
 
               <div className="card no-print" style={{ textAlign: 'center', padding: '2rem' }}>
                 <button onClick={resetConsultation} className="btn btn-secondary" style={{ width: '100%', padding: '0.85rem' }}>
