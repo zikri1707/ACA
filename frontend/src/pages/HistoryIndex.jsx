@@ -547,21 +547,7 @@ export const HistoryIndex = () => {
                   )}
                 </div>
 
-                {/* Confidence */}
-                <div style={{
-                  flexShrink: 0, textAlign: 'center', minWidth: '80px',
-                  padding: '0.5rem 0.75rem', borderRadius: '12px',
-                  backgroundColor: con.confidence_level >= 80 ? '#ecfdf5' : '#fffbeb',
-                  border: `1px solid ${con.confidence_level >= 80 ? '#a7f3d0' : '#fde68a'}`,
-                }}>
-                  <div style={{
-                    fontSize: '1.4rem', fontWeight: 800, lineHeight: 1,
-                    color: con.confidence_level >= 80 ? '#10b981' : '#f59e0b',
-                  }}>
-                    {con.confidence_level}%
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 700, marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>confidence</div>
-                </div>
+
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
@@ -717,11 +703,7 @@ export const HistoryIndex = () => {
                               </div>
                             </div>
                             <div className="no-print" style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
-                              <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981' }}>{detail.confidence_level}%</div>
-                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Confidence</div>
-                              </div>
-                              <div style={{ width: '1px', backgroundColor: 'var(--border)' }} />
+
                               <div style={{ textAlign: 'center' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'capitalize' }}>{detail.business_type}</div>
                                 <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Jenis Usaha</div>
