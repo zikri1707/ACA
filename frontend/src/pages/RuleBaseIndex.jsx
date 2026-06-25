@@ -1173,7 +1173,7 @@ export const RuleBaseIndex = () => {
             className={`rule-tab-btn ${activeTab === 'rules_diagram' ? 'active' : ''}`}
             style={{ whiteSpace: 'nowrap' }}
           >
-            📊 Flowchart & Matriks
+            📊 Matriks Keputusan
           </button>
           <button
             onClick={() => setActiveTab('visualizer')}
@@ -1928,7 +1928,7 @@ export const RuleBaseIndex = () => {
       {/* Tab 5: Flowchart & Matriks */}
       {activeTab === 'rules_diagram' && (
         <div className="anim-fade-in">
-          <div className="card" style={{ padding: '2rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
+          {/* <div className="card" style={{ padding: '2rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Flowchart (Diagram Alir Logika)</h3>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
               Representasi diagram alir memetakan percabangan sistem secara eksak sesuai pertanyaan yang muncul kepada pengguna.
@@ -2050,7 +2050,7 @@ export const RuleBaseIndex = () => {
                 <div ref={flowchartRef} className="flowchart-render-container" style={{ display: 'inline-block' }} />
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className="card" style={{ padding: '2rem', borderRadius: '12px' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>Decision Table (Tabel Keputusan)</h3>
