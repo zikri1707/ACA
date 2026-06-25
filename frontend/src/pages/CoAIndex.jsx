@@ -845,8 +845,8 @@ export const CoAIndex = () => {
 
       {/* Modal: View Details (Available to both Admin and User) */}
       {showDetailModal && detailAccount && (
-        <div className="modal-overlay animate-fade-in">
-          <div className="modal-content animate-slide-up" style={{ maxWidth: '480px', borderRadius: '16px', border: '1px solid var(--border)', padding: '1.75rem' }}>
+        <div className="modal-overlay animate-fade-in" onClick={() => setShowDetailModal(false)} style={{ overflowY: 'auto', padding: '2rem 1rem' }}>
+          <div className="modal-content animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', borderRadius: '16px', border: '1px solid var(--border)', padding: '1.75rem', maxHeight: '85vh', display: 'flex', flexDirection: 'column', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{
@@ -866,6 +866,8 @@ export const CoAIndex = () => {
               </button>
             </div>
 
+            {/* Scrollable body */}
+            <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
             {/* Gradient Banner representing Category */}
             <div style={{
               background: CATEGORY_THEMES[detailAccount.category]?.gradient || 'var(--primary)',
@@ -917,22 +919,35 @@ export const CoAIndex = () => {
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Memeriksa relasi database...</span>
                 </div>
               ) : detailUsage ? (
-                <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.85rem' }}>
-                  <div style={{ flex: 1, backgroundColor: 'var(--surface)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>Aturan Sistem Pakar</div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary)' }}>{detailUsage.ruleCount} Rules</div>
+                <div>
+                  <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.85rem' }}>
+                    <div style={{ flex: 1, backgroundColor: 'var(--surface)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>Aturan Sistem Pakar</div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary)' }}>{detailUsage.ruleCount} Rules</div>
+                    </div>
+                    <div style={{ flex: 1, backgroundColor: 'var(--surface)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>Transaksi Terklasifikasi</div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary)' }}>{detailUsage.consultationCount} Kali</div>
+                    </div>
                   </div>
-                  <div style={{ flex: 1, backgroundColor: 'var(--surface)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>Transaksi Terklasifikasi</div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary)' }}>{detailUsage.consultationCount} Kali</div>
-                  </div>
+                  {detailUsage.relatedRules && detailUsage.relatedRules.length > 0 && (
+                    <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.75rem', backgroundColor: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600, marginBottom: '0.25rem' }}>Digunakan oleh Aturan:</div>
+                      {detailUsage.relatedRules.map((r, i) => (
+                        <div key={i} style={{ fontSize: '0.8rem', color: 'var(--text-primary)', padding: '0.15rem 0' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{r.code}</span> — {r.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <span style={{ fontSize: '0.8rem', color: 'var(--danger)' }}>Gagal memuat info relasi database.</span>
               )}
             </div>
+            </div>{/* end scrollable body */}
 
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', flexShrink: 0 }}>
               {isAdmin && (
                 <button
                   onClick={() => { setShowDetailModal(false); handleEditClick(detailAccount); }}

@@ -30,6 +30,7 @@ export const Sidebar = () => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon className="w-6 h-6" /> },
     { id: 'consultation', label: 'Konsultasi', icon: <ConsultationIcon className="w-6 h-6" /> },
+    { id: 'coa', label: 'Chart of Account', icon: <AccountsIcon className="w-6 h-6" /> },
     { id: 'rules', label: 'Rule Base', icon: <RulesIcon className="w-6 h-6" /> },
     { id: 'history', label: 'Riwayat', icon: <HistoryIcon className="w-6 h-6" /> },
     // { id: 'reports', label: 'Laporan', icon: <ReportsIcon className="w-6 h-6" /> },

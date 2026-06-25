@@ -194,42 +194,35 @@ async function init() {
 
     // Seeding Accounts (COA)
     const defaultAccounts = [
-      { code: '1-1000', name: 'Kas Utama', category: 'Aset', subcategory: 'Kas & Setara Kas' },
-      { code: '1-1100', name: 'Bank BCA (Operasional)', category: 'Aset', subcategory: 'Bank' },
-      { code: '1-1200', name: 'Piutang Usaha', category: 'Aset', subcategory: 'Piutang Usaha' },
-      { code: '1-1300', name: 'Persediaan', category: 'Aset', subcategory: 'Persediaan' },
-      { code: '1-1400', name: 'Sewa Dibayar Dimuka', category: 'Aset', subcategory: 'Uang Muka' },
-      { code: '1-1500', name: 'Perlengkapan', category: 'Aset', subcategory: 'Perlengkapan' },
-      { code: '1-2100', name: 'Peralatan', category: 'Aset', subcategory: 'Aset Tetap' },
-      { code: '1-2110', name: 'Akumulasi Penyusutan Peralatan', category: 'Aset', subcategory: 'Akumulasi Penyusutan' },
-      { code: '1-9000', name: 'Aset Lain-lain', category: 'Aset', subcategory: 'Aset Lain-lain' },
-      
-      { code: '2-1000', name: 'Hutang Dagang', category: 'Kewajiban', subcategory: 'Hutang Lancar' },
-      { code: '2-2000', name: 'Hutang Bank', category: 'Kewajiban', subcategory: 'Hutang Jangka Panjang' },
-      
-      { code: '3-1000', name: 'Modal Pemilik', category: 'Ekuitas', subcategory: 'Modal' },
-      { code: '3-2000', name: 'Prive', category: 'Ekuitas', subcategory: 'Prive' },
-      { code: '3-9000', name: 'Ikhtisar Laba Rugi', category: 'Ekuitas', subcategory: 'Laba Ditahan' },
-      
-      { code: '4-1000', name: 'Pendapatan Penjualan', category: 'Pendapatan', subcategory: 'Pendapatan Usaha' },
-      { code: '4-1100', name: 'Pendapatan Jasa', category: 'Pendapatan', subcategory: 'Pendapatan Usaha' },
-      { code: '4-9000', name: 'Pendapatan Lain-lain', category: 'Pendapatan', subcategory: 'Pendapatan Lain' },
-      
-      { code: '5-1000', name: 'Beban Gaji', category: 'Beban', subcategory: 'Beban Operasional' },
-      { code: '5-1100', name: 'Beban Utilitas', category: 'Beban', subcategory: 'Beban Operasional' },
-      { code: '5-1200', name: 'Beban Sewa', category: 'Beban', subcategory: 'Beban Operasional' },
-      { code: '5-1300', name: 'Beban Pemasaran', category: 'Beban', subcategory: 'Beban Operasional' },
-      { code: '5-1500', name: 'Beban ATK', category: 'Beban', subcategory: 'Beban Operasional' },
-      { code: '5-2000', name: 'Beban Penyusutan', category: 'Beban', subcategory: 'Beban Non-Tunai' },
-      { code: '5-3000', name: 'Harga Pokok Penjualan', category: 'Beban', subcategory: 'Harga Pokok Penjualan' },
-      { code: '2-9000', name: 'Hutang Lain-lain', category: 'Kewajiban', subcategory: 'Hutang Lancar' },
-      { code: '5-9000', name: 'Beban Lain-lain', category: 'Beban', subcategory: 'Beban Operasional' }
+      { code: '1-1000', name: 'Kas Utama', category: 'Aset', subcategory: 'Kas & Setara Kas', description: 'Akun utama untuk mencatat seluruh penerimaan dan pengeluaran kas tunai perusahaan.' },
+      { code: '1-1200', name: 'Piutang Usaha', category: 'Aset', subcategory: 'Piutang Usaha', description: 'Mencatat tagihan kepada pelanggan atas penjualan barang atau jasa secara kredit.' },
+      { code: '1-1300', name: 'Persediaan', category: 'Aset', subcategory: 'Persediaan', description: 'Mencatat nilai persediaan barang dagang yang tersedia untuk dijual.' },
+      { code: '1-1500', name: 'Perlengkapan', category: 'Aset', subcategory: 'Perlengkapan', description: 'Mencatat perlengkapan operasional kantor yang habis pakai (ATK, alat kebersihan, dll).' },
+      { code: '1-2100', name: 'Peralatan', category: 'Aset', subcategory: 'Aset Tetap', description: 'Mencatat aset tetap berupa peralatan usaha dengan masa manfaat lebih dari satu tahun.' },
+
+      { code: '2-1000', name: 'Hutang Dagang', category: 'Kewajiban', subcategory: 'Hutang Lancar', description: 'Mencatat kewajiban pembayaran kepada pemasok atas pembelian barang atau jasa secara kredit.' },
+      { code: '2-2000', name: 'Hutang Bank', category: 'Kewajiban', subcategory: 'Hutang Jangka Panjang', description: 'Mencatat kewajiban pinjaman dari bank yang harus dilunasi sesuai jadwal angsuran.' },
+      { code: '2-9000', name: 'Hutang Lain-lain', category: 'Kewajiban', subcategory: 'Hutang Lancar', description: 'Mencatat kewajiban lain-lain yang tidak termasuk hutang dagang maupun hutang bank.' },
+
+      { code: '3-1000', name: 'Modal Pemilik', category: 'Ekuitas', subcategory: 'Modal', description: 'Mencatat investasi modal yang disetorkan oleh pemilik usaha.' },
+      { code: '3-2000', name: 'Prive', category: 'Ekuitas', subcategory: 'Prive', description: 'Mencatat penarikan dana oleh pemilik untuk keperluan pribadi di luar kegiatan usaha.' },
+
+      { code: '4-1000', name: 'Pendapatan Penjualan', category: 'Pendapatan', subcategory: 'Pendapatan Usaha', description: 'Mencatat pendapatan dari penjualan barang dagang kepada pelanggan.' },
+      { code: '4-1100', name: 'Pendapatan Jasa', category: 'Pendapatan', subcategory: 'Pendapatan Usaha', description: 'Mencatat pendapatan dari penyediaan layanan jasa kepada pelanggan.' },
+      { code: '4-9000', name: 'Pendapatan Lain-lain', category: 'Pendapatan', subcategory: 'Pendapatan Lain', description: 'Mencatat pendapatan di luar kegiatan usaha utama, seperti bunga bank atau selisih kurs.' },
+
+      { code: '5-1000', name: 'Beban Gaji', category: 'Beban', subcategory: 'Beban Operasional', description: 'Mencatat beban gaji, upah, dan tunjangan yang dibayarkan kepada karyawan.' },
+      { code: '5-1100', name: 'Beban Utilitas', category: 'Beban', subcategory: 'Beban Operasional', description: 'Mencatat beban utilitas operasional seperti listrik, air, telepon, dan internet.' },
+      { code: '5-1200', name: 'Beban Sewa', category: 'Beban', subcategory: 'Beban Operasional', description: 'Mencatat beban sewa tempat usaha, gedung, atau fasilitas operasional lainnya.' },
+      { code: '5-1300', name: 'Beban Pemasaran', category: 'Beban', subcategory: 'Beban Operasional', description: 'Mencatat biaya pemasaran, promosi, iklan, dan kegiatan branding usaha.' },
+      { code: '5-1500', name: 'Beban ATK', category: 'Beban', subcategory: 'Beban Operasional', description: 'Mencatat beban alat tulis kantor yang langsung dibebankan pada periode berjalan.' },
+      { code: '5-9000', name: 'Beban Lain-lain', category: 'Beban', subcategory: 'Beban Operasional', description: 'Mencatat beban operasional lainnya yang tidak terklasifikasi ke akun beban spesifik.' }
     ];
 
     for (const acc of defaultAccounts) {
       await runAsync(
         'INSERT INTO accounts (code, name, category, subcategory, description) VALUES (?, ?, ?, ?, ?)',
-        [acc.code, acc.name, acc.category, acc.subcategory, '']
+        [acc.code, acc.name, acc.category, acc.subcategory, acc.description || '']
       );
     }
     console.log('COA seeded.');

@@ -64,6 +64,8 @@ function AppContent() {
         return <DashboardPage />;
       case 'consultation':
         return <ConsultationWizard />;
+      case 'coa':
+        return <CoAIndex />;
       case 'rules':
         return <RuleBaseIndex />;
       case 'history':

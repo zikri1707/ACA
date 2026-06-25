@@ -119,13 +119,21 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // Get Account Usage Info (to check if used in rules or consultations)
 router.get('/:id/usage', authenticateToken, async (req, res) => {
   try {
-    const ruleUsage = await get('SELECT COUNT(*) as count FROM rules WHERE conclusion_account_id = ?', [req.params.id]);
-    const consultationUsage = await get('SELECT COUNT(*) as count FROM consultations WHERE result_account_id = ?', [req.params.id]);
+    const ruleDebit = await get('SELECT COUNT(*) as count FROM rules WHERE debit_account_id = ?', [req.params.id]);
+    const ruleCredit = await get('SELECT COUNT(*) as count FROM rules WHERE credit_account_id = ?', [req.params.id]);
+    const ruleCount = (ruleDebit?.count || 0) + (ruleCredit?.count || 0);
+
+    // Get the actual rule names that reference this account
+    const relatedRules = await query(
+      'SELECT code, name FROM rules WHERE debit_account_id = ? OR credit_account_id = ?',
+      [req.params.id, req.params.id]
+    );
     
     return res.json({
-      inUse: ruleUsage.count > 0 || consultationUsage.count > 0,
-      ruleCount: ruleUsage.count,
-      consultationCount: consultationUsage.count
+      inUse: ruleCount > 0,
+      ruleCount,
+      consultationCount: 0,
+      relatedRules
     });
   } catch (err) {
     return res.status(500).json({ message: 'Gagal memeriksa penggunaan akun.', error: err.message });
@@ -140,13 +148,14 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(404).json({ message: 'Akun tidak ditemukan.' });
     }
 
-    // Double check usage to enforce integrity
-    const ruleUsage = await get('SELECT COUNT(*) as count FROM rules WHERE conclusion_account_id = ?', [req.params.id]);
-    const consultationUsage = await get('SELECT COUNT(*) as count FROM consultations WHERE result_account_id = ?', [req.params.id]);
+    // Check usage in rules
+    const ruleDebit = await get('SELECT COUNT(*) as count FROM rules WHERE debit_account_id = ?', [req.params.id]);
+    const ruleCredit = await get('SELECT COUNT(*) as count FROM rules WHERE credit_account_id = ?', [req.params.id]);
+    const ruleCount = (ruleDebit?.count || 0) + (ruleCredit?.count || 0);
     
-    if (ruleUsage.count > 0 || consultationUsage.count > 0) {
+    if (ruleCount > 0) {
       return res.status(400).json({ 
-        message: `Tidak dapat menghapus akun karena digunakan oleh ${ruleUsage.count} aturan dan ${consultationUsage.count} riwayat konsultasi.` 
+        message: `Tidak dapat menghapus akun karena digunakan oleh ${ruleCount} aturan pakar.` 
       });
     }
 
